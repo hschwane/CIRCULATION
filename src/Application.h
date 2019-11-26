@@ -41,6 +41,13 @@ private:
     int m_width; //!< main window framebuffer width
     int m_height; //!< main window framebuffer height
     int m_aspect; //!< main window framebuffer aspect ratio
+
+    // camera
+    mpu::gph::Camera m_camera; //!< the camera used by the renderer to draw results
+
+    // internal helper functions
+    void addInputs(); //!< add some useful input functions
+    void resetCamera(); //!< resets the camera
 };
 
 
