@@ -64,6 +64,8 @@ bool Application::run()
     if(m_showImGuiDemoWindow) ImGui::ShowDemoWindow(&m_showImGuiDemoWindow);
     if(m_showCameraDebugWindow) m_camera.showDebugWindow(&m_showCameraDebugWindow);
     if(m_showPerfWindow) showPerfWindow(m_showPerfWindow);
+    if(m_showAboutWindow)
+        showAboutWindow(m_showAboutWindow);
 
     // -------------------------
     // simulation
@@ -155,6 +157,14 @@ void Application::mainMenuBar()
             ImGui::EndMenu();
         }
 
+        // window menu to select shown windows
+        if(ImGui::BeginMenu("Help"))
+        {
+            ImGui::MenuItem("About", nullptr, &m_showAboutWindow);
+
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMenuBar();
     }
 }
@@ -168,5 +178,41 @@ void Application::showPerfWindow(bool &show)
 
         if(ImGui::Checkbox("V-Sync",&m_vsync))
             mpu::gph::enableVsync(m_vsync);
+    }
+}
+
+void Application::showAboutWindow(bool& show)
+{
+    ImGui::SetNextWindowSize({500,0});
+    if(ImGui::Begin("About",&show, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+    {
+        ImGui::Text("CIRCULATION");
+        ImGui::Text("Cuda Inderactive Climate simULATION");
+        ImGui::Text("Developed by Hendrik Schwanekamp\nhendrik.schwanekamp@gmx.net");
+        ImGui::Text("on Gituhb:\n https://github.com/hschwane/CIRCULATION");
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+        ImGui::Spacing();
+        ImGui::Separator();
+
+        ImGui::TextWrapped("Included third party software:\n\n "
+                    "GCE-Math: A C++ generalized constant expression-based math library Copyright 2016-2019 Keith O'Hara This product includes software developed by Keith O'Hara (http://www.kthohr.com)\n"
+                    "\n"
+                    "This software contains source code provided by NVIDIA Corporation.\n\n"
+                    "CUB by nvlabs (https://nvlabs.github.io/cub/)\n"
+                    "\n"
+                    "stb_image (https://github.com/nothings/stb) This software contains source code provided by Sean T. Barrett.\n"
+                    "\n"
+                    "Dear ImGui (https://github.com/ocornut/imgui) This software contains source code provided by Omar Cornut.\n"
+                    "\n"
+                    "tiny file dialogs (ysengrin.com) This software contains source code provided by Guillaume Vareille.\n"
+                    "\n"
+                    "Test textures by Thomas Schmall (https://www.oxpal.com/uv-checker-texture.html)\n"
+                    "\n"
+                    "GLShader by Johannes Braun (https://github.com/johannes-braun/GLshader)  \n");
+
+        if(ImGui::Button("Close"))
+            show = false;
     }
 }

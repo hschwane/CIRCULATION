@@ -50,6 +50,7 @@ private:
     bool m_showImGuiDemoWindow{false}; //!< is true ImGUI demo window will be shown
     bool m_showCameraDebugWindow{false}; //!< if true camera debug window will be drawn
     bool m_showPerfWindow{false}; //!< if true camera debug window will be drawn
+    bool m_showAboutWindow{false}; //!< if true camera debug window will be drawn
 
     // internal helper functions
     void addInputs(); //!< add some useful input functions
@@ -58,6 +59,8 @@ private:
 
     void mainMenuBar(); //!< draw and handle the main menu bar
     void showPerfWindow(bool &show); //!< shows window with performance information and settings
+    void showAboutWindow(bool &show); //!< shows window with information on app
+    void showKeybindingsWindow(bool &show); //!< shows window with information keybindings
 };
 
 
