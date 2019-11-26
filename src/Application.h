@@ -51,6 +51,7 @@ private:
     bool m_showCameraDebugWindow{false}; //!< if true camera debug window will be drawn
     bool m_showPerfWindow{false}; //!< if true camera debug window will be drawn
     bool m_showAboutWindow{false}; //!< if true camera debug window will be drawn
+    bool m_showKeybindingsWindow{false}; //!< if true camera debug window will be drawn
 
     // internal helper functions
     void addInputs(); //!< add some useful input functions

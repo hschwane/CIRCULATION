@@ -39,7 +39,6 @@ Application::Application(int width, int height)
                                  glViewport(0,0,w,h);
                                  this->m_width = w;
                                  this->m_width = h;
-                                 logDEBUG("Application") << "window resized. w " << w << " h " << h;
                                  this->m_aspect = float(m_width) / float(m_height);
                              });
 
@@ -64,8 +63,8 @@ bool Application::run()
     if(m_showImGuiDemoWindow) ImGui::ShowDemoWindow(&m_showImGuiDemoWindow);
     if(m_showCameraDebugWindow) m_camera.showDebugWindow(&m_showCameraDebugWindow);
     if(m_showPerfWindow) showPerfWindow(m_showPerfWindow);
-    if(m_showAboutWindow)
-        showAboutWindow(m_showAboutWindow);
+    if(m_showAboutWindow) showAboutWindow(m_showAboutWindow);
+    if(m_showKeybindingsWindow) showKeybindingsWindow(m_showKeybindingsWindow);
 
     // -------------------------
     // simulation
@@ -153,15 +152,14 @@ void Application::mainMenuBar()
             ImGui::MenuItem("performance", nullptr, &m_showPerfWindow);
             ImGui::MenuItem("camera debug window", nullptr, &m_showCameraDebugWindow);
             ImGui::MenuItem("ImGui demo window", nullptr, &m_showImGuiDemoWindow);
-
             ImGui::EndMenu();
         }
 
         // window menu to select shown windows
         if(ImGui::BeginMenu("Help"))
         {
+            ImGui::MenuItem("Keybindings", nullptr, &m_showKeybindingsWindow);
             ImGui::MenuItem("About", nullptr, &m_showAboutWindow);
-
             ImGui::EndMenu();
         }
 
@@ -211,6 +209,43 @@ void Application::showAboutWindow(bool& show)
                     "Test textures by Thomas Schmall (https://www.oxpal.com/uv-checker-texture.html)\n"
                     "\n"
                     "GLShader by Johannes Braun (https://github.com/johannes-braun/GLshader)  \n");
+
+        ImGui::Separator();
+        if(ImGui::Button("Close"))
+            show = false;
+    }
+}
+
+void Application::showKeybindingsWindow(bool& show)
+{
+    if(ImGui::Begin("Keybindings",&show))
+    {
+        ImGui::Text("Keybindings on german keyboard:");
+
+        if(ImGui::CollapsingHeader("General"))
+        {
+            ImGui::Columns(2);
+            ImGui::Text("ESC"); ImGui::NextColumn(); ImGui::Text("Close Application"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("F11"); ImGui::NextColumn(); ImGui::Text("Toggle Fullscreen"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("TAB"); ImGui::NextColumn(); ImGui::Text("Toggle User Interface"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Columns(1);
+        }
+
+        if(ImGui::CollapsingHeader("Camera"))
+        {
+            ImGui::Columns(2);
+            ImGui::Text("Left MB or CTRL + mouse"); ImGui::NextColumn(); ImGui::Text("Rotate"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("WASD"); ImGui::NextColumn(); ImGui::Text("Move"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("Q/E"); ImGui::NextColumn(); ImGui::Text("Move up / down"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("Middle MB or ALT + mouse"); ImGui::NextColumn(); ImGui::Text("Pan"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("Middle Wheel"); ImGui::NextColumn(); ImGui::Text("Zoom"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("hold SHIFT"); ImGui::NextColumn(); ImGui::Text("Slower movement"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("hold SPACE"); ImGui::NextColumn(); ImGui::Text("Faster movement"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("+/-"); ImGui::NextColumn(); ImGui::Text("increase / decrease movement speed"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("R"); ImGui::NextColumn(); ImGui::Text("switch between \"trackball\" and \"first person\" movement"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("X"); ImGui::NextColumn(); ImGui::Text("reset camera position and orientation"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Columns(1);
+        }
 
         if(ImGui::Button("Close"))
             show = false;
