@@ -41,13 +41,15 @@ private:
     int m_width; //!< main window framebuffer width
     int m_height; //!< main window framebuffer height
     float m_aspect; //!< main window framebuffer aspect ratio
+    bool m_vsync{true}; //!< is vsync enabled?
 
     // camera
     mpu::gph::Camera m_camera; //!< the camera used by the renderer to draw results
 
     // user interface
-    bool m_showImGuiDemoWindow; //!< is true ImGUI demo window will be shown
+    bool m_showImGuiDemoWindow{false}; //!< is true ImGUI demo window will be shown
     bool m_showCameraDebugWindow{false}; //!< if true camera debug window will be drawn
+    bool m_showPerfWindow{false}; //!< if true camera debug window will be drawn
 
     // internal helper functions
     void addInputs(); //!< add some useful input functions
@@ -55,6 +57,7 @@ private:
     void resetCamera(); //!< resets the camera
 
     void mainMenuBar(); //!< draw and handle the main menu bar
+    void showPerfWindow(bool &show); //!< shows window with performance information and settings
 };
 
 

@@ -30,7 +30,7 @@ Application::Application(int width, int height)
     ImGui::create(m_window);
 
     // some gl settings
-    mpu::gph::enableVsync(true);
+    mpu::gph::enableVsync(m_vsync);
     glClearColor( .2f, .2f, .2f, 1.0f);
 
     // add resize callback
@@ -63,6 +63,7 @@ bool Application::run()
     // draw windows if needed
     if(m_showImGuiDemoWindow) ImGui::ShowDemoWindow(&m_showImGuiDemoWindow);
     if(m_showCameraDebugWindow) m_camera.showDebugWindow(&m_showCameraDebugWindow);
+    if(m_showPerfWindow) showPerfWindow(m_showPerfWindow);
 
     // -------------------------
     // simulation
@@ -147,6 +148,7 @@ void Application::mainMenuBar()
         // window menu to select shown windows
         if(ImGui::BeginMenu("Windows"))
         {
+            ImGui::MenuItem("performance", nullptr, &m_showPerfWindow);
             ImGui::MenuItem("camera debug window", nullptr, &m_showCameraDebugWindow);
             ImGui::MenuItem("ImGui demo window", nullptr, &m_showImGuiDemoWindow);
 
@@ -154,5 +156,17 @@ void Application::mainMenuBar()
         }
 
         ImGui::EndMenuBar();
+    }
+}
+
+void Application::showPerfWindow(bool &show)
+{
+    if(ImGui::Begin("performance",&show))
+    {
+        ImGui::Text("Frametime: %f", mpu::gph::Input::deltaTime());
+        ImGui::Text("FPS: %f", 1.0f / mpu::gph::Input::deltaTime());
+
+        if(ImGui::Checkbox("V-Sync",&m_vsync))
+            mpu::gph::enableVsync(m_vsync);
     }
 }
