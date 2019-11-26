@@ -39,12 +39,14 @@ Application::Application(int width, int height)
                                  glViewport(0,0,w,h);
                                  this->m_width = w;
                                  this->m_width = h;
-                                 this->m_aspect = m_width / m_height;
+                                 logDEBUG("Application") << "window resized. w " << w << " h " << h;
+                                 this->m_aspect = float(m_width) / float(m_height);
                              });
 
     // add input functions
     m_camera.addInputs();
     addInputs();
+    setKeybindings();
 }
 
 bool Application::run()
@@ -73,8 +75,46 @@ void Application::addInputs()
     Input::addButton("ToggleFullscreen","switch between fullscreen and windowed mode",
                           [](Window& wnd) { wnd.toggleFullscreen(); });
 
+    // ability to reset the camera
     Input::addButton("ResetCamera", "reset the camera based on loaded grid",
             [this](Window&) { this->resetCamera(); });
+}
+
+void Application::setKeybindings()
+{
+    using namespace mpu::gph;
+
+    // camera
+    Input::mapKeyToInput("CameraMoveSideways",GLFW_KEY_D,Input::ButtonBehavior::whenDown,Input::AxisBehavior::positive);
+    Input::mapKeyToInput("CameraMoveSideways",GLFW_KEY_A,Input::ButtonBehavior::whenDown,Input::AxisBehavior::negative);
+    Input::mapKeyToInput("CameraMoveForwardBackward",GLFW_KEY_W,Input::ButtonBehavior::whenDown,Input::AxisBehavior::positive);
+    Input::mapKeyToInput("CameraMoveForwardBackward",GLFW_KEY_S,Input::ButtonBehavior::whenDown,Input::AxisBehavior::negative);
+    Input::mapKeyToInput("CameraMoveUpDown",GLFW_KEY_Q,Input::ButtonBehavior::whenDown,Input::AxisBehavior::negative);
+    Input::mapKeyToInput("CameraMoveUpDown",GLFW_KEY_E,Input::ButtonBehavior::whenDown,Input::AxisBehavior::positive);
+
+    Input::mapCourserToInput("CameraPanHorizontal", Input::AxisOrientation::horizontal,Input::AxisBehavior::negative,0, "EnablePan");
+    Input::mapCourserToInput("CameraPanVertical", Input::AxisOrientation::vertical,Input::AxisBehavior::positive,0, "EnablePan");
+    Input::mapScrollToInput("CameraZoom");
+
+    Input::mapMouseButtonToInput("EnablePan", GLFW_MOUSE_BUTTON_MIDDLE);
+    Input::mapKeyToInput("EnablePan", GLFW_KEY_LEFT_ALT);
+
+    Input::mapCourserToInput("CameraRotateHorizontal", Input::AxisOrientation::horizontal,Input::AxisBehavior::negative,0, "EnableRotation");
+    Input::mapCourserToInput("CameraRotateVertical", Input::AxisOrientation::vertical,Input::AxisBehavior::negative,0, "EnableRotation");
+
+    Input::mapMouseButtonToInput("EnableRotation", GLFW_MOUSE_BUTTON_LEFT);
+    Input::mapKeyToInput("EnableRotation", GLFW_KEY_LEFT_CONTROL);
+
+    Input::mapKeyToInput("CameraMovementSpeed",GLFW_KEY_RIGHT_BRACKET,Input::ButtonBehavior::whenDown,Input::AxisBehavior::positive);
+    Input::mapKeyToInput("CameraMovementSpeed",GLFW_KEY_SLASH,Input::ButtonBehavior::whenDown,Input::AxisBehavior::negative);
+    Input::mapKeyToInput("CameraToggleMode",GLFW_KEY_R);
+    Input::mapKeyToInput("CameraSlowMode",GLFW_KEY_LEFT_SHIFT,Input::ButtonBehavior::whenDown);
+    Input::mapKeyToInput("CameraFastMode",GLFW_KEY_SPACE,Input::ButtonBehavior::whenDown);
+
+    // generic
+    Input::mapKeyToInput("Close",GLFW_KEY_ESCAPE);
+    Input::mapKeyToInput("ToggleFullscreen",GLFW_KEY_F11);
+    Input::mapKeyToInput("ResetCamera",GLFW_KEY_X);
 }
 
 void Application::resetCamera()
