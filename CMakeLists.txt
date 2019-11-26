@@ -40,8 +40,9 @@ include(setDefaultTypeRelease)
 # create target
 # -------------------------------------------------------------
 add_executable(CIRCULATION
-            "src/main.cpp"
-            "src/Application.cpp"
+            "src/dummy.cpp"
+            "src/main.cu"
+            "src/Application.cu"
             "src/Grid.cu"
         )
 
