@@ -55,8 +55,17 @@ bool Application::run()
     if( !m_window.frameBegin())
         return false;
 
-    ImGui::ShowDemoWindow();
-    m_camera.showDebugWindow();
+    // handle user interface
+    if(!m_hideGUI)
+    {
+        // draw main menue
+        mainMenuBar();
+
+        // draw windows if needed
+        if(m_showImGuiDemoWindow) ImGui::ShowDemoWindow(&m_showImGuiDemoWindow);
+        if(m_showCameraDebugWindow) m_camera.showDebugWindow(&m_showCameraDebugWindow);
+
+    }
 
     m_camera.update();
 
@@ -121,4 +130,21 @@ void Application::resetCamera()
 {
     m_camera.setPosition({0,0,2});
     m_camera.setTarget({0,0,0});
+}
+
+void Application::mainMenuBar()
+{
+    if(ImGui::BeginMainMenuBar())
+    {
+        // window menu to select shown windows
+        if(ImGui::BeginMenu("Windows"))
+        {
+            ImGui::MenuItem("camera debug window", nullptr, &m_showCameraDebugWindow);
+            ImGui::MenuItem("ImGui demo window", nullptr, &m_showImGuiDemoWindow);
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMenuBar();
+    }
 }

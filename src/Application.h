@@ -45,10 +45,17 @@ private:
     // camera
     mpu::gph::Camera m_camera; //!< the camera used by the renderer to draw results
 
+    // user interface
+    bool m_hideGUI{false}; //!< if true ui will not be drawn
+    bool m_showImGuiDemoWindow; //!< is true ImGUI demo window will be shown
+    bool m_showCameraDebugWindow{false}; //!< if true camera debug window will be drawn
+
     // internal helper functions
     void addInputs(); //!< add some useful input functions
     void setKeybindings(); //!< set keybindings for all the functions
     void resetCamera(); //!< resets the camera
+
+    void mainMenuBar(); //!< draw and handle the main menu bar
 };
 
 
