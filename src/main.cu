@@ -11,6 +11,7 @@
 
 #include <mpUtils/mpUtils.h>
 #include "Application.h"
+#include "Grid.h"
 
 int main()
 {
@@ -22,11 +23,20 @@ int main()
     myLog.printHeader("CIRCULATION", CIRCULATION_VERSION, CIRCULATION_VERSION_SHA, "Debug");
 #endif
 
-    // create app
-    Application myApp(600,600);
+//    // create app
+//    Application myApp(600,600);
+//
+//    // run app
+//    while (myApp.run());
 
-    // run app
-    while (myApp.run());
+
+    GridBuffer<GridDensity,GridVelocity2D> buffer(20);
+
+
+    buffer.write<AT::density>(2,0.45451f);
+    float d = buffer.read<AT::density>(2);
+
+    logINFO("Test") << d;
 
     return 0;
 }
