@@ -42,6 +42,7 @@ include(setDefaultTypeRelease)
 add_executable(CIRCULATION
             "src/main.cpp"
             "src/Application.cpp"
+            "src/Grid.cu"
         )
 
 # -------------------------------------------------------------
