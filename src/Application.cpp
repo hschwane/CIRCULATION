@@ -55,18 +55,22 @@ bool Application::run()
     if( !m_window.frameBegin())
         return false;
 
+    // -------------------------
     // handle user interface
-    if(!m_hideGUI)
-    {
-        // draw main menue
-        mainMenuBar();
+    // draw main menu
+    mainMenuBar();
 
-        // draw windows if needed
-        if(m_showImGuiDemoWindow) ImGui::ShowDemoWindow(&m_showImGuiDemoWindow);
-        if(m_showCameraDebugWindow) m_camera.showDebugWindow(&m_showCameraDebugWindow);
+    // draw windows if needed
+    if(m_showImGuiDemoWindow) ImGui::ShowDemoWindow(&m_showImGuiDemoWindow);
+    if(m_showCameraDebugWindow) m_camera.showDebugWindow(&m_showCameraDebugWindow);
 
-    }
+    // -------------------------
+    // simulation
 
+    // -------------------------
+    // rendering
+
+    // update camera
     m_camera.update();
 
     m_window.frameEnd();
@@ -87,6 +91,9 @@ void Application::addInputs()
     // ability to reset the camera
     Input::addButton("ResetCamera", "reset the camera based on loaded grid",
             [this](Window&) { this->resetCamera(); });
+
+    // hde gui for nice screenshots
+    Input::addButton("ToggleGUI","toggle visibility the user interface", [this](Window&){ImGui::toggleVisibility();});
 }
 
 void Application::setKeybindings()
@@ -124,6 +131,7 @@ void Application::setKeybindings()
     Input::mapKeyToInput("Close",GLFW_KEY_ESCAPE);
     Input::mapKeyToInput("ToggleFullscreen",GLFW_KEY_F11);
     Input::mapKeyToInput("ResetCamera",GLFW_KEY_X);
+    Input::mapKeyToInput("ToggleGUI", GLFW_KEY_TAB);
 }
 
 void Application::resetCamera()
