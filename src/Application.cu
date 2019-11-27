@@ -181,11 +181,14 @@ void Application::showPerfWindow(bool &show)
 
 void Application::showAboutWindow(bool& show)
 {
+
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f),
+                            ImGuiCond_Appearing, ImVec2(0.5f,0.5f));
     ImGui::SetNextWindowSize({500,0});
     if(ImGui::Begin("About",&show, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
     {
         ImGui::Text("CIRCULATION");
-        ImGui::Text("Cuda Inderactive Climate simULATION");
+        ImGui::Text("Cuda InteRactive Climate simULATION");
         ImGui::Text("Developed by Hendrik Schwanekamp\nhendrik.schwanekamp@gmx.net");
         ImGui::Text("on Gituhb:\n https://github.com/hschwane/CIRCULATION");
 
@@ -218,6 +221,8 @@ void Application::showAboutWindow(bool& show)
 
 void Application::showKeybindingsWindow(bool& show)
 {
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f),
+                            ImGuiCond_Appearing, ImVec2(0.5f,0.5f));
     if(ImGui::Begin("Keybindings",&show))
     {
         ImGui::Text("Keybindings on german keyboard:");
@@ -247,6 +252,7 @@ void Application::showKeybindingsWindow(bool& show)
             ImGui::Columns(1);
         }
 
+        ImGui::Separator();
         if(ImGui::Button("Close"))
             show = false;
     }

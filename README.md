@@ -1,2 +1,2 @@
 # CIRCULATION
-Cuda Interactive Climate simULATION.
+Cuda InteRactive Climate simULATION.
