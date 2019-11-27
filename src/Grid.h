@@ -202,6 +202,9 @@ public:
     void bindRenderBuffer(GLuint binding, GLenum target); //!< bind the renderbuffer to target starting with binding id binding
     void addRenderBufferToVao(mpu::gph::VertexArray& vao, int binding); //!< adds the renderbuffer buffers onto the vao starting with binding id binding
 
+    void cacheOnHost(); //!< cache the current buffers data on the host
+    void pushCachToDevice(); //!< write changes from the local cache back to the device
+
     template <AT Param>
     auto read(int cellId); //!< read data from grid cell cellId parameter Param
     template <AT Param, typename T>
@@ -385,6 +388,18 @@ template <typename ...GridAttribs>
 int Grid<GridAttribs...>::size()
 {
     return m_numCells;
+}
+
+template <typename... GridAttribs>
+void Grid<GridAttribs...>::cacheOnHost()
+{
+    logWARNING("Grid") << "host cache is not implemented jet";
+}
+
+template <typename... GridAttribs>
+void Grid<GridAttribs...>::pushCachToDevice()
+{
+    logWARNING("Grid") << "host cache is not implemented jet";
 }
 
 // template function definitions of the Grid class
