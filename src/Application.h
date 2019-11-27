@@ -18,6 +18,7 @@
 //--------------------
 #include <mpUtils/mpUtils.h>
 #include <mpUtils/mpGraphics.h>
+#include <mpUtils/mpCuda.h>
 //--------------------
 
 //-------------------------------------------------------------------
@@ -57,11 +58,14 @@ private:
     void addInputs(); //!< add some useful input functions
     void setKeybindings(); //!< set keybindings for all the functions
     void resetCamera(); //!< resets the camera
+    void createNewSim(); //!< creates a new simulation and makes it current
 
+    // ui windows and menus
     void mainMenuBar(); //!< draw and handle the main menu bar
     void showPerfWindow(bool &show); //!< shows window with performance information and settings
     void showAboutWindow(bool &show); //!< shows window with information on app
     void showKeybindingsWindow(bool &show); //!< shows window with information keybindings
+    void newSimulationModal(); //!< draws the new simulation modal if needed
 };
 
 

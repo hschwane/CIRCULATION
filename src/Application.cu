@@ -65,6 +65,7 @@ bool Application::run()
     if(m_showPerfWindow) showPerfWindow(m_showPerfWindow);
     if(m_showAboutWindow) showAboutWindow(m_showAboutWindow);
     if(m_showKeybindingsWindow) showKeybindingsWindow(m_showKeybindingsWindow);
+    newSimulationModal();
 
     // -------------------------
     // simulation
@@ -144,13 +145,24 @@ void Application::resetCamera()
 
 void Application::mainMenuBar()
 {
+    bool newSimPressed=false; // was Simulation -> New selected?
+
     if(ImGui::BeginMainMenuBar())
     {
+        // simulation menu to manage the simulation
+        if(ImGui::BeginMenu("Simulation"))
+        {
+            if(ImGui::MenuItem("New"))
+                newSimPressed=true; // needed for some imGui id stack thing
+            ImGui::EndMenu();
+        }
+
         // window menu to select shown windows
         if(ImGui::BeginMenu("Windows"))
         {
             ImGui::MenuItem("performance", nullptr, &m_showPerfWindow);
             ImGui::MenuItem("camera debug window", nullptr, &m_showCameraDebugWindow);
+            ImGui::Separator();
             ImGui::MenuItem("ImGui demo window", nullptr, &m_showImGuiDemoWindow);
             ImGui::EndMenu();
         }
@@ -165,6 +177,10 @@ void Application::mainMenuBar()
 
         ImGui::EndMenuBar();
     }
+
+    // open modal
+    if(newSimPressed)
+        ImGui::OpenPopup("New Simulation");
 }
 
 void Application::showPerfWindow(bool &show)
@@ -256,4 +272,69 @@ void Application::showKeybindingsWindow(bool& show)
         if(ImGui::Button("Close"))
             show = false;
     }
+}
+
+void Application::newSimulationModal()
+{
+    if(ImGui::BeginPopupModal("New Simulation",nullptr,ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        static int selctedModel = 0;
+        static int selctedCoordinates = 0;
+        static int3 numGridCells{128,128,32};
+        static float3 minCoords{-1,-1,-1};
+        static float3 maxCoords{1,1,1};
+
+        // select simulation model and coordinate system
+        ImGui::Combo("Model",&selctedModel,"RenderDemo\0\0");
+        ImGui::Combo("CoordinateSystem",&selctedCoordinates,"Cartesian 2D\0\0");
+        int dimension = (selctedCoordinates == 0) ? 2 : 3; // change this to use data from the actual grid thing
+
+        // depending on the dimension number of selected system
+        if(dimension == 2)
+        {
+            ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
+            ImGui::DragFloat2("Min coordinates", &minCoords.x);
+            ImGui::DragFloat2("Max coordinates", &maxCoords.x);
+
+            float3 size = maxCoords - minCoords;
+            float3 cellSize = size / make_float3(numGridCells);
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+            ImGui::DragFloat2("Size", &size.x);
+            ImGui::DragFloat2("Cell Size", &cellSize.x);
+            ImGui::PopItemFlag();
+            ImGui::PopStyleVar();
+        }
+        else
+        {
+            ImGui::Text("3D is not implemented yet");
+        }
+
+        // clamp values on selected coordinate system
+        switch(selctedCoordinates)
+        {
+            case 0:
+                // dont touch min / max coords, as no restrictions apply
+                dimension = 2;
+                break;
+        }
+
+        if(ImGui::Button("Cancel"))
+            ImGui::CloseCurrentPopup();
+        ImGui::SameLine();
+
+        if(ImGui::Button("Create"))
+        {
+            ImGui::CloseCurrentPopup();
+            createNewSim();
+        }
+        ImGui::SetItemDefaultFocus();
+
+        ImGui::EndPopup();
+    }
+}
+
+void Application::createNewSim()
+{
+    logINFO("Application") << "Creating new simulation...";
 }
