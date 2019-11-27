@@ -24,19 +24,23 @@ int main()
 #endif
 
 //    // create app
-//    Application myApp(600,600);
-//
+    Application myApp(600,600);
+
 //    // run app
 //    while (myApp.run());
 
 
     GridBuffer<GridDensity,GridVelocity2D> buffer(20);
+    RenderBuffer<GridDensity::RenderType, GridVelocity2D::RenderType> rb(20);
 
 
     buffer.write<AT::density>(2,0.45451f);
-    float d = buffer.read<AT::density>(2);
 
-    logINFO("Test") << d;
+
+    rb.write(buffer);
+    rb.bind(0,GL_SHADER_STORAGE_BUFFER);
+
+    mpu::gph::Buffer<float> vbo(30);
 
     return 0;
 }
