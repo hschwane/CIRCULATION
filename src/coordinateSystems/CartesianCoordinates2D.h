@@ -30,7 +30,7 @@
 class CartesianCoordinates2D : public CoordinateSystem
 {
 public:
-    CartesianCoordinates2D(float2 min, float2 max, int2 numGridCells); //!< smallest value, biggest value and number of grid cells in each dimension
+    CartesianCoordinates2D(float3 min, float3 max, int3 numGridCells); //!< smallest value, biggest value and number of grid cells in each dimension
     ~CartesianCoordinates2D() override = default;
 
     // convert
