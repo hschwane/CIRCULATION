@@ -59,8 +59,8 @@ public:
     // boundaries
     virtual float3 getMinCoord() const =0; //!< get the lower bound for all dimensions
     virtual float3 getMaxCoord() const =0; //!< get the upper bound for all dimensions
-    virtual int numGridCells() const =0; //!< total number of grid cells
-    virtual int3 numGridCells3d() const =0; //!< number of grid cells in each dimension
+    virtual int getNumGridCells() const =0; //!< total number of grid cells
+    virtual int3 getNumGridCells3d() const =0; //!< number of grid cells in each dimension
 
     // dimensions
     virtual float3 getCellSize() const =0; //! get the size of the cell in target coordinates (uniform grid)

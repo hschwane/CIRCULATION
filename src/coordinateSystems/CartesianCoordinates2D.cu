@@ -95,12 +95,12 @@ int CartesianCoordinates2D::getDownNeighbor(int cellId) const
     return -1;
 }
 
-int CartesianCoordinates2D::numGridCells() const
+int CartesianCoordinates2D::getNumGridCells() const
 {
     return m_totalNumGridCells;
 }
 
-int3 CartesianCoordinates2D::numGridCells3d() const
+int3 CartesianCoordinates2D::getNumGridCells3d() const
 {
     return make_int3(m_numGridCells);
 }

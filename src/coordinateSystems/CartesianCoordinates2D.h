@@ -54,8 +54,8 @@ public:
     // boundaries
     float3 getMinCoord() const override; //!< get the lower bound for all dimensions
     float3 getMaxCoord() const override; //!< get the upper bound for all dimensions
-    int numGridCells() const override; //!< total number of grid cells
-    int3 numGridCells3d() const override; //!< number of grid cells in each dimension
+    int getNumGridCells() const override; //!< total number of grid cells
+    int3 getNumGridCells3d() const override; //!< number of grid cells in each dimension
 
     // dimensions
     float3 getCellSize() const override; //! get the size of the cell in target coordinates (uniform grid)
