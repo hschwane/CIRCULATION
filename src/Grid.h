@@ -298,7 +298,7 @@ void Grid<GridAttribs...>::swapAndRender()
     {
         lck.lock();
         prepareForRendering();
-        lck.lock();
+        lck.unlock();
         m_rbuMtx.unlock();
     } else
         m_newRenderdataWaiting = true;
@@ -364,7 +364,7 @@ bool Grid<GridAttribs...>::newRenderDataReady()
 template <typename ...GridAttribs>
 void Grid<GridAttribs...>::prepareForRendering()
 {
-    m_renderBuffer = *m_renderAwaitBuffer;
+    m_renderBuffer.write( *m_renderAwaitBuffer);
     m_newRenderdataWaiting = false;
     m_renderbufferNotRendered = true;
 }
@@ -372,7 +372,7 @@ void Grid<GridAttribs...>::prepareForRendering()
 template <typename ...GridAttribs>
 void Grid<GridAttribs...>::bindRenderBuffer(GLuint binding, GLenum target)
 {
-    m_renderBuffer.bing(binding,target);
+    m_renderBuffer.bind(binding,target);
 }
 
 template <typename ...GridAttribs>
@@ -386,5 +386,14 @@ int Grid<GridAttribs...>::size()
 {
     return m_numCells;
 }
+
+// template function definitions of the Grid class
+//-------------------------------------------------------------------
+
+// declare and precompile some grid types
+
+using TestGrid = Grid<GridDensity,GridVelocity2D>;
+
+extern template class Grid<GridDensity,GridVelocity2D>;
 
 #endif //CIRCULATION_GRID_H

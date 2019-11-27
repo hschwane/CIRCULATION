@@ -16,5 +16,6 @@
 #include "Grid.h"
 //--------------------
 
-// function definitions of the Grid class
+// template instantiations for faster compiling
 //-------------------------------------------------------------------
+template class Grid<GridDensity,GridVelocity2D>;
