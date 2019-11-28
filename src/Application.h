@@ -23,6 +23,7 @@
 #include "coordinateSystems/CoordinateSystem.h"
 #include "coordinateSystems/CartesianCoordinates2D.h"
 #include "Grid.h"
+#include "Renderer.h"
 //--------------------
 
 /**
@@ -84,11 +85,12 @@ private:
     float m_aspect; //!< main window framebuffer aspect ratio
     bool m_vsync{true}; //!< is vsync enabled?
 
-    // camera
+    // rendering
+    Renderer m_renderer;
     mpu::gph::Camera m_camera; //!< the camera used by the renderer to draw results
 
     // simulation
-    std::unique_ptr<CoordinateSystem> m_currentCS{nullptr}; //!< coordinate system currently in use
+    std::shared_ptr<CoordinateSystem> m_currentCS{nullptr}; //!< coordinate system currently in use
     RenderDemoGrid m_demoGrid;
 
     // rendering
@@ -96,9 +98,10 @@ private:
     // user interface
     bool m_showImGuiDemoWindow{false}; //!< is true ImGUI demo window will be shown
     bool m_showCameraDebugWindow{false}; //!< if true camera debug window will be drawn
-    bool m_showPerfWindow{false}; //!< if true camera debug window will be drawn
-    bool m_showAboutWindow{false}; //!< if true camera debug window will be drawn
-    bool m_showKeybindingsWindow{false}; //!< if true camera debug window will be drawn
+    bool m_showPerfWindow{false}; //!< if true performance window will be drawn
+    bool m_showAboutWindow{false}; //!< if true about window will be drawn
+    bool m_showKeybindingsWindow{false}; //!< if true keybinding window will be drawn
+    bool m_showRendererWindow{false}; //!< if true renderer window will be drawn
 
     // internal helper functions
     void addInputs(); //!< add some useful input functions
@@ -109,9 +112,9 @@ private:
 
     // ui windows and menus
     void mainMenuBar(); //!< draw and handle the main menu bar
-    void showPerfWindow(bool &show); //!< shows window with performance information and settings
-    void showAboutWindow(bool &show); //!< shows window with information on app
-    void showKeybindingsWindow(bool &show); //!< shows window with information keybindings
+    void showPerfWindow(bool* show); //!< shows window with performance information and settings
+    void showAboutWindow(bool* show); //!< shows window with information on app
+    void showKeybindingsWindow(bool* show); //!< shows window with information keybindings
     void newSimulationModal(); //!< draws the new simulation modal if needed
 };
 

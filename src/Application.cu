@@ -20,7 +20,8 @@
 //-------------------------------------------------------------------
 Application::Application(int width, int height)
     : m_window(width,height,"CIRCULATION"),
-    m_camera(mpu::gph::Camera::trackball, glm::vec3(0,0,2), glm::vec3(0,0,0))
+    m_camera(mpu::gph::Camera::trackball, glm::vec3(0,0,2), glm::vec3(0,0,0)),
+    m_renderer(width,height)
 {
     // add shader include pathes
     mpu::gph::addShaderIncludePath(MPU_LIB_SHADER_PATH"include");
@@ -31,7 +32,6 @@ Application::Application(int width, int height)
 
     // some gl settings
     mpu::gph::enableVsync(m_vsync);
-    glClearColor( .2f, .2f, .2f, 1.0f);
 
     // add resize callback
     m_window.addFBSizeCallback([this](int w, int h)
@@ -39,6 +39,7 @@ Application::Application(int width, int height)
                                  glViewport(0,0,w,h);
                                  this->m_width = w;
                                  this->m_width = h;
+                                 this->m_renderer.setSize(w,h);
                                  this->m_aspect = float(m_width) / float(m_height);
                              });
 
@@ -62,9 +63,10 @@ bool Application::run()
     // draw windows if needed
     if(m_showImGuiDemoWindow) ImGui::ShowDemoWindow(&m_showImGuiDemoWindow);
     if(m_showCameraDebugWindow) m_camera.showDebugWindow(&m_showCameraDebugWindow);
-    if(m_showPerfWindow) showPerfWindow(m_showPerfWindow);
-    if(m_showAboutWindow) showAboutWindow(m_showAboutWindow);
-    if(m_showKeybindingsWindow) showKeybindingsWindow(m_showKeybindingsWindow);
+    if(m_showPerfWindow) showPerfWindow(&m_showPerfWindow);
+    if(m_showAboutWindow) showAboutWindow(&m_showAboutWindow);
+    if(m_showKeybindingsWindow) showKeybindingsWindow(&m_showKeybindingsWindow);
+    if(m_showRendererWindow) m_renderer.showGui(&m_showRendererWindow);
 
     // open new simulation modal on startup
     static struct Once{Once(){ImGui::OpenPopup("New Simulation");}}once;
@@ -75,9 +77,9 @@ bool Application::run()
 
     // -------------------------
     // rendering
-
-    // update camera
     m_camera.update();
+    m_renderer.setViewMat(m_camera.viewMatrix());
+    m_renderer.draw();
 
     m_window.frameEnd();
     return true;
@@ -142,8 +144,16 @@ void Application::setKeybindings()
 
 void Application::resetCamera()
 {
-    m_camera.setPosition({0,0,2});
-    m_camera.setTarget({0,0,0});
+    glm::vec3 aabbMin{m_currentCS->getAABBMin().x,m_currentCS->getAABBMin().y, m_currentCS->getAABBMin().z};
+    glm::vec3 aabbMax{m_currentCS->getAABBMax().x,m_currentCS->getAABBMax().y, m_currentCS->getAABBMax().z};
+
+    glm::vec3 size = aabbMax - aabbMin;
+    float diagonal = glm::length(size);
+    glm::vec3 center = aabbMin + size/2;
+
+    m_camera.setPosition(glm::vec3(diagonal*2));
+    m_camera.setTarget(center);
+    m_renderer.setClip(0.001,diagonal*4);
 }
 
 void Application::mainMenuBar()
@@ -160,10 +170,25 @@ void Application::mainMenuBar()
             ImGui::EndMenu();
         }
 
+        if(ImGui::BeginMenu("Visualization"))
+        {
+            ImGui::MenuItem("Show Visualization window", nullptr, &m_showRendererWindow);
+            ImGui::Separator();
+
+            if(ImGui::MenuItem("Reset Camera","X"))
+                resetCamera();
+
+            if(ImGui::MenuItem("Toggle Camera Mode","R"))
+                m_camera.toggleMode();
+
+            ImGui::EndMenu();
+        }
+
         // window menu to select shown windows
         if(ImGui::BeginMenu("Windows"))
         {
             ImGui::MenuItem("performance", nullptr, &m_showPerfWindow);
+            ImGui::MenuItem("visualization", nullptr, &m_showRendererWindow);
             ImGui::MenuItem("camera debug window", nullptr, &m_showCameraDebugWindow);
             ImGui::Separator();
             ImGui::MenuItem("ImGui demo window", nullptr, &m_showImGuiDemoWindow);
@@ -186,9 +211,10 @@ void Application::mainMenuBar()
         ImGui::OpenPopup("New Simulation");
 }
 
-void Application::showPerfWindow(bool &show)
+void Application::showPerfWindow(bool* show)
 {
-    if(ImGui::Begin("performance",&show))
+    ImGui::SetNextWindowSize({0,0},ImGuiCond_FirstUseEver);
+    if(ImGui::Begin("performance",show))
     {
         ImGui::Text("Frametime: %f", mpu::gph::Input::deltaTime());
         ImGui::Text("FPS: %f", 1.0f / mpu::gph::Input::deltaTime());
@@ -198,13 +224,12 @@ void Application::showPerfWindow(bool &show)
     }
 }
 
-void Application::showAboutWindow(bool& show)
+void Application::showAboutWindow(bool* show)
 {
-
     ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f),
                             ImGuiCond_Appearing, ImVec2(0.5f,0.5f));
     ImGui::SetNextWindowSize({500,0});
-    if(ImGui::Begin("About",&show, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+    if(ImGui::Begin("About",show, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
     {
         ImGui::Text("CIRCULATION");
         ImGui::Text("Cuda InteRactive Climate simULATION");
@@ -234,15 +259,16 @@ void Application::showAboutWindow(bool& show)
 
         ImGui::Separator();
         if(ImGui::Button("Close"))
-            show = false;
+            *show = false;
     }
 }
 
-void Application::showKeybindingsWindow(bool& show)
+void Application::showKeybindingsWindow(bool* show)
 {
+    ImGui::SetNextWindowSize({0,0},ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f),
                             ImGuiCond_Appearing, ImVec2(0.5f,0.5f));
-    if(ImGui::Begin("Keybindings",&show))
+    if(ImGui::Begin("Keybindings",show))
     {
         ImGui::Text("Keybindings on german keyboard:");
 
@@ -273,7 +299,7 @@ void Application::showKeybindingsWindow(bool& show)
 
         ImGui::Separator();
         if(ImGui::Button("Close"))
-            show = false;
+            *show = false;
     }
 }
 
@@ -357,11 +383,16 @@ void Application::createNewSim(SimModel model, CSType coordinateSystem, const fl
                            << int(coordinateSystem) << " coordinate range [" << min << "|" << max << "] and grid cell count " << cells;
 
     m_currentCS = coordinateSystemFactory(coordinateSystem, min, max, cells);
+    m_renderer.setCS(m_currentCS);
 
     switch(model)
     {
         case SimModel::renderDemo:
             m_demoGrid = RenderDemoGrid(m_currentCS->getNumGridCells());
+            m_demoGrid.addRenderBufferToVao(m_renderer.getVAO(),0);
+            m_demoGrid.bindRenderBuffer(0,GL_SHADER_STORAGE_BUFFER);
             break;
     }
+
+    resetCamera();
 }
