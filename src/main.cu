@@ -11,7 +11,6 @@
 
 #include <mpUtils/mpUtils.h>
 #include "Application.h"
-#include "Grid.h"
 
 int main()
 {
@@ -23,10 +22,10 @@ int main()
     myLog.printHeader("CIRCULATION", CIRCULATION_VERSION, CIRCULATION_VERSION_SHA, "Debug");
 #endif
 
-//    // create app
+    // create app
     Application myApp(600,600);
 
-//    // run app
+    // run app
     while (myApp.run());
 
     return 0;
