@@ -73,10 +73,10 @@ public:
 private:
     const float2 m_min; //!< smallest possible coordinate
     const float2 m_max; //!< highest possible coordinate
-    const float2 m_size; //!< m_max - m_min
-    const float2 m_cellSize; //!< size of one grid cell
     const int2 m_numGridCells; //!< number of cells in each dimension
     const int m_totalNumGridCells; //!< total number of cells
+    const float2 m_size; //!< m_max - m_min
+    const float2 m_cellSize; //!< size of one grid cell
 };
 
 

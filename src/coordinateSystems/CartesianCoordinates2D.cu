@@ -24,7 +24,8 @@
 // function definitions of the CartesianCoordinates2D class
 //-------------------------------------------------------------------
 CartesianCoordinates2D::CartesianCoordinates2D(float3 min, float3 max, int3 numGridCells)
-    : m_min(make_float2(min)), m_max(make_float2(max)), m_numGridCells(make_int2(numGridCells)),
+    : m_min(make_float2(min)), m_max(make_float2(max)),
+    m_numGridCells(make_int2(numGridCells)),
     m_totalNumGridCells(numGridCells.x*numGridCells.y),
     m_size(m_max-m_min),
     m_cellSize( m_size / make_float2(m_numGridCells))
