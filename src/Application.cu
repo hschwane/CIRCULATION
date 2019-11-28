@@ -65,6 +65,9 @@ bool Application::run()
     if(m_showPerfWindow) showPerfWindow(m_showPerfWindow);
     if(m_showAboutWindow) showAboutWindow(m_showAboutWindow);
     if(m_showKeybindingsWindow) showKeybindingsWindow(m_showKeybindingsWindow);
+
+    // open new simulation modal on startup
+    static struct Once{Once(){ImGui::OpenPopup("New Simulation");}}once;
     newSimulationModal();
 
     // -------------------------
@@ -285,12 +288,14 @@ void Application::newSimulationModal()
         static float3 maxCoords{1,1,1};
 
         // select simulation model and coordinate system
-        ImGui::Combo("Model",&selctedModel,"RenderDemo\0\0");
-        ImGui::Combo("CoordinateSystem",&selctedCoordinates,"Cartesian 2D\0\0");
-        int dimension = (selctedCoordinates == 0) ? 2 : 3; // change this to use data from the actual grid thing
+        ImGui::Combo("Model",&selctedModel,"Render Demo\0\0");
+        ImGui::Combo("Coordinate System",&selctedCoordinates,"2D Cartesian Coordinate\0\0");
+
+        // figure out dimension
+        auto cs = coordinateSystemFactory(static_cast<CSType>(selctedCoordinates),{0,0,0},{0,0,0},{0,0,0});
 
         // depending on the dimension number of selected system
-        if(dimension == 2)
+        if(cs->getDimension() == 2)
         {
             ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
             ImGui::DragFloat2("Min coordinates", &minCoords.x);
@@ -302,21 +307,25 @@ void Application::newSimulationModal()
             ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
             ImGui::DragFloat2("Size", &size.x);
             ImGui::DragFloat2("Cell Size", &cellSize.x);
+            int numOfCells = numGridCells.x * numGridCells.y;
+            ImGui::DragInt("Total number of cells", &numOfCells);
             ImGui::PopItemFlag();
             ImGui::PopStyleVar();
         }
         else
         {
-            ImGui::Text("3D is not implemented yet");
-        }
+            ImGui::DragInt3("Number of Grid Cells", &numGridCells.x);
+            ImGui::DragFloat3("Min coordinates", &minCoords.x);
+            ImGui::DragFloat3("Max coordinates", &maxCoords.x);
 
-        // clamp values on selected coordinate system
-        switch(selctedCoordinates)
-        {
-            case 0:
-                // dont touch min / max coords, as no restrictions apply
-                dimension = 2;
-                break;
+            float3 size = maxCoords - minCoords;
+            float3 cellSize = size / make_float3(numGridCells);
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+            ImGui::DragFloat3("Size", &size.x);
+            ImGui::DragFloat3("Cell Size", &cellSize.x);
+            ImGui::PopItemFlag();
+            ImGui::PopStyleVar();
         }
 
         if(ImGui::Button("Cancel"))
@@ -326,7 +335,15 @@ void Application::newSimulationModal()
         if(ImGui::Button("Create"))
         {
             ImGui::CloseCurrentPopup();
-            createNewSim();
+
+            if(cs->getDimension() == 2)
+            {
+                minCoords.z=0;
+                maxCoords.z=0;
+                numGridCells.z=0;
+            }
+
+            createNewSim(static_cast<SimModel>(selctedModel), static_cast<CSType>(selctedCoordinates), minCoords, maxCoords, numGridCells);
         }
         ImGui::SetItemDefaultFocus();
 
@@ -334,7 +351,17 @@ void Application::newSimulationModal()
     }
 }
 
-void Application::createNewSim()
+void Application::createNewSim(SimModel model, CSType coordinateSystem, const float3& min, const float3& max, const int3& cells)
 {
-    logINFO("Application") << "Creating new simulation...";
+    logINFO("Application") << "Creating new simulation with sim model " << int(model) << " coordinate system "
+                           << int(coordinateSystem) << " coordinate range [" << min << "|" << max << "] and grid cell count " << cells;
+
+    m_currentCS = coordinateSystemFactory(coordinateSystem, min, max, cells);
+
+    switch(model)
+    {
+        case SimModel::renderDemo:
+            m_demoGrid = TestGrid(m_currentCS->getNumGridCells());
+            break;
+    }
 }
