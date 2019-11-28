@@ -139,3 +139,18 @@ float3 CartesianCoordinates2D::getAABBMax() const
 {
     return float3{m_max.x,m_max.y,0};
 }
+
+std::string CartesianCoordinates2D::getShaderFileName() const
+{
+    return "CoordinateSystems/cartesianCoordinates2D.glsl";
+}
+
+void CartesianCoordinates2D::setShaderUniforms(mpu::gph::ShaderProgram& shader) const
+{
+    shader.uniform2f("csInternalData.m_min", glm::vec2(m_min.x,m_min.y));
+    shader.uniform2f("csInternalData.m_max", glm::vec2(m_max.x,m_max.y));
+    shader.uniform2f("csInternalData.m_size", glm::vec2(m_size.x,m_size.y));
+    shader.uniform2f("csInternalData.m_cellSize", glm::vec2(m_cellSize.x,m_cellSize.y));
+    shader.uniform2i("csInternalData.m_numGridCells", glm::ivec2(m_numGridCells.x,m_numGridCells.y));
+    shader.uniform1i("csInternalData.m_numTotalGridCells", m_totalNumGridCells);
+}

@@ -66,6 +66,10 @@ public:
     float3 getAABBMin() const override; //!< get the lower left  bounding box corner in cartesian coords
     float3 getAABBMax() const override; //!< get the upper right bounding box corner in cartesian coords
 
+    // openGL support
+    virtual std::string getShaderFileName() const; //!< returns name of a file to be included in a shader which defines above functions in glsl
+    virtual void setShaderUniforms(mpu::gph::ShaderProgram& shader) const; //!< sets the necessary uniforms to a shader that included th shader file from "getShaderFileName()" function
+
 private:
     const float2 m_min; //!< smallest possible coordinate
     const float2 m_max; //!< highest possible coordinate

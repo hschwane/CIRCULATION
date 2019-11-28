@@ -18,6 +18,7 @@
 //--------------------
 #include <mpUtils/mpUtils.h>
 #include <mpUtils/mpCuda.h>
+#include <mpUtils/mpGraphics.h>
 //--------------------
 
 //-------------------------------------------------------------------
@@ -70,6 +71,10 @@ public:
     // bounding box
     virtual float3 getAABBMin() const =0; //!< get the lower left  bounding box corner in cartesian coords
     virtual float3 getAABBMax() const =0; //!< get the upper right bounding box corner in cartesian coords
+
+    // openGL support
+    virtual std::string getShaderFileName() const =0; //!< returns name of a file to be included in a shader which defines above functions in glsl
+    virtual void setShaderUniforms(mpu::gph::ShaderProgram& shader) const =0; //!< sets the necessary uniforms to a shader that included th shader file from "getShaderFileName()" function
 };
 
 
