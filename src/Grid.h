@@ -176,10 +176,12 @@ void RenderBuffer<Attributes...>::addToVao(mpu::gph::VertexArray& vao, int bindi
  * class Grid
  *
  * Class to manage memory for simulation data of a grid based simulation.
- * Supports buffer swap and rendering be done from different threads.
+ * Supports buffer swap and rendering to be done from two different threads.
  *
  * usage:
  * Use variadic template to define attribute types from above list (e.g. GridDensity, GridVelocity, usw)
+ * Only copy/move/create in the render thread in single threaded contex! (because openGL buffers are part of this and the context need to be valid)
+ * Also threading might break when copying while other thread is still working on the grid as copy / move / swap are NOT thread safe.
  *
  */
 template <typename ...GridAttribs>
@@ -190,6 +192,11 @@ public:
     using RenderBufferType = RenderBuffer<typename GridAttribs::RenderType ...>;
 
     explicit Grid(int numCells=0);
+
+    // copy and move constructor (copy swap idom)
+    Grid(const Grid& other);
+    Grid(Grid&& other) noexcept;
+    Grid& operator=(Grid other) noexcept;
 
     void swapBuffer(); //!< swap working buffers, the old write buffer becomes the read buffer
     void swapAndRender(); //!< swap and ready the current buffer for rendering
@@ -211,6 +218,31 @@ public:
     void write(int cellId, T&& data); //!< read data from grid cell cellId parameter Param
 
     int size(); //!< returns the number of available grid cells
+
+    // for copy swap idom
+    friend void swap(Grid& first, Grid& second) //!< swap two instances of buffer
+    {
+        using std::swap;
+
+        swap(first.m_numCells,second.m_numCells);
+
+        swap(first.m_readBuffer,second.m_readBuffer);
+        swap(first.m_writeBuffer,second.m_writeBuffer);
+        swap(first.m_renderAwaitBuffer,second.m_renderAwaitBuffer);
+        swap(first.m_unusedBuffer,second.m_unusedBuffer);
+
+        swap(first.m_bufferA,second.m_bufferA);
+        swap(first.m_bufferB,second.m_bufferB);
+        swap(first.m_bufferC,second.m_bufferC);
+        swap(first.m_renderBuffer,second.m_renderBuffer);
+
+        bool b = first.m_renderbufferNotRendered;
+        first.m_renderbufferNotRendered = second.m_renderbufferNotRendered.load();
+        second.m_renderbufferNotRendered = b;
+        b = first.m_newRenderdataWaiting;
+        first.m_newRenderdataWaiting = second.m_newRenderdataWaiting.load();
+        second.m_newRenderdataWaiting = b;
+    }
 
 private:
     int m_numCells; //!< number of grid cells
@@ -255,12 +287,76 @@ void Grid<GridAttribs...>::write(int cellId, T&& data)
 template <typename ...GridAttribs>
 Grid<GridAttribs...>::Grid(int numCells)
     : m_bufferA(numCells), m_bufferB(numCells),
-    m_bufferC(numCells), m_numCells(numCells)
+    m_bufferC(numCells), m_numCells(numCells),
+    m_renderBuffer(numCells)
 {
     m_readBuffer  = &m_bufferA;
     m_writeBuffer = &m_bufferB;
     m_unusedBuffer = nullptr;
     m_renderAwaitBuffer = &m_bufferC;
+}
+
+template <typename... GridAttribs>
+Grid<GridAttribs...>::Grid(const Grid& other)
+    : m_bufferA(other.m_bufferA),
+      m_bufferB(other.m_bufferB),
+      m_bufferC(other.m_bufferC),
+      m_renderBuffer(other.m_renderBuffer),
+      m_renderbufferNotRendered(other.m_renderbufferNotRendered.load()),
+      m_newRenderdataWaiting(other.m_newRenderdataWaiting.load()),
+      m_rbuMtx(),
+      m_rabuMtx(),
+      m_numCells(other.m_numCells)
+{
+    if(other.m_readBuffer == &other.m_bufferA)
+        m_readBuffer = &m_bufferA;
+    else if(other.m_readBuffer == &other.m_bufferB)
+        m_readBuffer = &m_bufferB;
+    else if(other.m_readBuffer == &other.m_bufferC)
+        m_readBuffer = &m_bufferC;
+    else
+        m_readBuffer = nullptr;
+
+    if(other.m_writeBuffer == &other.m_bufferA)
+        m_writeBuffer = &m_bufferA;
+    else if(other.m_writeBuffer == &other.m_bufferB)
+        m_writeBuffer = &m_bufferB;
+    else if(other.m_writeBuffer == &other.m_bufferC)
+        m_writeBuffer = &m_bufferC;
+    else
+        m_writeBuffer = nullptr;
+
+    if(other.m_renderAwaitBuffer == &other.m_bufferA)
+        m_renderAwaitBuffer = &m_bufferA;
+    else if(other.m_renderAwaitBuffer == &other.m_bufferB)
+        m_renderAwaitBuffer = &m_bufferB;
+    else if(other.m_renderAwaitBuffer == &other.m_bufferC)
+        m_renderAwaitBuffer = &m_bufferC;
+    else
+        m_renderAwaitBuffer = nullptr;
+
+    if(other.m_unusedBuffer == &other.m_bufferA)
+        m_unusedBuffer = &m_bufferA;
+    else if(other.m_unusedBuffer == &other.m_bufferB)
+        m_unusedBuffer = &m_bufferB;
+    else if(other.m_unusedBuffer == &other.m_bufferC)
+        m_unusedBuffer = &m_bufferC;
+    else
+        m_unusedBuffer = nullptr;
+}
+
+template <typename... GridAttribs>
+Grid<GridAttribs...>::Grid(Grid&& other) noexcept
+    : Grid()
+{
+    swap(*this,other);
+}
+
+template <typename... GridAttribs>
+Grid<GridAttribs...>& Grid<GridAttribs...>::operator=(Grid other) noexcept
+{
+    swap(*this,other);
+    return *this;
 }
 
 template <typename ...GridAttribs>
