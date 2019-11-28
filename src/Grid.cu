@@ -18,4 +18,4 @@
 
 // template instantiations for faster compiling
 //-------------------------------------------------------------------
-template class Grid<GridDensity,GridVelocity2D>;
+template class Grid<GridDensity,GridVelocityX,GridVelocityY>;

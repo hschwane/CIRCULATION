@@ -89,7 +89,7 @@ private:
 
     // simulation
     std::unique_ptr<CoordinateSystem> m_currentCS{nullptr}; //!< coordinate system currently in use
-    TestGrid m_demoGrid;
+    RenderDemoGrid m_demoGrid;
 
     // rendering
 

@@ -361,7 +361,7 @@ void Application::createNewSim(SimModel model, CSType coordinateSystem, const fl
     switch(model)
     {
         case SimModel::renderDemo:
-            m_demoGrid = TestGrid(m_currentCS->getNumGridCells());
+            m_demoGrid = RenderDemoGrid(m_currentCS->getNumGridCells());
             break;
     }
 }

@@ -76,12 +76,15 @@ private:
  */
 enum class AT
 {
-    velocity,
+    velocityX,
+    velocityY,
     density
 };
 
+
 using GridDensity = GridAttribute<AT::density,float>;
-using GridVelocity2D = GridAttribute<AT::velocity,float2>;
+using GridVelocityX = GridAttribute<AT::velocityX,float>;
+using GridVelocityY = GridAttribute<AT::velocityY,float>;
 
 
 //-------------------------------------------------------------------
@@ -503,8 +506,8 @@ void Grid<GridAttribs...>::pushCachToDevice()
 
 // declare and precompile some grid types
 
-using TestGrid = Grid<GridDensity,GridVelocity2D>;
+using RenderDemoGrid = Grid<GridDensity,GridVelocityX>;
 
-extern template class Grid<GridDensity,GridVelocity2D>;
+extern template class Grid<GridDensity,GridVelocityY>;
 
 #endif //CIRCULATION_GRID_H
