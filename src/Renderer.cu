@@ -31,6 +31,8 @@ Renderer::Renderer(int w, int h)
     m_gridCenterShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.vert"});
     m_gridCenterShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
 
+    glEnable(GL_LINE_SMOOTH);
+
     m_aspect = float(w)/float(h);
     rebuildProjectionMat();
 
@@ -52,12 +54,17 @@ void Renderer::showGui(bool* show)
         if(ImGui::CollapsingHeader("Grid lines"))
         {
             ImGui::Checkbox("show grid lines",&m_renderGridlines);
+            if(ImGui::ColorEdit3("Color##linecolor",glm::value_ptr(m_gridlineColor)))
+                m_gridlineShader.uniform3f("constantColor", m_gridlineColor);
         }
 
-        if(ImGui::CollapsingHeader("Grid points"))
-        {
-            ImGui::Checkbox("show grid center points",&m_renderGridpoints);
-        }
+//        if(ImGui::CollapsingHeader("Grid points"))
+//        {
+//            ImGui::Checkbox("show grid center points",&m_renderGridpoints);
+//            if(ImGui::ColorEdit3("Color##pointcolor",glm::value_ptr(m_gridpointColor)))
+//                m_gridCenterShader.uniform3f("constantColor", m_gridpointColor);
+
+//        }
 
         ImGui::End();
     }
@@ -72,13 +79,17 @@ void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
     m_gridlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
     m_gridlineShader.rebuild();
     m_cs->setShaderUniforms(m_gridlineShader);
+    m_gridlineShader.uniform3f("constantColor", m_gridlineColor);
+
 
     // compile grid center shader
-    m_gridlineShader.clearDefinitions();
-    m_gridlineShader.addDefinition(glsp::definition("RENDER_GRID_CELL_POINTS"));
-    m_gridlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
-    m_gridlineShader.rebuild();
-    m_cs->setShaderUniforms(m_gridlineShader);
+    m_gridCenterShader.clearDefinitions();
+    m_gridCenterShader.addDefinition(glsp::definition("RENDER_GRID_CELL_POINTS"));
+    m_gridCenterShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+    m_gridCenterShader.rebuild();
+    m_cs->setShaderUniforms(m_gridCenterShader);
+    m_gridCenterShader.uniform3f("constantColor", m_gridpointColor);
+
 
 }
 
@@ -100,6 +111,8 @@ void Renderer::setViewMat(const glm::mat4& view)
     m_view = view;
     m_gridlineShader.uniformMat4("viewMat", m_view);
     m_gridlineShader.uniformMat4("viewProjectionMat", m_projection * m_view);
+    m_gridCenterShader.uniformMat4("viewMat", m_view);
+    m_gridCenterShader.uniformMat4("viewProjectionMat", m_projection * m_view);
 }
 
 mpu::gph::VertexArray& Renderer::getVAO()
@@ -135,4 +148,6 @@ void Renderer::rebuildProjectionMat()
     m_projection = glm::perspective(glm::radians(m_fovy),m_aspect,m_near,m_far);
     m_gridlineShader.uniformMat4("projectionMat", m_projection);
     m_gridlineShader.uniformMat4("viewProjectionMat", m_projection * m_view);
+    m_gridCenterShader.uniformMat4("projectionMat", m_projection);
+    m_gridCenterShader.uniformMat4("viewProjectionMat", m_projection * m_view);
 }

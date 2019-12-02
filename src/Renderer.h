@@ -57,7 +57,10 @@ private:
     // settings
     glm::vec3 m_backgroundColor{0.2,0.2,0.2}; //!< background color
     bool m_renderGridlines{true};   //!< should grid lines be rendered
+    glm::vec3 m_gridlineColor{1.0,1.0,1.0}; //!< gridline color
     bool m_renderGridpoints{false}; //!< should grid center points be rendered
+    glm::vec3 m_gridpointColor{1.0,1.0,1.0}; //!< gridpoint color
+
 
     float m_near{0.001}; //!< near plane distance
     float m_far{50}; //!< far plane distance

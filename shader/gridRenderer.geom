@@ -9,6 +9,12 @@ uniform mat4 projectionMat;
 uniform mat4 viewMat;
 uniform mat4 viewProjectionMat;
 
+// in
+in vec3 cellColorGeom[];
+
+// out
+out vec3 cellColor;
+
 // include coordinate system
 #if defined(CARTESIAN_COORDINATES_2D)
     #include "coordinateSystems/cartesianCoordinates2D.glsl"
@@ -23,6 +29,8 @@ void main()
 {
     vec3 cellCoord = cs_getCellCoordinate(gl_PrimitiveIDIn);
     vec3 vertexCoord;
+
+    cellColor = cellColorGeom[0];
 
     // Vertex 1
     vertexCoord = cellCoord + vec3(0.5,0.5,0.5) * cs_getCellSize();
