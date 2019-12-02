@@ -21,7 +21,6 @@
 #include "coordinateSystems/CoordinateSystem.h"
 //--------------------
 
-
 //-------------------------------------------------------------------
 /**
  * class Renderer
@@ -66,7 +65,7 @@ private:
     bool m_renderScalarField{true}; //!< should a scalar field be rendered
     glm::vec3 m_scalarConstColor{1.0,1.0,1.0}; //!< gridpoint color
     float m_gap{0.0f}; //!< size of gap between scalar values
-
+    int m_currentScalarField{-1}; //!< scalar field to visualize
 
     float m_near{0.001}; //!< near plane distance
     float m_far{50}; //!< far plane distance
@@ -80,6 +79,7 @@ private:
 
     // stuff to render
     std::shared_ptr<CoordinateSystem> m_cs{nullptr}; //!< coordinate system to use for rendering
+    std::vector<std::pair<std::string,int>> m_scalarFields; //!< scalar fields used for visualization, name and buffer id
 
     // opengl objects
     mpu::gph::ShaderProgram m_scalarShader; //!< shader used for rendering

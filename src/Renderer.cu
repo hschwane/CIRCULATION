@@ -42,6 +42,9 @@ Renderer::Renderer(int w, int h)
 
     // initial settings
     glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, 1.0f);
+
+    m_scalarFields.emplace_back("field",2);
+    m_scalarFields.emplace_back("fieldB",3);
 }
 
 void Renderer::showGui(bool* show)
@@ -66,10 +69,33 @@ void Renderer::showGui(bool* show)
         if(ImGui::CollapsingHeader("Scalar field"))
         {
             ImGui::Checkbox("show scalar field",&m_renderScalarField);
-            if(ImGui::ColorEdit3("Color##scalarconstcolor",glm::value_ptr(m_scalarConstColor)))
-                m_scalarShader.uniform3f("constantColor", m_scalarConstColor);
             if(ImGui::DragFloat("gap between cells", &m_gap, 0.0001f,0.0000000001f,20.0f))
                 m_scalarShader.uniform1f("gapSize",m_gap);
+
+            if( ImGui::BeginCombo("Attribute", (m_currentScalarField<0) ? "Solid Color"
+                                            : m_scalarFields[m_currentScalarField].first.c_str() ))
+            {
+                bool selected = (m_currentScalarField == -1);
+                if(ImGui::Selectable("Solid Color", &selected))
+                    m_currentScalarField = -1;
+
+                for(int i = 0; i < m_scalarFields.size(); i++)
+                {
+                    selected = (m_currentScalarField == i);
+                    if(ImGui::Selectable(m_scalarFields[i].first.c_str(), &selected))
+                        m_currentScalarField = i;
+                }
+                ImGui::EndCombo();
+            }
+
+            if(m_currentScalarField == -1)
+            {
+                if(ImGui::ColorEdit3("Color##scalarconstcolor", glm::value_ptr(m_scalarConstColor)))
+                    m_scalarShader.uniform3f("constantColor", m_scalarConstColor);
+            } else
+            {
+
+            }
         }
 
         if(ImGui::CollapsingHeader("Grid lines"))
