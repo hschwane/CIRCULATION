@@ -31,6 +31,10 @@ Renderer::Renderer(int w, int h)
     m_gridCenterShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.vert"});
     m_gridCenterShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
 
+    m_scalarShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.vert"});
+    m_scalarShader.setShaderModule({PROJECT_SHADER_PATH"scalarRenderer.geom"});
+    m_scalarShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
+
     glEnable(GL_LINE_SMOOTH);
 
     m_aspect = float(w)/float(h);
@@ -49,7 +53,7 @@ void Renderer::showGui(bool* show)
         {
             if(ImGui::ColorEdit3("Background",glm::value_ptr(m_backgroundColor)))
                 glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, 1.0f);
-            if(ImGui::DragFloat("Scale",&m_scale,0.1f,0.0001f,1000.0f))
+            if(ImGui::DragFloat("Scale",&m_scale,0.01f,0.0001f,1000.0f))
             {
                 m_model = glm::scale(glm::mat4(1.0f),glm::vec3(m_scale));
                 m_gridlineShader.uniformMat4("modelMat", m_model);
@@ -59,11 +63,20 @@ void Renderer::showGui(bool* show)
             }
         }
 
+        if(ImGui::CollapsingHeader("Scalar field"))
+        {
+            ImGui::Checkbox("show scalar field",&m_renderScalarField);
+            if(ImGui::ColorEdit3("Color##scalarconstcolor",glm::value_ptr(m_scalarConstColor)))
+                m_scalarShader.uniform3f("constantColor", m_scalarConstColor);
+            if(ImGui::DragFloat("gap between cells", &m_gap, 0.0001f,0.0000000001f,20.0f))
+                m_scalarShader.uniform1f("gapSize",m_gap);
+        }
+
         if(ImGui::CollapsingHeader("Grid lines"))
         {
             ImGui::Checkbox("show grid lines",&m_renderGridlines);
             if(ImGui::ColorEdit3("Color##linecolor",glm::value_ptr(m_gridlineColor)))
-                m_gridlineShader.uniform3f("constantColor", m_gridlineColor);
+                m_scalarShader.uniform3f("constantColor", m_gridlineColor);
         }
 
 //        if(ImGui::CollapsingHeader("Grid points"))
@@ -111,6 +124,17 @@ void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
     m_gridCenterShader.uniformMat4("viewMat", m_view);
     m_gridCenterShader.uniformMat4("projectionMat", m_projection);
     m_gridCenterShader.uniformMat4("modelMat", m_model);
+
+    // compile scalar field shader
+    m_scalarShader.clearDefinitions();
+    m_scalarShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+    m_scalarShader.rebuild();
+    m_cs->setShaderUniforms(m_scalarShader);
+    m_scalarShader.uniform3f("constantColor", m_scalarConstColor);
+    m_scalarShader.uniformMat4("viewMat", m_view);
+    m_scalarShader.uniformMat4("projectionMat", m_projection);
+    m_scalarShader.uniformMat4("modelMat", m_model);
+    m_scalarShader.uniform1f("gapSize", m_gap);
 }
 
 void Renderer::setSize(int w, int h)
@@ -139,6 +163,13 @@ void Renderer::draw()
 
     m_vao.bind();
 
+    // visualize scalar field
+    if(m_renderScalarField)
+    {
+        m_scalarShader.use();
+        glDrawArrays(GL_POINTS, 0, m_cs->getNumGridCells());
+    }
+
     // visualize grid outlines
     if(m_renderGridlines)
     {
@@ -159,6 +190,7 @@ void Renderer::setViewMat(const glm::mat4& view)
     m_view = view;
     m_gridlineShader.uniformMat4("viewMat", m_view);
     m_gridCenterShader.uniformMat4("viewMat", m_view);
+    m_scalarShader.uniformMat4("viewMat", m_view);
     updateMVP();
 }
 
@@ -167,6 +199,7 @@ void Renderer::rebuildProjectionMat()
     m_projection = glm::perspective(glm::radians(m_fovy),m_aspect,m_near,m_far);
     m_gridlineShader.uniformMat4("projectionMat", m_projection);
     m_gridCenterShader.uniformMat4("projectionMat", m_projection);
+    m_scalarShader.uniformMat4("projectionMat", m_projection);
     updateMVP();
 }
 
@@ -174,4 +207,5 @@ void Renderer::updateMVP()
 {
     m_gridlineShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
     m_gridCenterShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
+    m_scalarShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
 }
