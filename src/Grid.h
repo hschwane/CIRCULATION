@@ -37,7 +37,8 @@ public:
     explicit GridAttribute(int numCells=0) : m_data(numCells) {}
 
     T read(int cellId) {return m_data[cellId];}
-    void write(int cellId, T&& data) {m_data[cellId] = std::forward<T>(data);}
+    template <typename Tin>
+    void write(int cellId, Tin&& data) {m_data[cellId] = data;}
 
     static constexpr AT type = attributeType;
     using RenderType = RenderAttribute<attributeType, T>;
@@ -110,7 +111,13 @@ public:
 template <AT Param, typename First, typename ...Attributes>
 struct GridAttributeSelectorImpl
 {
-    using type = mpu::if_else_t< First::type == Param, First, GridAttributeSelectorImpl<Param,Attributes...> >;
+    using type = mpu::if_else_t< First::type == Param, First, typename GridAttributeSelectorImpl<Param,Attributes...>::type >;
+};
+
+template <AT Param, typename First>
+struct GridAttributeSelectorImpl<Param,First>
+{
+    using type = mpu::if_else_t< First::type == Param, First, nullptr_t >;
 };
 
 //!< selects the first attribute with type == param from attributes
@@ -130,7 +137,7 @@ template <typename... Attributes>
 template <AT Param, typename T>
 void GridBuffer<Attributes...>::write(int cellId, T&& data)
 {
-    GridAttributeSelector_t<Param,Attributes...>::write(cellId,std::forward<T>(data));
+    GridAttributeSelector_t<Param,Attributes...>::write(cellId, std::forward<T>(data));
 }
 
 
