@@ -46,7 +46,6 @@ public:
     mpu::gph::VertexArray& getVAO(); //!< get a reference to the vao so buffers can be bound to it
 
     void setSize(int w, int h); //!< call when window is resized
-    void setClip(float near, float far); //!< change clipping distance
     void setViewMat(const glm::mat4& view); //!< set the view matrix
 
     void showGui(bool* show); //!< show user interface for rendering settings
@@ -56,6 +55,7 @@ private:
 
     // settings
     glm::vec3 m_backgroundColor{0.2,0.2,0.2}; //!< background color
+    float m_scale{1.0}; //!< global scale factor
     bool m_renderGridlines{true};   //!< should grid lines be rendered
     glm::vec3 m_gridlineColor{1.0,1.0,1.0}; //!< gridline color
     bool m_renderGridpoints{false}; //!< should grid center points be rendered
@@ -64,11 +64,14 @@ private:
 
     float m_near{0.001}; //!< near plane distance
     float m_far{50}; //!< far plane distance
+    float m_unscaledFar{50}; //!< far plane without scaling
     float m_fovy{60}; //!< field of view in degrees
     float m_aspect; //!< aspect ratio of the current window
 
+
     glm::mat4 m_projection{1.0}; //!< projection matrix used when rendering
     glm::mat4 m_view{1.0}; //!< view matrix used when rendering
+    glm::mat4 m_model{1.0}; //!< model matrix used when rendering
 
     // stuff to render
     std::shared_ptr<CoordinateSystem> m_cs{nullptr}; //!< coordinate system to use for rendering
@@ -78,8 +81,10 @@ private:
     mpu::gph::ShaderProgram m_gridCenterShader; //!< shader used for rendering
     mpu::gph::VertexArray m_vao; //!< vertex array to use for rendering
 
+    // internal helper functions
+    void setClip(float near, float far); //!< change clipping distance
     void rebuildProjectionMat(); //!< set the projection matrix using a aspect ratio
-
+    void updateMVP(); //!< update model  view projection on all shaders
 };
 
 

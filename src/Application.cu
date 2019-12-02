@@ -153,7 +153,6 @@ void Application::resetCamera()
 
     m_camera.setPosition(glm::vec3(diagonal));
     m_camera.setTarget(center);
-    m_renderer.setClip(0.001,diagonal*4);
 }
 
 void Application::mainMenuBar()

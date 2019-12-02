@@ -3,7 +3,8 @@
 // uniforms
 uniform mat4 projectionMat;
 uniform mat4 viewMat;
-uniform mat4 viewProjectionMat;
+uniform mat4 modelMat;
+uniform mat4 modelViewProjectionMat;
 
 uniform vec3 constantColor;
 
@@ -23,9 +24,9 @@ void main()
     vec3 cellCoordCartesian = cs_getCartesian(cellCoord);
 
     if(cs_getCartesianDimension() == 2)
-        gl_Position = viewProjectionMat * vec4(cellCoordCartesian.x, 0, cellCoordCartesian.y,1);
+        gl_Position = modelViewProjectionMat * vec4(cellCoordCartesian.x, 0, cellCoordCartesian.y,1);
     else
-        gl_Position = viewProjectionMat * vec4(cellCoordCartesian.x, cellCoordCartesian.y, cellCoordCartesian.z, 1);
+        gl_Position = modelViewProjectionMat * vec4(cellCoordCartesian.x, cellCoordCartesian.y, cellCoordCartesian.z, 1);
 #else
     gl_Position = vec4(0,0,0,1);
 #endif

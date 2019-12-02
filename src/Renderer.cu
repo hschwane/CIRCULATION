@@ -49,6 +49,14 @@ void Renderer::showGui(bool* show)
         {
             if(ImGui::ColorEdit3("Background",glm::value_ptr(m_backgroundColor)))
                 glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, 1.0f);
+            if(ImGui::DragFloat("Scale",&m_scale,0.1f,0.0001f,1000.0f))
+            {
+                m_model = glm::scale(glm::mat4(1.0f),glm::vec3(m_scale));
+                m_gridlineShader.uniformMat4("modelMat", m_model);
+                m_gridCenterShader.uniformMat4("modelMat", m_model);
+                setClip(0.001,m_unscaledFar*m_scale);
+                updateMVP();
+            }
         }
 
         if(ImGui::CollapsingHeader("Grid lines"))
@@ -74,13 +82,24 @@ void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
 {
     m_cs = cs;
 
+    // set near / far
+    glm::vec3 aabbMin{m_cs->getAABBMin().x,m_cs->getAABBMin().y, m_cs->getAABBMin().z};
+    glm::vec3 aabbMax{m_cs->getAABBMax().x,m_cs->getAABBMax().y, m_cs->getAABBMax().z};
+
+    glm::vec3 size = aabbMax - aabbMin;
+    float diagonal = glm::length(size);
+    m_unscaledFar = diagonal * 4;
+    setClip(0.001,m_unscaledFar*m_scale);
+
     // compile grid - line shader
     m_gridlineShader.clearDefinitions();
     m_gridlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
     m_gridlineShader.rebuild();
     m_cs->setShaderUniforms(m_gridlineShader);
     m_gridlineShader.uniform3f("constantColor", m_gridlineColor);
-
+    m_gridlineShader.uniformMat4("viewMat", m_view);
+    m_gridlineShader.uniformMat4("projectionMat", m_projection);
+    m_gridlineShader.uniformMat4("modelMat", m_model);
 
     // compile grid center shader
     m_gridCenterShader.clearDefinitions();
@@ -89,8 +108,9 @@ void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
     m_gridCenterShader.rebuild();
     m_cs->setShaderUniforms(m_gridCenterShader);
     m_gridCenterShader.uniform3f("constantColor", m_gridpointColor);
-
-
+    m_gridCenterShader.uniformMat4("viewMat", m_view);
+    m_gridCenterShader.uniformMat4("projectionMat", m_projection);
+    m_gridCenterShader.uniformMat4("modelMat", m_model);
 }
 
 void Renderer::setSize(int w, int h)
@@ -104,15 +124,6 @@ void Renderer::setClip(float near, float far)
     m_near = near;
     m_far = far;
     rebuildProjectionMat();
-}
-
-void Renderer::setViewMat(const glm::mat4& view)
-{
-    m_view = view;
-    m_gridlineShader.uniformMat4("viewMat", m_view);
-    m_gridlineShader.uniformMat4("viewProjectionMat", m_projection * m_view);
-    m_gridCenterShader.uniformMat4("viewMat", m_view);
-    m_gridCenterShader.uniformMat4("viewProjectionMat", m_projection * m_view);
 }
 
 mpu::gph::VertexArray& Renderer::getVAO()
@@ -143,11 +154,24 @@ void Renderer::draw()
     }
 }
 
+void Renderer::setViewMat(const glm::mat4& view)
+{
+    m_view = view;
+    m_gridlineShader.uniformMat4("viewMat", m_view);
+    m_gridCenterShader.uniformMat4("viewMat", m_view);
+    updateMVP();
+}
+
 void Renderer::rebuildProjectionMat()
 {
     m_projection = glm::perspective(glm::radians(m_fovy),m_aspect,m_near,m_far);
     m_gridlineShader.uniformMat4("projectionMat", m_projection);
-    m_gridlineShader.uniformMat4("viewProjectionMat", m_projection * m_view);
     m_gridCenterShader.uniformMat4("projectionMat", m_projection);
-    m_gridCenterShader.uniformMat4("viewProjectionMat", m_projection * m_view);
+    updateMVP();
+}
+
+void Renderer::updateMVP()
+{
+    m_gridlineShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
+    m_gridCenterShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
 }
