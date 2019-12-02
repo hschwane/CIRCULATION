@@ -25,6 +25,7 @@ Renderer::Renderer(int w, int h)
     setViewMat(glm::mat4(1.0f));
 
     m_renderShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.vert"});
+    m_renderShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.geom"});
     m_renderShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
 
     m_aspect = float(w)/float(h);
