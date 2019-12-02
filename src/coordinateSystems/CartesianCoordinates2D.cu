@@ -141,9 +141,9 @@ float3 CartesianCoordinates2D::getAABBMax() const
     return float3{m_max.x,m_max.y,0};
 }
 
-std::string CartesianCoordinates2D::getShaderFileName() const
+std::string CartesianCoordinates2D::getShaderDefine() const
 {
-    return "CoordinateSystems/cartesianCoordinates2D.glsl";
+    return "CARTESIAN_COORDINATES_2D";
 }
 
 void CartesianCoordinates2D::setShaderUniforms(mpu::gph::ShaderProgram& shader) const

@@ -67,7 +67,7 @@ public:
     float3 getAABBMax() const override; //!< get the upper right bounding box corner in cartesian coords
 
     // openGL support
-    virtual std::string getShaderFileName() const; //!< returns name of a file to be included in a shader which defines above functions in glsl
+    virtual std::string getShaderDefine() const; //!< returns name of a file to be included in a shader which defines above functions in glsl
     virtual void setShaderUniforms(mpu::gph::ShaderProgram& shader) const; //!< sets the necessary uniforms to a shader that included th shader file from "getShaderFileName()" function
 
 private:

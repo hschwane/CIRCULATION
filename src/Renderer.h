@@ -29,8 +29,10 @@
  * Class to render a simulation grid.
  *
  * usage:
- * Set coordinates using setCS, bin the grids buffers to the vao using getVAO() declare a grid using declareGrid(),
- * set view and projection matrix, then call draw(). Call Size() in your framebuffer resize callback.
+ * Set coordinates using setCS.
+ * Bin the grids buffers to the vao using getVAO() also bind them to the same positions of SSBO binding point.
+ * Declare the grid using declareGrid().
+ * Set view and projection matrix, then call draw(). Call Size() in your framebuffer resize callback.
  * To change setting show the renderer ui with showUi().
  *
  */

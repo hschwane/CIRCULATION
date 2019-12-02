@@ -506,8 +506,8 @@ void Grid<GridAttribs...>::pushCachToDevice()
 
 // declare and precompile some grid types
 
-using RenderDemoGrid = Grid<GridDensity,GridVelocityX>;
+using RenderDemoGrid = Grid<GridDensity,GridVelocityX,GridVelocityY>;
 
-extern template class Grid<GridDensity,GridVelocityY>;
+extern template class Grid<GridDensity,GridVelocityX,GridVelocityY>;
 
 #endif //CIRCULATION_GRID_H

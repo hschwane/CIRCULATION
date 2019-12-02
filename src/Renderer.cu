@@ -21,9 +21,11 @@
 //-------------------------------------------------------------------
 
 Renderer::Renderer(int w, int h)
-    : m_renderShader({{PROJECT_SHADER_PATH"gridRenderer.vert"},{PROJECT_SHADER_PATH"gridRenderer.frag"}})
 {
     setViewMat(glm::mat4(1.0f));
+
+    m_renderShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.vert"});
+    m_renderShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
 
     m_aspect = float(w)/float(h);
     rebuildProjectionMat();
@@ -47,6 +49,10 @@ void Renderer::showGui(bool* show)
 void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
 {
     m_cs = cs;
+    m_renderShader.clearDefinitions();
+    m_renderShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+    m_renderShader.rebuild();
+    m_cs->setShaderUniforms(m_renderShader);
 }
 
 void Renderer::setSize(int w, int h)
@@ -87,7 +93,7 @@ void Renderer::draw()
 
 void Renderer::rebuildProjectionMat()
 {
-    m_projection = glm::perspective(m_fovy,m_aspect,m_near,m_far);
+    m_projection = glm::perspective(glm::radians(m_fovy),m_aspect,m_near,m_far);
     m_renderShader.uniformMat4("projectionMat",m_projection);
     m_renderShader.uniformMat4("viewProjectionMat",m_projection * m_view);
 }

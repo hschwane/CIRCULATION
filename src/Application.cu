@@ -151,7 +151,7 @@ void Application::resetCamera()
     float diagonal = glm::length(size);
     glm::vec3 center = aabbMin + size/2;
 
-    m_camera.setPosition(glm::vec3(diagonal*2));
+    m_camera.setPosition(glm::vec3(diagonal));
     m_camera.setTarget(center);
     m_renderer.setClip(0.001,diagonal*4);
 }
