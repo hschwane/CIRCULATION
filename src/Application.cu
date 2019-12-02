@@ -14,6 +14,7 @@
 // includes
 //--------------------
 #include "Application.h"
+#include <random>
 //--------------------
 
 // function definitions of the Application class
@@ -387,11 +388,33 @@ void Application::createNewSim(SimModel model, CSType coordinateSystem, const fl
     switch(model)
     {
         case SimModel::renderDemo:
-            m_demoGrid = RenderDemoGrid(m_currentCS->getNumGridCells());
-            m_demoGrid.addRenderBufferToVao(m_renderer.getVAO(),0);
-            m_demoGrid.bindRenderBuffer(0,GL_SHADER_STORAGE_BUFFER);
+        {
+            RenderDemoGrid(m_currentCS->getNumGridCells());
+            generateDemoData(m_demoGrid);
+            m_demoGrid.addRenderBufferToVao(m_renderer.getVAO(), 0);
+            m_demoGrid.bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
             break;
+        }
     }
 
     resetCamera();
+}
+
+void Application::generateDemoData(RenderDemoGrid& grid)
+{
+    std::default_random_engine rng(mpu::getRanndomSeed());
+    std::normal_distribution<float> dist(10,4);
+
+    for(int i : mpu::Range<int>(grid.size()))
+    {
+        float density = fmax(0,dist(rng));
+        float velX = fmax(0,dist(rng));
+        float velY = fmax(0,dist(rng));
+
+        grid.write<AT::density>(i,density);
+        grid.write<AT::velocityX>(i,velX);
+        grid.write<AT::velocityY>(i,velY);
+    }
+
+    grid.swapAndRender();
 }

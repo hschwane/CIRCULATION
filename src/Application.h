@@ -109,6 +109,8 @@ private:
     void resetCamera(); //!< resets the camera
     void createNewSim(SimModel model, CSType coordinateSystem, const float3& min, const float3& max,
             const int3& cells); //!< creates a new simulation and makes it current
+    void generateDemoData(RenderDemoGrid& grid); //!< generates some random data to test rendering
+
 
     // ui windows and menus
     void mainMenuBar(); //!< draw and handle the main menu bar
