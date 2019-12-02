@@ -56,6 +56,8 @@ private:
 
     // settings
     glm::vec3 m_backgroundColor{0.2,0.2,0.2}; //!< background color
+    bool m_renderGridlines{true};   //!< should grid lines be rendered
+    bool m_renderGridpoints{false}; //!< should grid center points be rendered
 
     float m_near{0.001}; //!< near plane distance
     float m_far{50}; //!< far plane distance
@@ -69,7 +71,8 @@ private:
     std::shared_ptr<CoordinateSystem> m_cs{nullptr}; //!< coordinate system to use for rendering
 
     // opengl objects
-    mpu::gph::ShaderProgram m_renderShader; //!< shader used for rendering
+    mpu::gph::ShaderProgram m_gridlineShader; //!< shader used for rendering
+    mpu::gph::ShaderProgram m_gridCenterShader; //!< shader used for rendering
     mpu::gph::VertexArray m_vao; //!< vertex array to use for rendering
 
     void rebuildProjectionMat(); //!< set the projection matrix using a aspect ratio

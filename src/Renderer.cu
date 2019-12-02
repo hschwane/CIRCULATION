@@ -24,9 +24,12 @@ Renderer::Renderer(int w, int h)
 {
     setViewMat(glm::mat4(1.0f));
 
-    m_renderShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.vert"});
-    m_renderShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.geom"});
-    m_renderShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
+    m_gridlineShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.vert"});
+    m_gridlineShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.geom"});
+    m_gridlineShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
+
+    m_gridCenterShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.vert"});
+    m_gridCenterShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
 
     m_aspect = float(w)/float(h);
     rebuildProjectionMat();
@@ -40,8 +43,21 @@ void Renderer::showGui(bool* show)
     ImGui::SetNextWindowSize({0,0},ImGuiCond_FirstUseEver);
     if(ImGui::Begin("Visualization",show))
     {
-        if(ImGui::ColorEdit3("Background",glm::value_ptr(m_backgroundColor)))
-            glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, 1.0f);
+        if(ImGui::CollapsingHeader("General"))
+        {
+            if(ImGui::ColorEdit3("Background",glm::value_ptr(m_backgroundColor)))
+                glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, 1.0f);
+        }
+
+        if(ImGui::CollapsingHeader("Grid lines"))
+        {
+            ImGui::Checkbox("show grid lines",&m_renderGridlines);
+        }
+
+        if(ImGui::CollapsingHeader("Grid points"))
+        {
+            ImGui::Checkbox("show grid center points",&m_renderGridpoints);
+        }
 
         ImGui::End();
     }
@@ -50,10 +66,20 @@ void Renderer::showGui(bool* show)
 void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
 {
     m_cs = cs;
-    m_renderShader.clearDefinitions();
-    m_renderShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
-    m_renderShader.rebuild();
-    m_cs->setShaderUniforms(m_renderShader);
+
+    // compile grid - line shader
+    m_gridlineShader.clearDefinitions();
+    m_gridlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+    m_gridlineShader.rebuild();
+    m_cs->setShaderUniforms(m_gridlineShader);
+
+    // compile grid center shader
+    m_gridlineShader.clearDefinitions();
+    m_gridlineShader.addDefinition(glsp::definition("RENDER_GRID_CELL_POINTS"));
+    m_gridlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+    m_gridlineShader.rebuild();
+    m_cs->setShaderUniforms(m_gridlineShader);
+
 }
 
 void Renderer::setSize(int w, int h)
@@ -72,8 +98,8 @@ void Renderer::setClip(float near, float far)
 void Renderer::setViewMat(const glm::mat4& view)
 {
     m_view = view;
-    m_renderShader.uniformMat4("viewMat",m_view);
-    m_renderShader.uniformMat4("viewProjectionMat",m_projection * m_view);
+    m_gridlineShader.uniformMat4("viewMat", m_view);
+    m_gridlineShader.uniformMat4("viewProjectionMat", m_projection * m_view);
 }
 
 mpu::gph::VertexArray& Renderer::getVAO()
@@ -88,13 +114,25 @@ void Renderer::draw()
         return;
 
     m_vao.bind();
-    m_renderShader.use();
-    glDrawArrays(GL_POINTS,0,m_cs->getNumGridCells());
+
+    // visualize grid outlines
+    if(m_renderGridlines)
+    {
+        m_gridlineShader.use();
+        glDrawArrays(GL_POINTS, 0, m_cs->getNumGridCells());
+    }
+
+    // visualize grid centerpoints
+    if(m_renderGridpoints)
+    {
+        m_gridCenterShader.use();
+        glDrawArrays(GL_POINTS, 0, m_cs->getNumGridCells());
+    }
 }
 
 void Renderer::rebuildProjectionMat()
 {
     m_projection = glm::perspective(glm::radians(m_fovy),m_aspect,m_near,m_far);
-    m_renderShader.uniformMat4("projectionMat",m_projection);
-    m_renderShader.uniformMat4("viewProjectionMat",m_projection * m_view);
+    m_gridlineShader.uniformMat4("projectionMat", m_projection);
+    m_gridlineShader.uniformMat4("viewProjectionMat", m_projection * m_view);
 }
