@@ -155,6 +155,11 @@ public:
     void write(GridBuffer<SourceAttribs...>& source);
     void bind(GLuint binding, GLenum target);
     void addToVao(mpu::gph::VertexArray& vao, int binding);
+private:
+    template<size_t ... I>
+    void addToVaoImpl(mpu::gph::VertexArray& vao, int binding, std::index_sequence<I ...>);
+    template<size_t ... I>
+    void bindImpl(GLuint binding, GLenum target, std::index_sequence<I ...>);
 };
 
 // template function definitions of the RenderBuffer class
@@ -168,17 +173,31 @@ void RenderBuffer<Attributes...>::write(GridBuffer<SourceAttribs...>& source)
 }
 
 template <typename... Attributes>
+template <size_t... I>
+void RenderBuffer<Attributes...>::bindImpl(GLuint binding, GLenum target, std::index_sequence<I...>)
+{
+    int t[] = {0, ((void)Attributes::bind(binding + I,target),1)...};
+    (void)t[0]; // silence compiler warning abut t being unused
+}
+
+template <typename... Attributes>
 void RenderBuffer<Attributes...>::bind(GLuint binding, GLenum target)
 {
-    int t[] = {0, ((void)Attributes::bind(binding,target),1)...};
+    bindImpl(binding,target, std::make_index_sequence<sizeof...(Attributes)>{});
+}
+
+template <typename... Attributes>
+template <size_t... I>
+void RenderBuffer<Attributes...>::addToVaoImpl(mpu::gph::VertexArray& vao, int binding, std::index_sequence<I ...>)
+{
+    int t[] = {0, ((void)Attributes::addToVao(vao,binding + I ),1)...};
     (void)t[0]; // silence compiler warning abut t being unused
 }
 
 template <typename... Attributes>
 void RenderBuffer<Attributes...>::addToVao(mpu::gph::VertexArray& vao, int binding)
 {
-    int t[] = {0, ((void)Attributes::addToVao(vao,binding),1)...};
-    (void)t[0]; // silence compiler warning abut t being unused
+    addToVaoImpl(vao, binding, std::make_index_sequence<sizeof...(Attributes)>{});
 }
 
 //-------------------------------------------------------------------
