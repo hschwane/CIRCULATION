@@ -34,11 +34,16 @@ template <AT attributeType, typename T>
 class GridAttribute
 {
 public:
-    explicit GridAttribute(int numCells=0) : m_data(numCells) {}
+    explicit GridAttribute(int numCells=0) : m_data(numCells)
+    {
+    }
 
     T read(int cellId) {return m_data[cellId];}
     template <typename Tin>
-    void write(int cellId, Tin&& data) {m_data[cellId] = data;}
+    void write(int cellId, Tin&& data)
+    {
+        m_data[cellId] = std::move<Tin>(data);
+    }
 
     static constexpr AT type = attributeType;
     using RenderType = RenderAttribute<attributeType, T>;
@@ -253,13 +258,8 @@ public:
     {
         using std::swap;
 
+        // swap owned things
         swap(first.m_numCells,second.m_numCells);
-
-        swap(first.m_readBuffer,second.m_readBuffer);
-        swap(first.m_writeBuffer,second.m_writeBuffer);
-        swap(first.m_renderAwaitBuffer,second.m_renderAwaitBuffer);
-        swap(first.m_unusedBuffer,second.m_unusedBuffer);
-
         swap(first.m_bufferA,second.m_bufferA);
         swap(first.m_bufferB,second.m_bufferB);
         swap(first.m_bufferC,second.m_bufferC);
@@ -271,6 +271,91 @@ public:
         b = first.m_newRenderdataWaiting;
         first.m_newRenderdataWaiting = second.m_newRenderdataWaiting.load();
         second.m_newRenderdataWaiting = b;
+
+        // figure out buffer pointer of first element from current values of second
+        BufferType* firstUnused;
+        BufferType* firstRead;
+        BufferType* firstWrite;
+        BufferType* firstRenderAwait;
+
+        if(second.m_readBuffer == &second.m_bufferA)
+            firstRead = &first.m_bufferA;
+        else if(second.m_readBuffer == &second.m_bufferB)
+            firstRead = &first.m_bufferB;
+        else if(second.m_readBuffer == &second.m_bufferC)
+            firstRead = &first.m_bufferC;
+        else
+            firstRead = nullptr;
+
+        if(second.m_writeBuffer == &second.m_bufferA)
+            firstWrite = &first.m_bufferA;
+        else if(second.m_writeBuffer == &second.m_bufferB)
+            firstWrite = &first.m_bufferB;
+        else if(second.m_writeBuffer == &second.m_bufferC)
+            firstWrite = &first.m_bufferC;
+        else
+            firstWrite = nullptr;
+
+        if(second.m_renderAwaitBuffer == &second.m_bufferA)
+            firstRenderAwait = &first.m_bufferA;
+        else if(second.m_renderAwaitBuffer == &second.m_bufferB)
+            firstRenderAwait = &first.m_bufferB;
+        else if(second.m_renderAwaitBuffer == &second.m_bufferC)
+            firstRenderAwait = &first.m_bufferC;
+        else
+            firstRenderAwait = nullptr;
+
+        if(second.m_unusedBuffer == &second.m_bufferA)
+            firstUnused = &first.m_bufferA;
+        else if(second.m_unusedBuffer == &second.m_bufferB)
+            firstUnused = &first.m_bufferB;
+        else if(second.m_unusedBuffer == &second.m_bufferC)
+            firstUnused = &first.m_bufferC;
+        else
+            firstUnused = nullptr;
+
+        // set new values of second from values of first
+        if(first.m_readBuffer == &first.m_bufferA)
+            second.m_readBuffer = &second.m_bufferA;
+        else if(first.m_readBuffer == &first.m_bufferB)
+            second.m_readBuffer = &second.m_bufferB;
+        else if(first.m_readBuffer == &first.m_bufferC)
+            second.m_readBuffer = &second.m_bufferC;
+        else
+            second.m_readBuffer = nullptr;
+
+        if(first.m_writeBuffer == &first.m_bufferA)
+            second.m_writeBuffer = &second.m_bufferA;
+        else if(first.m_writeBuffer == &first.m_bufferB)
+            second.m_writeBuffer = &second.m_bufferB;
+        else if(first.m_writeBuffer == &first.m_bufferC)
+            second.m_writeBuffer = &second.m_bufferC;
+        else
+            second.m_writeBuffer = nullptr;
+
+        if(first.m_renderAwaitBuffer == &first.m_bufferA)
+            second.m_renderAwaitBuffer = &second.m_bufferA;
+        else if(first.m_renderAwaitBuffer == &first.m_bufferB)
+            second.m_renderAwaitBuffer = &second.m_bufferB;
+        else if(first.m_renderAwaitBuffer == &first.m_bufferC)
+            second.m_renderAwaitBuffer = &second.m_bufferC;
+        else
+            second.m_renderAwaitBuffer = nullptr;
+
+        if(first.m_unusedBuffer == &first.m_bufferA)
+            second.m_unusedBuffer = &second.m_bufferA;
+        else if(first.m_unusedBuffer == &first.m_bufferB)
+            second.m_unusedBuffer = &second.m_bufferB;
+        else if(first.m_unusedBuffer == &first.m_bufferC)
+            second.m_unusedBuffer = &second.m_bufferC;
+        else
+            second.m_unusedBuffer = nullptr;
+
+        // set values for first buffer
+        first.m_unusedBuffer = firstUnused;
+        first.m_readBuffer = firstRead;
+        first.m_writeBuffer = firstWrite;
+        first.m_renderAwaitBuffer = firstRenderAwait;
     }
 
 private:
@@ -533,7 +618,6 @@ void Grid<GridAttribs...>::pushCachToDevice()
 // declare and precompile some grid types
 
 using RenderDemoGrid = Grid<GridDensity,GridVelocityX,GridVelocityY>;
-
 extern template class Grid<GridDensity,GridVelocityX,GridVelocityY>;
 
 #endif //CIRCULATION_GRID_H
