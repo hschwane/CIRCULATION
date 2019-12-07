@@ -59,6 +59,8 @@ void Renderer::showGui(bool* show)
                 setClip(0.001,m_unscaledFar*m_scale);
                 updateMVP();
             }
+            if(ImGui::Button("Rebuild Shader"))
+                compileShader();
         }
 
         if(ImGui::CollapsingHeader("Scalar field"))
@@ -139,6 +141,13 @@ void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
     m_unscaledFar = diagonal * 4;
     setClip(0.001,m_unscaledFar*m_scale);
 
+    compileShader();
+}
+
+void Renderer::compileShader()
+{
+    logINFO("Renderer") << "recompiling all visualization shdaders";
+
     // compile grid - line shader
     m_gridlineShader.clearDefinitions();
     m_gridlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
@@ -176,7 +185,7 @@ void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
     m_scalarShader.uniform1f("maxScalar",m_maxScalar);
     m_scalarShader.uniform1b("scalarColor",(m_currentScalarField >= 0));
     glBindAttribLocation(static_cast<GLuint>(m_scalarShader),
-            (m_currentScalarField >= 0) ? m_scalarFields[m_currentScalarField].second : 0, "scalar");
+                         (m_currentScalarField >= 0) ? m_scalarFields[m_currentScalarField].second : 0, "scalar");
 
 }
 

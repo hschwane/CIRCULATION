@@ -93,6 +93,7 @@ private:
     mpu::gph::VertexArray m_vao; //!< vertex array to use for rendering
 
     // internal helper functions
+    void compileShader(); //!< comile / recompile all visualization shader
     void setClip(float near, float far); //!< change clipping distance
     void rebuildProjectionMat(); //!< set the projection matrix using a aspect ratio
     void updateMVP(); //!< update model  view projection on all shaders
