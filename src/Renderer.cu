@@ -42,9 +42,6 @@ Renderer::Renderer(int w, int h)
 
     // initial settings
     glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, 1.0f);
-
-    m_scalarFields.emplace_back("field",2);
-    m_scalarFields.emplace_back("fieldB",3);
 }
 
 void Renderer::showGui(bool* show)
@@ -77,13 +74,20 @@ void Renderer::showGui(bool* show)
             {
                 bool selected = (m_currentScalarField == -1);
                 if(ImGui::Selectable("Solid Color", &selected))
+                {
                     m_currentScalarField = -1;
+                    m_scalarShader.uniform1b("scalarColor",false);
+                }
 
                 for(int i = 0; i < m_scalarFields.size(); i++)
                 {
                     selected = (m_currentScalarField == i);
                     if(ImGui::Selectable(m_scalarFields[i].first.c_str(), &selected))
+                    {
                         m_currentScalarField = i;
+                        m_scalarShader.uniform1b("scalarColor",true);
+                        glBindAttribLocation(static_cast<GLuint>(m_scalarShader), m_scalarFields[i].second, "scalar");
+                    }
                 }
                 ImGui::EndCombo();
             }
@@ -94,7 +98,14 @@ void Renderer::showGui(bool* show)
                     m_scalarShader.uniform3f("constantColor", m_scalarConstColor);
             } else
             {
-
+                if(ImGui::ColorEdit3("Min Color##scalarmnincolor", glm::value_ptr(m_scalarMinColor)))
+                    m_scalarShader.uniform3f("minScalarColor", m_scalarMinColor);
+                if(ImGui::ColorEdit3("Max Color##scalarmaxcolor", glm::value_ptr(m_scalarMaxColor)))
+                    m_scalarShader.uniform3f("maxScalarColor", m_scalarMaxColor);
+                if(ImGui::DragFloat("Min Value##minscalarcolor",&m_minScalar))
+                    m_scalarShader.uniform1f("minScalar",m_minScalar);
+                if(ImGui::DragFloat("Max Value##maxscalarcolor",&m_maxScalar))
+                    m_scalarShader.uniform1f("maxScalar",m_maxScalar);
             }
         }
 
@@ -161,6 +172,14 @@ void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
     m_scalarShader.uniformMat4("projectionMat", m_projection);
     m_scalarShader.uniformMat4("modelMat", m_model);
     m_scalarShader.uniform1f("gapSize", m_gap);
+    m_scalarShader.uniform3f("minScalarColor", m_scalarMinColor);
+    m_scalarShader.uniform3f("maxScalarColor", m_scalarMaxColor);
+    m_scalarShader.uniform1f("minScalar",m_minScalar);
+    m_scalarShader.uniform1f("maxScalar",m_maxScalar);
+    m_scalarShader.uniform1b("scalarColor",(m_currentScalarField >= 0));
+    glBindAttribLocation(static_cast<GLuint>(m_scalarShader),
+            (m_currentScalarField >= 0) ? m_scalarFields[m_currentScalarField].second : 0, "scalar");
+
 }
 
 void Renderer::setSize(int w, int h)
@@ -234,4 +253,10 @@ void Renderer::updateMVP()
     m_gridlineShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
     m_gridCenterShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
     m_scalarShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
+}
+
+void Renderer::setScalarFields(std::vector<std::pair<std::string, int>> fields)
+{
+    m_currentScalarField = -1;
+    m_scalarFields = std::move(fields);
 }

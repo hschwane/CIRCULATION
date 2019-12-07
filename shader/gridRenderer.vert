@@ -1,5 +1,8 @@
 #version 450 core
 
+// input
+in float scalar; // scalar value for color
+
 // uniforms
 uniform mat4 projectionMat;
 uniform mat4 viewMat;
@@ -7,6 +10,11 @@ uniform mat4 modelMat;
 uniform mat4 modelViewProjectionMat;
 
 uniform vec3 constantColor;
+uniform bool scalarColor;
+uniform float minScalar;
+uniform float maxScalar;
+uniform vec3 minScalarColor;
+uniform vec3 maxScalarColor;
 
 // out
 out vec3 cellColorGeom;
@@ -31,6 +39,18 @@ void main()
     gl_Position = vec4(0,0,0,1);
 #endif
 
-    cellColorGeom = constantColor;
-    cellColor = constantColor;
+    if(scalarColor)
+    {
+        float f = (scalar - minScalar) / (maxScalar - minScalar);
+        f = clamp(f,0,1);
+        vec3 color = mix(minScalarColor,maxScalarColor,f);
+
+        cellColorGeom = color;
+        cellColor = color;
+    }
+    else
+    {
+        cellColorGeom = constantColor;
+        cellColor = constantColor;
+    }
 }

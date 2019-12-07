@@ -44,6 +44,7 @@ public:
     void setCS(std::shared_ptr<CoordinateSystem> cs); //!< sets the coordinate system
     mpu::gph::VertexArray& getVAO(); //!< get a reference to the vao so buffers can be bound to it
 
+    void setScalarFields(std::vector<std::pair<std::string,int>> fields); //!< set scalar field names and buffer ids
     void setSize(int w, int h); //!< call when window is resized
     void setViewMat(const glm::mat4& view); //!< set the view matrix
 
@@ -64,6 +65,10 @@ private:
 
     bool m_renderScalarField{true}; //!< should a scalar field be rendered
     glm::vec3 m_scalarConstColor{1.0,1.0,1.0}; //!< gridpoint color
+    glm::vec3 m_scalarMinColor{0.0,0.0,0.0}; //!< color of smallest value
+    glm::vec3 m_scalarMaxColor{1.0,0.0,0.0}; //!< color of biggest value
+    float m_minScalar{0.0f}; //!< smallest scalar value
+    float m_maxScalar{1.0f}; //!< biggest scalar value
     float m_gap{0.0f}; //!< size of gap between scalar values
     int m_currentScalarField{-1}; //!< scalar field to visualize
 
