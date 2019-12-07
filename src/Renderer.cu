@@ -35,8 +35,6 @@ Renderer::Renderer(int w, int h)
     m_scalarShader.setShaderModule({PROJECT_SHADER_PATH"scalarRenderer.geom"});
     m_scalarShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
 
-    glEnable(GL_LINE_SMOOTH);
-
     m_aspect = float(w)/float(h);
     rebuildProjectionMat();
 
@@ -113,7 +111,7 @@ void Renderer::showGui(bool* show)
         {
             ImGui::Checkbox("show grid lines",&m_renderGridlines);
             if(ImGui::ColorEdit3("Color##linecolor",glm::value_ptr(m_gridlineColor)))
-                m_scalarShader.uniform3f("constantColor", m_gridlineColor);
+                m_gridlineShader.uniform3f("constantColor", m_gridlineColor);
         }
 
 //        if(ImGui::CollapsingHeader("Grid points"))
