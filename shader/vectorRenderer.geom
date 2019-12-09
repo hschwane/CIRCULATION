@@ -9,6 +9,7 @@ uniform mat4 projectionMat;
 uniform mat4 viewMat;
 uniform mat4 modelMat;
 uniform mat4 modelViewProjectionMat;
+uniform float arrowSize;
 
 // in
 in vec3 cellColorGeom[];
@@ -36,8 +37,6 @@ void main()
     vec3 cellCoordCart = cs_getCartesian(cellCoord);
 
     cellColor = cellColorGeom[0]; // forward color
-
-    float arrowSize = 0.015;
 
     mat4 move = transpose( mat4( arrowSize,0,0,cellCoordCart.x,
                                   0,arrowSize,0,cellCoordCart.y,

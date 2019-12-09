@@ -74,6 +74,7 @@ private:
     int m_currentScalarField{-1}; //!< scalar field to visualize
 
     bool m_renderVectorField{true}; //!< should a vector field be rendered
+    float m_arrowSize{0.013}; //!< size of the drawn arrow sprites
     glm::vec3 m_VectorConstColor{0.0,0.8,1.0}; //!< vector color
     bool m_colorVectorsByLength{false}; //!< should vectors be colored by length, or constant?
     glm::vec3 m_minVecColor{0.0,0.0,0.0}; //!< color of smallest value

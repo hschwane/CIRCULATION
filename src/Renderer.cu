@@ -119,6 +119,9 @@ void Renderer::showGui(bool* show)
 
             ImGui::Checkbox("show vector field",&m_renderVectorField);
 
+            if(ImGui::DragFloat("arrow size", &m_arrowSize, 0.001))
+                m_vectorShader.uniform1f("arrowSize",m_arrowSize);
+
             if( ImGui::BeginCombo("Attribute##vectorfieldselection", (m_currentVecField<0) ? "none" : m_vectorFields[m_currentVecField].first.c_str()))
             {
                 for(int i = 0; i < m_vectorFields.size(); i++)
@@ -252,6 +255,7 @@ void Renderer::compileShader()
     m_vectorShader.uniform1f("minScalar",m_minVecLength);
     m_vectorShader.uniform1f("maxScalar",m_maxVecLength);
     m_vectorShader.uniform3f("constantColor", m_VectorConstColor);
+    m_vectorShader.uniform1f("arrowSize",m_arrowSize);
 
     if(m_currentVecField >= 0)
     {
