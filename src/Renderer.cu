@@ -70,7 +70,7 @@ void Renderer::showGui(bool* show)
         if(ImGui::CollapsingHeader("Scalar field"))
         {
             ImGui::Checkbox("show scalar field",&m_renderScalarField);
-            if(ImGui::DragFloat("gap between cells", &m_gap, 0.0001f,0.0000000001f,20.0f))
+            if(ImGui::DragFloat("gap between cells", &m_gap, 0.0001f,0.0000000001f,20.0f,"%.4f"))
                 m_scalarShader.uniform1f("gapSize",m_gap);
 
             if( ImGui::BeginCombo("Attribute", (m_currentScalarField<0) ? "Solid Color"
@@ -115,6 +115,8 @@ void Renderer::showGui(bool* show)
 
         if(ImGui::CollapsingHeader("Vector field"))
         {
+            ImGui::Text("Note: arrows show the direction of the vector.");
+
             ImGui::Checkbox("show vector field",&m_renderVectorField);
             if(ImGui::ColorEdit3("Color##vectorColor",glm::value_ptr(m_vectorConstColor)))
                 m_vectorShader.uniform3f("constantColor", m_vectorConstColor);
