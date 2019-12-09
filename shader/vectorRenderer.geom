@@ -10,8 +10,6 @@ uniform mat4 viewMat;
 uniform mat4 modelMat;
 uniform mat4 modelViewProjectionMat;
 
-uniform float gapSize;
-
 // in
 in vec3 cellColorGeom[];
 in float angle[]; // angle of the vector
@@ -44,14 +42,17 @@ void main()
 
     cellColor = cellColorGeom[0]; // forward color
 
-    mat4 move = mat4( 1,0,0,cellCoordCart.x,
-                      0,1,0,cellCoordCart.y,
-                      0,0,1,cellCoordCart.z,
-                      0,0,0,1);
-    mat4 rotate = mat4( cos(angle[0]), -sin(angle[0]), 0, 0,
-                        sin(angle[0]), cos(angle[0]), 0, 0,
-                        0,0,0,0,
-                        0,0,0,1);
+    float arrowSize = 0.015;
+
+    mat4 move = transpose( mat4( arrowSize,0,0,cellCoordCart.x,
+                                  0,arrowSize,0,cellCoordCart.y,
+                                  0,0,arrowSize,cellCoordCart.z,
+                                  0,0,0,arrowSize));
+
+    mat4 rotate = transpose( mat4( cos(angle[0]), -sin(angle[0]), 0, 0,
+                                    sin(angle[0]), cos(angle[0]), 0, 0,
+                                    0,0,0,0,
+                                    0,0,0,1));
     mat4 transform = move * rotate;
 
     // calculate vertex positions

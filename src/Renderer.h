@@ -72,6 +72,10 @@ private:
     float m_gap{0.0f}; //!< size of gap between scalar values
     int m_currentScalarField{-1}; //!< scalar field to visualize
 
+    bool m_renderVectorField{true}; //!< should a vector field be rendered
+    glm::vec3 m_vectorConstColor{1.0,0.0,0.0}; //!< gridpoint color
+    float m_angle{0.0f}; //!< vector angle
+
     float m_near{0.001}; //!< near plane distance
     float m_far{50}; //!< far plane distance
     float m_unscaledFar{50}; //!< far plane without scaling
@@ -87,6 +91,7 @@ private:
     std::vector<std::pair<std::string,int>> m_scalarFields; //!< scalar fields used for visualization, name and buffer id
 
     // opengl objects
+    mpu::gph::ShaderProgram m_vectorShader; //!< shader used for rendering
     mpu::gph::ShaderProgram m_scalarShader; //!< shader used for rendering
     mpu::gph::ShaderProgram m_gridlineShader; //!< shader used for rendering
     mpu::gph::ShaderProgram m_gridCenterShader; //!< shader used for rendering

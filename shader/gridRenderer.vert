@@ -16,9 +16,12 @@ uniform float maxScalar;
 uniform vec3 minScalarColor;
 uniform vec3 maxScalarColor;
 
+uniform float vectorAngle;
+
 // out
 out vec3 cellColorGeom;
 out vec3 cellColor;
+out float angle;
 
 // include oordinate system
 #if defined(CARTESIAN_COORDINATES_2D)
@@ -53,4 +56,6 @@ void main()
         cellColorGeom = constantColor;
         cellColor = constantColor;
     }
+
+    angle = vectorAngle;
 }

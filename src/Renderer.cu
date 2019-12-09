@@ -35,6 +35,10 @@ Renderer::Renderer(int w, int h)
     m_scalarShader.setShaderModule({PROJECT_SHADER_PATH"scalarRenderer.geom"});
     m_scalarShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
 
+    m_vectorShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.vert"});
+    m_vectorShader.setShaderModule({PROJECT_SHADER_PATH"vectorRenderer.geom"});
+    m_vectorShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
+
     m_aspect = float(w)/float(h);
     rebuildProjectionMat();
 
@@ -107,6 +111,16 @@ void Renderer::showGui(bool* show)
                 if(ImGui::DragFloat("Max Value##maxscalarcolor",&m_maxScalar))
                     m_scalarShader.uniform1f("maxScalar",m_maxScalar);
             }
+        }
+
+        if(ImGui::CollapsingHeader("Vector field"))
+        {
+            ImGui::Checkbox("show vector field",&m_renderVectorField);
+            if(ImGui::ColorEdit3("Color##vectorColor",glm::value_ptr(m_vectorConstColor)))
+                m_vectorShader.uniform3f("constantColor", m_vectorConstColor);
+
+            if(ImGui::DragFloat("m_angle##vectorangle",&m_angle))
+                m_vectorShader.uniform1f("vectorAngle",glm::radians(m_angle));
         }
 
         if(ImGui::CollapsingHeader("Grid lines"))
@@ -187,6 +201,17 @@ void Renderer::compileShader()
     glBindAttribLocation(static_cast<GLuint>(m_scalarShader),
                          (m_currentScalarField >= 0) ? m_scalarFields[m_currentScalarField].second : 0, "scalar");
 
+    // compile vector shader
+    m_vectorShader.clearDefinitions();
+    m_vectorShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+    m_vectorShader.rebuild();
+    m_cs->setShaderUniforms(m_vectorShader);
+    m_vectorShader.uniform3f("constantColor", m_vectorConstColor);
+    m_vectorShader.uniformMat4("viewMat", m_view);
+    m_vectorShader.uniformMat4("projectionMat", m_projection);
+    m_vectorShader.uniformMat4("modelMat", m_model);
+    m_scalarShader.uniform1b("scalarColor", false);
+
 }
 
 void Renderer::setSize(int w, int h)
@@ -235,6 +260,13 @@ void Renderer::draw()
         m_gridCenterShader.use();
         glDrawArrays(GL_POINTS, 0, m_cs->getNumGridCells());
     }
+
+    // visualize vectors
+    if(m_renderVectorField)
+    {
+        m_vectorShader.use();
+        glDrawArrays(GL_POINTS, 0, m_cs->getNumGridCells());
+    }
 }
 
 void Renderer::setViewMat(const glm::mat4& view)
@@ -243,6 +275,7 @@ void Renderer::setViewMat(const glm::mat4& view)
     m_gridlineShader.uniformMat4("viewMat", m_view);
     m_gridCenterShader.uniformMat4("viewMat", m_view);
     m_scalarShader.uniformMat4("viewMat", m_view);
+    m_vectorShader.uniformMat4("viewMat", m_view);
     updateMVP();
 }
 
@@ -252,6 +285,7 @@ void Renderer::rebuildProjectionMat()
     m_gridlineShader.uniformMat4("projectionMat", m_projection);
     m_gridCenterShader.uniformMat4("projectionMat", m_projection);
     m_scalarShader.uniformMat4("projectionMat", m_projection);
+    m_vectorShader.uniformMat4("projectionMat", m_projection);
     updateMVP();
 }
 
@@ -260,6 +294,7 @@ void Renderer::updateMVP()
     m_gridlineShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
     m_gridCenterShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
     m_scalarShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
+    m_vectorShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
 }
 
 void Renderer::setScalarFields(std::vector<std::pair<std::string, int>> fields)
