@@ -59,6 +59,21 @@ void main()
     if(prepareVector)
     {
         vec2 inVec = vec2(vecX[gl_VertexID],vecY[gl_VertexID]);
+
+        int left = cs_getLeftNeighbor(gl_VertexID);
+        int down = cs_getBackwardNeighbor(gl_VertexID);
+
+        if(left > 0)
+        {
+            inVec.x += vecX[left];
+            inVec.x *= 0.5;
+        }
+        if(down > 0)
+        {
+            inVec.y += vecY[down];
+            inVec.y *= 0.5;
+        }
+
         vec2 vector = cs_getCartesian(vec3(inVec,0)).xy;
         float s = length(vector);
 

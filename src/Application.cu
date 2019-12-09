@@ -415,12 +415,13 @@ void Application::generateDemoData(RenderDemoGrid& grid)
 {
     std::default_random_engine rng(mpu::getRanndomSeed());
     std::normal_distribution<float> dist(10,4);
+    std::normal_distribution<float> vdist(0,4);
 
     for(int i : mpu::Range<int>(grid.size()))
     {
         float density = fmax(0,dist(rng));
-        float velX = fmax(0,dist(rng));
-        float velY = fmax(0,dist(rng));
+        float velX = vdist(rng);
+        float velY = vdist(rng);
 
         grid.write<AT::density>(i,density);
         grid.write<AT::velocityX>(i,velX);
