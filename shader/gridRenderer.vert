@@ -74,11 +74,11 @@ void main()
             inVec.y *= 0.5;
         }
 
-        vec2 vector = cs_getCartesian(vec3(inVec,0)).xy;
+        vec3 vector = cs_getCartesian(vec3(inVec,0));
         float s = length(vector);
 
         // also figure out vector orientation
-        angle = atan(vector.y, vector.x);
+        angle = -atan(vector.z, vector.x);
     }
 
     if(scalarColor)
