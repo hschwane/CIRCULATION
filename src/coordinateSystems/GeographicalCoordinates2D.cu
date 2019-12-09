@@ -20,7 +20,7 @@
 //-------------------------------------------------------------------
 
 GeographicalCoordinates2D::GeographicalCoordinates2D(float minLat, float maxLat, int3 numGridCells, float radius)
-    : m_maxLat(maxLat), m_minLat(minLat), m_radius(radius), m_numGridCells(make_int2(numGridCells)),
+    : m_radius(radius), m_numGridCells(make_int2(numGridCells)),
         m_min(make_float2(0,minLat)), m_max(make_float2(2* M_PIf32, maxLat)),
         m_totalNumGridCells(numGridCells.x*numGridCells.y), m_size(m_max - m_min),
         m_cellSize( m_size / make_float2(m_numGridCells))
@@ -153,8 +153,6 @@ void GeographicalCoordinates2D::setShaderUniforms(mpu::gph::ShaderProgram& shade
     shader.uniform2f("csInternalData.m_cellSize", glm::vec2(m_cellSize.x,m_cellSize.y));
     shader.uniform2i("csInternalData.m_numGridCells", glm::ivec2(m_numGridCells.x,m_numGridCells.y));
     shader.uniform1i("csInternalData.m_numTotalGridCells", m_totalNumGridCells);
-    shader.uniform1f("csInternalData.m_minLat", m_minLat);
-    shader.uniform1f("csInternalData.m_maxLat", m_maxLat);
     shader.uniform1f("csInternalData.m_radius", m_radius);
 }
 

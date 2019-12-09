@@ -21,6 +21,8 @@ out vec3 cellColor;
 // include coordinate system
 #if defined(CARTESIAN_COORDINATES_2D)
     #include "coordinateSystems/cartesianCoordinates2D.glsl"
+#else if defined(GEOGRAPHICAL_COORDINATES_2D)
+    #include "coordinateSystems/geographicalCoordinates2D.glsl"
 #endif
 
 // vertices for drawing an arrow

@@ -22,6 +22,7 @@
 
 #include "coordinateSystems/CoordinateSystem.h"
 #include "coordinateSystems/CartesianCoordinates2D.h"
+#include "coordinateSystems/GeographicalCoordinates2D.h"
 #include "Grid.h"
 #include "Renderer.h"
 //--------------------
@@ -39,7 +40,8 @@ enum class SimModel : int
  */
 enum class CSType : int
 {
-    cartesian2d = 0
+    cartesian2d = 0,
+    geographical2d = 1
 };
 
 /**
@@ -57,7 +59,10 @@ inline std::unique_ptr<CoordinateSystem> coordinateSystemFactory(CSType csType, 
     {
         case CSType::cartesian2d:
             cs = std::make_unique<CartesianCoordinates2D>(min,max,cells);
-        break;
+            break;
+        case CSType::geographical2d:
+            cs = std::make_unique<GeographicalCoordinates2D>(min.y,max.y,cells,max.z);
+            break;
     }
     return cs;
 }

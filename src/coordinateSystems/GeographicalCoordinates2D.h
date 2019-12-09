@@ -72,8 +72,6 @@ public:
 
 private:
     const float m_radius; //!< radius of the sphere shell
-    const float m_minLat; //!< smallest possible latitude
-    const float m_maxLat; //!< biggest possible latitude
     const int2 m_numGridCells; //!< number of cells in each dimension
     const int m_totalNumGridCells; //!< total number of cells
     const float2 m_min; //!< smallest possible coordinate in both directions i.e. lower left corner of the grid

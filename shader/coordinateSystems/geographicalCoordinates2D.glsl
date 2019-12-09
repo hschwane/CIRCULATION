@@ -2,8 +2,6 @@
 
 struct GeographicalCoordinates2D_internal
 {
-    float m_minLat;
-    float m_maxLat;
     float m_radius;
     vec2 m_min;
     vec2 m_max;
@@ -28,7 +26,7 @@ vec3 cs_getCoord(const vec3 cartesian)
 {
     float r = sqrt( cartesian.x * cartesian.x + cartesian.y * cartesian.y + cartesian.z * cartesian.z );
     float phi = acos(cartesian.z / r);
-    return make_float3(  atan(cartesian.y,cartesian.x), PI - phi, 0);
+    return vec3(  atan(cartesian.y,cartesian.x), PI - phi, 0);
 }
 
 vec3 cs_getCellCoordinate3d(const ivec3 cellId3d)

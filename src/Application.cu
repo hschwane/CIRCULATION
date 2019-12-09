@@ -315,7 +315,7 @@ void Application::newSimulationModal()
 
         // select simulation model and coordinate system
         ImGui::Combo("Model",&selctedModel,"Render Demo\0\0");
-        ImGui::Combo("Coordinate System",&selctedCoordinates,"2D Cartesian Coordinate\0\0");
+        ImGui::Combo("Coordinate System",&selctedCoordinates,"2D Cartesian Coordinates\0 2D Geographical Coordinates\0\0");
 
         // figure out dimension
         auto cs = coordinateSystemFactory(static_cast<CSType>(selctedCoordinates),{0,0,0},{0,0,0},{0,0,0});
@@ -362,12 +362,12 @@ void Application::newSimulationModal()
         {
             ImGui::CloseCurrentPopup();
 
-            if(cs->getDimension() == 2)
-            {
-                minCoords.z=0;
-                maxCoords.z=0;
-                numGridCells.z=0;
-            }
+//            if(cs->getDimension() == 2)
+//            {
+//                minCoords.z=0;
+//                maxCoords.z=0;
+//                numGridCells.z=0;
+//            }
 
             createNewSim(static_cast<SimModel>(selctedModel), static_cast<CSType>(selctedCoordinates), minCoords, maxCoords, numGridCells);
         }
