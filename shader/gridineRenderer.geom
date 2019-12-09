@@ -21,11 +21,6 @@ out vec3 cellColor;
     #include "coordinateSystems/cartesianCoordinates2D.glsl"
 #endif
 
-vec4 switchPlaneFor2D(vec3 cartesianPosition)
-{
-    return vec4(cartesianPosition.x, 0, cartesianPosition.y, 1);
-}
-
 void main()
 {
     vec3 cellCoord = cs_getCellCoordinate(gl_PrimitiveIDIn);
@@ -35,27 +30,27 @@ void main()
 
     // Vertex 1
     vertexCoord = cellCoord + vec3(0.5,0.5,0.5) * cs_getCellSize();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D( cs_getCartesian(vertexCoord) );
+    gl_Position = modelViewProjectionMat * vec4( cs_getCartesian(vertexCoord),1 );
     EmitVertex();
 
     // Vertex 2
     vertexCoord = cellCoord + vec3(0.5,-0.5,0.5) * cs_getCellSize();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D( cs_getCartesian(vertexCoord) );
+    gl_Position = modelViewProjectionMat * vec4( cs_getCartesian(vertexCoord),1 );
     EmitVertex();
 
     // Vertex 3
     vertexCoord = cellCoord + vec3(-0.5,-0.5,0.5) * cs_getCellSize();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D( cs_getCartesian(vertexCoord) );
+    gl_Position = modelViewProjectionMat * vec4( cs_getCartesian(vertexCoord),1 );
     EmitVertex();
 
     // Vertex 4
     vertexCoord = cellCoord + vec3(-0.5,0.5,0.5) * cs_getCellSize();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D( cs_getCartesian(vertexCoord) );
+    gl_Position = modelViewProjectionMat * vec4( cs_getCartesian(vertexCoord),1 );
     EmitVertex();
 
     // Vertex 5 (vertex 1 again to close the loop)
     vertexCoord = cellCoord + vec3(0.5,0.5,0.5) * cs_getCellSize();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D( cs_getCartesian(vertexCoord) );
+    gl_Position = modelViewProjectionMat * vec4( cs_getCartesian(vertexCoord),1 );
     EmitVertex();
 
     EndPrimitive();

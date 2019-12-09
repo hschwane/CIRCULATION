@@ -23,11 +23,6 @@ out vec3 cellColor;
     #include "coordinateSystems/cartesianCoordinates2D.glsl"
 #endif
 
-vec4 switchPlaneFor2D(vec3 cartesianPosition)
-{
-    return vec4(cartesianPosition.x, 0, cartesianPosition.y, 1);
-}
-
 void main()
 {
     vec3 cellCoord = cs_getCellCoordinate(gl_PrimitiveIDIn);
@@ -58,13 +53,13 @@ void main()
     corner2 -= diag2 * gapSize;
 
     // emmit vertices
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D( corner1 );
+    gl_Position = modelViewProjectionMat * vec4(corner1,1);
     EmitVertex();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D( corner4 );
+    gl_Position = modelViewProjectionMat * vec4(corner4,1);
     EmitVertex();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D( corner2 );
+    gl_Position = modelViewProjectionMat * vec4(corner2,1);
     EmitVertex();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D( corner3 );
+    gl_Position = modelViewProjectionMat * vec4(corner3,1);
     EmitVertex();
 
     EndPrimitive();

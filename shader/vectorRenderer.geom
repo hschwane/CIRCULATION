@@ -24,16 +24,11 @@ out vec3 cellColor;
 
 // vertices for drawing an arrow
 vec4 vertices[] = {
-                    vec4(-0.25f,  -0.5f, 0, 1),
-                    vec4(0.0f,    -0.25f, 0, 1),
-                    vec4(0.0f,    0.5f, 0, 1),
-                    vec4(0.25f, -0.5f, 0, 1)
+                    vec4(-0.25f,  0, -0.5f,  1),
+                    vec4(0.0f,    0, -0.25f, 1),
+                    vec4(0.0f,    0,  0.5f,  1),
+                    vec4(0.25f,   0, -0.5f,  1)
                   };
-
-vec4 switchPlaneFor2D(vec4 cartesianPosition)
-{
-    return vec4(cartesianPosition.x, 0, cartesianPosition.y, 1);
-}
 
 void main()
 {
@@ -47,11 +42,11 @@ void main()
     mat4 move = transpose( mat4( arrowSize,0,0,cellCoordCart.x,
                                   0,arrowSize,0,cellCoordCart.y,
                                   0,0,arrowSize,cellCoordCart.z,
-                                  0,0,0,arrowSize));
+                                  0,0,0,1));
 
-    mat4 rotate = transpose( mat4( cos(angle[0]), -sin(angle[0]), 0, 0,
-                                    sin(angle[0]), cos(angle[0]), 0, 0,
-                                    0,0,0,0,
+    mat4 rotate = transpose( mat4( cos(angle[0]), 0, sin(angle[0]), 0,
+                                    0,1,0,0,
+                                    -sin(angle[0]), 0, cos(angle[0]), 0,
                                     0,0,0,1));
     mat4 transform = move * rotate;
 
@@ -62,13 +57,13 @@ void main()
     vec4 p4 = transform * vertices[3];
 
     // emmit vertices
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D(p1);
+    gl_Position = modelViewProjectionMat * p1;
     EmitVertex();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D(p2);
+    gl_Position = modelViewProjectionMat * p2;
     EmitVertex();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D(p3);
+    gl_Position = modelViewProjectionMat * p3;
     EmitVertex();
-    gl_Position = modelViewProjectionMat * switchPlaneFor2D(p4);
+    gl_Position = modelViewProjectionMat * p4;
     EmitVertex();
 
     EndPrimitive();

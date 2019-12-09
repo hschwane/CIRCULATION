@@ -34,12 +34,12 @@ CartesianCoordinates2D::CartesianCoordinates2D(float3 min, float3 max, int3 numG
 
 float3 CartesianCoordinates2D::getCartesian(const float3& coord) const
 {
-    return float3{coord.x,coord.y,0};
+    return float3{coord.x,0,coord.y};
 }
 
 float3 CartesianCoordinates2D::getCoord(const float3& cartesian) const
 {
-    return float3{cartesian.x,cartesian.y,0};
+    return float3{cartesian.x,cartesian.z,0};
 }
 
 float3 CartesianCoordinates2D::getCellCoordinate(int cellId) const
