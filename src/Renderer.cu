@@ -106,9 +106,9 @@ void Renderer::showGui(bool* show)
                     m_scalarShader.uniform3f("minScalarColor", m_scalarMinColor);
                 if(ImGui::ColorEdit3("Max Color##scalarmaxcolor", glm::value_ptr(m_scalarMaxColor)))
                     m_scalarShader.uniform3f("maxScalarColor", m_scalarMaxColor);
-                if(ImGui::DragFloat("Min Value##minscalarcolor",&m_minScalar))
+                if(ImGui::DragFloat("Min Value##minscalarcolor",&m_minScalar,0.01))
                     m_scalarShader.uniform1f("minScalar",m_minScalar);
-                if(ImGui::DragFloat("Max Value##maxscalarcolor",&m_maxScalar))
+                if(ImGui::DragFloat("Max Value##maxscalarcolor",&m_maxScalar,0.01))
                     m_scalarShader.uniform1f("maxScalar",m_maxScalar);
             }
         }
@@ -118,8 +118,15 @@ void Renderer::showGui(bool* show)
             ImGui::Text("Note: arrows show the direction of the vector.");
 
             ImGui::Checkbox("show vector field",&m_renderVectorField);
-            if(ImGui::ColorEdit3("Color##vectorColor",glm::value_ptr(m_vectorConstColor)))
-                m_vectorShader.uniform3f("constantColor", m_vectorConstColor);
+
+            if(ImGui::ColorEdit3("Min Color##vecmincolor", glm::value_ptr(m_minVecColor)))
+                m_vectorShader.uniform3f("minVecColor", m_minVecColor);
+            if(ImGui::ColorEdit3("Max Color##vecmaxcolor", glm::value_ptr(m_maxVecColor)))
+                m_vectorShader.uniform3f("maxVecColor", m_maxVecColor);
+            if(ImGui::DragFloat("Min Length##minveclength",&m_minVecLength,0.01))
+                m_vectorShader.uniform1f("minVecLength",m_minVecLength);
+            if(ImGui::DragFloat("Max Length##maxveclength",&m_maxVecLength,0.01))
+                m_vectorShader.uniform1f("maxVecLength",m_maxVecLength);
 
             if(ImGui::DragFloat("m_angle##vectorangle",&m_angle))
                 m_vectorShader.uniform1f("vectorAngle",glm::radians(m_angle));
@@ -208,11 +215,14 @@ void Renderer::compileShader()
     m_vectorShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
     m_vectorShader.rebuild();
     m_cs->setShaderUniforms(m_vectorShader);
-    m_vectorShader.uniform3f("constantColor", m_vectorConstColor);
     m_vectorShader.uniformMat4("viewMat", m_view);
     m_vectorShader.uniformMat4("projectionMat", m_projection);
     m_vectorShader.uniformMat4("modelMat", m_model);
-    m_scalarShader.uniform1b("scalarColor", false);
+    m_vectorShader.uniform1b("vectorColor", true);
+    m_vectorShader.uniform3f("minVecColor", m_minVecColor);
+    m_vectorShader.uniform3f("maxVecColor", m_maxVecColor);
+    m_vectorShader.uniform1f("minVecLength",m_minVecLength);
+    m_vectorShader.uniform1f("maxVecLength",m_maxVecLength);
 
 }
 

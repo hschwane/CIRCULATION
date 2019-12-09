@@ -10,11 +10,17 @@ uniform mat4 modelMat;
 uniform mat4 modelViewProjectionMat;
 
 uniform vec3 constantColor;
-uniform bool scalarColor;
+uniform bool scalarColor = false;
 uniform float minScalar;
 uniform float maxScalar;
 uniform vec3 minScalarColor;
 uniform vec3 maxScalarColor;
+
+uniform bool vectorColor = false;
+uniform float minVecLength;
+uniform float maxVecLength;
+uniform vec3 minVecColor;
+uniform vec3 maxVecColor;
 
 uniform float vectorAngle;
 
@@ -42,11 +48,23 @@ void main()
     gl_Position = vec4(0,0,0,1);
 #endif
 
+    vec3 vector = vec3(1,1,1);
+
     if(scalarColor)
     {
         float f = (scalar - minScalar) / (maxScalar - minScalar);
         f = clamp(f,0,1);
         vec3 color = mix(minScalarColor,maxScalarColor,f);
+
+        cellColorGeom = color;
+        cellColor = color;
+    }
+    else if(vectorColor)
+    {
+        float s = length(vector);
+        float f = (s - minVecLength) / (maxVecLength - minVecLength);
+        f = clamp(f,0,1);
+        vec3 color = mix(minVecColor,maxVecColor,f);
 
         cellColorGeom = color;
         cellColor = color;
