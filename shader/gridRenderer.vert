@@ -48,8 +48,6 @@ void main()
     gl_Position = vec4(0,0,0,1);
 #endif
 
-    vec3 vector = vec3(1,1,1);
-
     if(scalarColor)
     {
         float f = (scalar - minScalar) / (maxScalar - minScalar);
@@ -61,6 +59,9 @@ void main()
     }
     else if(vectorColor)
     {
+        vec2 inVec = vec2(1,0);
+        vec2 vector = cs_getCartesian(vec3(inVec,0)).xy;
+
         float s = length(vector);
         float f = (s - minVecLength) / (maxVecLength - minVecLength);
         f = clamp(f,0,1);
@@ -68,12 +69,13 @@ void main()
 
         cellColorGeom = color;
         cellColor = color;
+
+        // also figure out vector orientation
+        angle = atan(vector.y, vector.x);
     }
     else
     {
         cellColorGeom = constantColor;
         cellColor = constantColor;
     }
-
-    angle = vectorAngle;
 }

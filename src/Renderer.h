@@ -64,7 +64,7 @@ private:
     glm::vec3 m_gridpointColor{1.0,1.0,1.0}; //!< gridpoint color
 
     bool m_renderScalarField{true}; //!< should a scalar field be rendered
-    glm::vec3 m_scalarConstColor{1.0,1.0,1.0}; //!< gridpoint color
+    glm::vec3 m_scalarConstColor{0.8,0.8,0.8}; //!< gridpoint color
     glm::vec3 m_scalarMinColor{0.0,0.0,0.0}; //!< color of smallest value
     glm::vec3 m_scalarMaxColor{1.0,0.0,0.0}; //!< color of biggest value
     float m_minScalar{0.0f}; //!< smallest scalar value
@@ -74,7 +74,7 @@ private:
 
     bool m_renderVectorField{true}; //!< should a vector field be rendered
     glm::vec3 m_minVecColor{0.0,0.0,0.0}; //!< color of smallest value
-    glm::vec3 m_maxVecColor{0.0,1.0,0.0}; //!< color of biggest value
+    glm::vec3 m_maxVecColor{0.0,0.0,1.0}; //!< color of biggest value
     float m_minVecLength{0.0f}; //!< smallest scalar value
     float m_maxVecLength{1.0f}; //!< biggest scalar value
     float m_angle{0.0f}; //!< vector angle
