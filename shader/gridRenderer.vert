@@ -25,11 +25,7 @@ uniform float maxScalar;
 uniform vec3 minScalarColor;
 uniform vec3 maxScalarColor;
 
-uniform bool vectorColor = false;
-uniform float minVecLength;
-uniform float maxVecLength;
-uniform vec3 minVecColor;
-uniform vec3 maxVecColor;
+uniform bool prepareVector = false;
 
 uniform float vectorAngle;
 
@@ -57,30 +53,27 @@ void main()
     gl_Position = vec4(0,0,0,1);
 #endif
 
+
+    float s = scalar;
+
+    if(prepareVector)
+    {
+        vec2 inVec = vec2(vecX[gl_VertexID],vecY[gl_VertexID]);
+        vec2 vector = cs_getCartesian(vec3(inVec,0)).xy;
+        float s = length(vector);
+
+        // also figure out vector orientation
+        angle = atan(vector.y, vector.x);
+    }
+
     if(scalarColor)
     {
-        float f = (scalar - minScalar) / (maxScalar - minScalar);
+        float f = (s - minScalar) / (maxScalar - minScalar);
         f = clamp(f,0,1);
         vec3 color = mix(minScalarColor,maxScalarColor,f);
 
         cellColorGeom = color;
         cellColor = color;
-    }
-    else if(vectorColor)
-    {
-        vec2 inVec = vec2(vecX[gl_VertexID],vecY[gl_VertexID]);
-        vec2 vector = cs_getCartesian(vec3(inVec,0)).xy;
-
-        float s = length(vector);
-        float f = (s - minVecLength) / (maxVecLength - minVecLength);
-        f = clamp(f,0,1);
-        vec3 color = mix(minVecColor,maxVecColor,f);
-
-        cellColorGeom = color;
-        cellColor = color;
-
-        // also figure out vector orientation
-        angle = atan(vector.y, vector.x);
     }
     else
     {

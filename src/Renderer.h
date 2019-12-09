@@ -74,6 +74,8 @@ private:
     int m_currentScalarField{-1}; //!< scalar field to visualize
 
     bool m_renderVectorField{true}; //!< should a vector field be rendered
+    glm::vec3 m_VectorConstColor{0.0,0.8,1.0}; //!< vector color
+    bool m_colorVectorsByLength{false}; //!< should vectors be colored by length, or constant?
     glm::vec3 m_minVecColor{0.0,0.0,0.0}; //!< color of smallest value
     glm::vec3 m_maxVecColor{0.0,0.0,1.0}; //!< color of biggest value
     float m_minVecLength{0.0f}; //!< smallest scalar value

@@ -73,11 +73,11 @@ void Renderer::showGui(bool* show)
             if(ImGui::DragFloat("gap between cells", &m_gap, 0.0001f,0.0000000001f,20.0f,"%.4f"))
                 m_scalarShader.uniform1f("gapSize",m_gap);
 
-            if( ImGui::BeginCombo("Attribute", (m_currentScalarField<0) ? "Solid Color"
+            if( ImGui::BeginCombo("Attribute##scalarfieldselection", (m_currentScalarField<0) ? "Solid Color"
                                             : m_scalarFields[m_currentScalarField].first.c_str() ))
             {
                 bool selected = (m_currentScalarField == -1);
-                if(ImGui::Selectable("Solid Color", &selected))
+                if(ImGui::Selectable("Solid Color##scalarfieldselection", &selected))
                 {
                     m_currentScalarField = -1;
                     m_scalarShader.uniform1b("scalarColor",false);
@@ -86,7 +86,7 @@ void Renderer::showGui(bool* show)
                 for(int i = 0; i < m_scalarFields.size(); i++)
                 {
                     selected = (m_currentScalarField == i);
-                    if(ImGui::Selectable(m_scalarFields[i].first.c_str(), &selected))
+                    if(ImGui::Selectable((m_scalarFields[i].first + "##scalarfieldselection").c_str(), &selected))
                     {
                         m_currentScalarField = i;
                         m_scalarShader.uniform1b("scalarColor",true);
@@ -119,12 +119,12 @@ void Renderer::showGui(bool* show)
 
             ImGui::Checkbox("show vector field",&m_renderVectorField);
 
-            if( ImGui::BeginCombo("Attribute", m_currentVecField<0 ? "none" : m_vectorFields[m_currentVecField].first.c_str()))
+            if( ImGui::BeginCombo("Attribute##vectorfieldselection", (m_currentVecField<0) ? "none" : m_vectorFields[m_currentVecField].first.c_str()))
             {
                 for(int i = 0; i < m_vectorFields.size(); i++)
                 {
                     bool selected = (m_currentVecField == i);
-                    if(ImGui::Selectable(m_vectorFields[i].first.c_str(), &selected))
+                    if(ImGui::Selectable((m_vectorFields[i].first+"##vectorfieldselection").c_str(), &selected))
                     {
                         m_currentVecField = i;
 
@@ -139,14 +139,24 @@ void Renderer::showGui(bool* show)
                 ImGui::EndCombo();
             }
 
-            if(ImGui::ColorEdit3("Min Color##vecmincolor", glm::value_ptr(m_minVecColor)))
-                m_vectorShader.uniform3f("minVecColor", m_minVecColor);
-            if(ImGui::ColorEdit3("Max Color##vecmaxcolor", glm::value_ptr(m_maxVecColor)))
-                m_vectorShader.uniform3f("maxVecColor", m_maxVecColor);
-            if(ImGui::DragFloat("Min Length##minveclength",&m_minVecLength,0.01))
-                m_vectorShader.uniform1f("minVecLength",m_minVecLength);
-            if(ImGui::DragFloat("Max Length##maxveclength",&m_maxVecLength,0.01))
-                m_vectorShader.uniform1f("maxVecLength",m_maxVecLength);
+            ImGui::Checkbox("color vectors by length##vectorfieldselection",&m_colorVectorsByLength);
+                m_vectorShader.uniform1b("scalarColor",m_colorVectorsByLength);
+
+            if(m_colorVectorsByLength)
+            {
+                if(ImGui::ColorEdit3("Min Color##vecmincolor", glm::value_ptr(m_minVecColor)))
+                    m_vectorShader.uniform3f("minScalarColor", m_minVecColor);
+                if(ImGui::ColorEdit3("Max Color##vecmaxcolor", glm::value_ptr(m_maxVecColor)))
+                    m_vectorShader.uniform3f("maxScalarColor", m_maxVecColor);
+                if(ImGui::DragFloat("Min Length##minveclength",&m_minVecLength,0.01))
+                    m_vectorShader.uniform1f("minScalar",m_minVecLength);
+                if(ImGui::DragFloat("Max Length##maxveclength",&m_maxVecLength,0.01))
+                    m_vectorShader.uniform1f("maxScalar",m_maxVecLength);
+            } else
+            {
+                if(ImGui::ColorEdit3("Color##vecconstcolor", glm::value_ptr(m_VectorConstColor)))
+                    m_vectorShader.uniform3f("constantColor", m_VectorConstColor);
+            }
         }
 
         if(ImGui::CollapsingHeader("Grid lines"))
@@ -235,11 +245,13 @@ void Renderer::compileShader()
     m_vectorShader.uniformMat4("viewMat", m_view);
     m_vectorShader.uniformMat4("projectionMat", m_projection);
     m_vectorShader.uniformMat4("modelMat", m_model);
-    m_vectorShader.uniform1b("vectorColor", true);
-    m_vectorShader.uniform3f("minVecColor", m_minVecColor);
-    m_vectorShader.uniform3f("maxVecColor", m_maxVecColor);
-    m_vectorShader.uniform1f("minVecLength",m_minVecLength);
-    m_vectorShader.uniform1f("maxVecLength",m_maxVecLength);
+    m_vectorShader.uniform1b("prepareVector", true);
+    m_vectorShader.uniform1b("scalarColor",m_colorVectorsByLength);
+    m_vectorShader.uniform3f("minScalarColor", m_minVecColor);
+    m_vectorShader.uniform3f("maxScalarColor", m_maxVecColor);
+    m_vectorShader.uniform1f("minScalar",m_minVecLength);
+    m_vectorShader.uniform1f("maxScalar",m_maxVecLength);
+    m_vectorShader.uniform3f("constantColor", m_VectorConstColor);
 
     if(m_currentVecField >= 0)
     {
