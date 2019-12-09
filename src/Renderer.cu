@@ -119,6 +119,26 @@ void Renderer::showGui(bool* show)
 
             ImGui::Checkbox("show vector field",&m_renderVectorField);
 
+            if( ImGui::BeginCombo("Attribute", m_currentVecField<0 ? "none" : m_vectorFields[m_currentVecField].first.c_str()))
+            {
+                for(int i = 0; i < m_vectorFields.size(); i++)
+                {
+                    bool selected = (m_currentVecField == i);
+                    if(ImGui::Selectable(m_vectorFields[i].first.c_str(), &selected))
+                    {
+                        m_currentVecField = i;
+
+                        unsigned int blockIndex = 0;
+                        blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK, "vectorFieldX");
+                        glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex, m_vectorFields[i].second.first);
+
+                        blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK, "vectorFieldY");
+                        glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex, m_vectorFields[i].second.second);
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
             if(ImGui::ColorEdit3("Min Color##vecmincolor", glm::value_ptr(m_minVecColor)))
                 m_vectorShader.uniform3f("minVecColor", m_minVecColor);
             if(ImGui::ColorEdit3("Max Color##vecmaxcolor", glm::value_ptr(m_maxVecColor)))
@@ -127,9 +147,6 @@ void Renderer::showGui(bool* show)
                 m_vectorShader.uniform1f("minVecLength",m_minVecLength);
             if(ImGui::DragFloat("Max Length##maxveclength",&m_maxVecLength,0.01))
                 m_vectorShader.uniform1f("maxVecLength",m_maxVecLength);
-
-            if(ImGui::DragFloat("m_angle##vectorangle",&m_angle))
-                m_vectorShader.uniform1f("vectorAngle",glm::radians(m_angle));
         }
 
         if(ImGui::CollapsingHeader("Grid lines"))
@@ -224,6 +241,15 @@ void Renderer::compileShader()
     m_vectorShader.uniform1f("minVecLength",m_minVecLength);
     m_vectorShader.uniform1f("maxVecLength",m_maxVecLength);
 
+    if(m_currentVecField >= 0)
+    {
+        unsigned int blockIndex = 0;
+        blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldX");
+        glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex,m_vectorFields[m_currentVecField].second.first);
+
+        blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldY");
+        glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex,m_vectorFields[m_currentVecField].second.second);
+    }
 }
 
 void Renderer::setSize(int w, int h)
@@ -274,7 +300,7 @@ void Renderer::draw()
     }
 
     // visualize vectors
-    if(m_renderVectorField)
+    if(m_renderVectorField && m_currentVecField >= 0)
     {
         m_vectorShader.use();
         glDrawArrays(GL_POINTS, 0, m_cs->getNumGridCells());
@@ -313,4 +339,10 @@ void Renderer::setScalarFields(std::vector<std::pair<std::string, int>> fields)
 {
     m_currentScalarField = -1;
     m_scalarFields = std::move(fields);
+}
+
+void Renderer::setVecFields(std::vector<std::pair<std::string,std::pair<int,int>>> fields)
+{
+    m_currentVecField = -1;
+    m_vectorFields = std::move(fields);
 }

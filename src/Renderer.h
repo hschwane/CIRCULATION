@@ -44,7 +44,8 @@ public:
     void setCS(std::shared_ptr<CoordinateSystem> cs); //!< sets the coordinate system
     mpu::gph::VertexArray& getVAO(); //!< get a reference to the vao so buffers can be bound to it
 
-    void setScalarFields(std::vector<std::pair<std::string,int>> fields); //!< set scalar field names and buffer ids
+    void setScalarFields(std::vector<std::pair<std::string,int>> fields); //!< set scalar fields names and buffer ids
+    void setVecFields(std::vector<std::pair<std::string,std::pair<int,int>>> fields); //!< set vextor fields names and buffer ids
     void setSize(int w, int h); //!< call when window is resized
     void setViewMat(const glm::mat4& view); //!< set the view matrix
 
@@ -77,7 +78,7 @@ private:
     glm::vec3 m_maxVecColor{0.0,0.0,1.0}; //!< color of biggest value
     float m_minVecLength{0.0f}; //!< smallest scalar value
     float m_maxVecLength{1.0f}; //!< biggest scalar value
-    float m_angle{0.0f}; //!< vector angle
+    int m_currentVecField{-1};
 
     float m_near{0.001}; //!< near plane distance
     float m_far{50}; //!< far plane distance
@@ -92,6 +93,7 @@ private:
     // stuff to render
     std::shared_ptr<CoordinateSystem> m_cs{nullptr}; //!< coordinate system to use for rendering
     std::vector<std::pair<std::string,int>> m_scalarFields; //!< scalar fields used for visualization, name and buffer id
+    std::vector<std::pair<std::string,std::pair<int,int>>> m_vectorFields; //!< scalar fields used for visualization, name and buffer id
 
     // opengl objects
     mpu::gph::ShaderProgram m_vectorShader; //!< shader used for rendering

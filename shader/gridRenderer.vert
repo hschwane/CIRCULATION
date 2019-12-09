@@ -3,6 +3,15 @@
 // input
 in float scalar; // scalar value for color
 
+layout(std430) buffer vectorFieldX // ssbo for vector field in x direction
+{
+    float vecX[];
+};
+layout(std430) buffer vectorFieldY // ssbo for vector field in y direction
+{
+    float vecY[];
+};
+
 // uniforms
 uniform mat4 projectionMat;
 uniform mat4 viewMat;
@@ -59,7 +68,7 @@ void main()
     }
     else if(vectorColor)
     {
-        vec2 inVec = vec2(1,0);
+        vec2 inVec = vec2(vecX[gl_VertexID],vecY[gl_VertexID]);
         vec2 vector = cs_getCartesian(vec3(inVec,0)).xy;
 
         float s = length(vector);

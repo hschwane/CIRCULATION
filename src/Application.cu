@@ -391,13 +391,19 @@ void Application::createNewSim(SimModel model, CSType coordinateSystem, const fl
         {
             m_demoGrid = RenderDemoGrid(m_currentCS->getNumGridCells());
             generateDemoData(m_demoGrid);
+
             m_demoGrid.addRenderBufferToVao(m_renderer.getVAO(), 0);
-//            m_demoGrid.bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
+            m_demoGrid.bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
+
             std::vector<std::pair<std::string,int>> scalarFields;
             scalarFields.emplace_back("density",0);
             scalarFields.emplace_back("velocity_x",1);
             scalarFields.emplace_back("velocity_y",2);
             m_renderer.setScalarFields(scalarFields);
+
+            std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
+            vectorFields.emplace_back("velocity",std::pair<int,int>(1,2));
+            m_renderer.setVecFields(vectorFields);
             break;
         }
     }
