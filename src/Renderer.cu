@@ -210,70 +210,83 @@ void Renderer::compileShader()
 {
     logINFO("Renderer") << "recompiling all visualization shdaders";
 
-    // compile grid - line shader
-    m_gridlineShader.clearDefinitions();
-    m_gridlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
-    m_gridlineShader.rebuild();
-    m_cs->setShaderUniforms(m_gridlineShader);
-    m_gridlineShader.uniform3f("constantColor", m_gridlineColor);
-    m_gridlineShader.uniformMat4("viewMat", m_view);
-    m_gridlineShader.uniformMat4("projectionMat", m_projection);
-    m_gridlineShader.uniformMat4("modelMat", m_model);
-
-    // compile grid center shader
-    m_gridCenterShader.clearDefinitions();
-    m_gridCenterShader.addDefinition(glsp::definition("RENDER_GRID_CELL_POINTS"));
-    m_gridCenterShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
-    m_gridCenterShader.rebuild();
-    m_cs->setShaderUniforms(m_gridCenterShader);
-    m_gridCenterShader.uniform3f("constantColor", m_gridpointColor);
-    m_gridCenterShader.uniformMat4("viewMat", m_view);
-    m_gridCenterShader.uniformMat4("projectionMat", m_projection);
-    m_gridCenterShader.uniformMat4("modelMat", m_model);
-
-    // compile scalar field shader
-    m_scalarShader.clearDefinitions();
-    m_scalarShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
-    m_scalarShader.rebuild();
-    m_cs->setShaderUniforms(m_scalarShader);
-    m_scalarShader.uniform3f("constantColor", m_scalarConstColor);
-    m_scalarShader.uniformMat4("viewMat", m_view);
-    m_scalarShader.uniformMat4("projectionMat", m_projection);
-    m_scalarShader.uniformMat4("modelMat", m_model);
-    m_scalarShader.uniform1f("gapSize", m_gap);
-    m_scalarShader.uniform3f("minScalarColor", m_scalarMinColor);
-    m_scalarShader.uniform3f("maxScalarColor", m_scalarMaxColor);
-    m_scalarShader.uniform1f("minScalar",m_minScalar);
-    m_scalarShader.uniform1f("maxScalar",m_maxScalar);
-    m_scalarShader.uniform1b("scalarColor",(m_currentScalarField >= 0));
-    glBindAttribLocation(static_cast<GLuint>(m_scalarShader),
-                         (m_currentScalarField >= 0) ? m_scalarFields[m_currentScalarField].second : 0, "scalar");
-
-    // compile vector shader
-    m_vectorShader.clearDefinitions();
-    m_vectorShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
-    m_vectorShader.rebuild();
-    m_cs->setShaderUniforms(m_vectorShader);
-    m_vectorShader.uniformMat4("viewMat", m_view);
-    m_vectorShader.uniformMat4("projectionMat", m_projection);
-    m_vectorShader.uniformMat4("modelMat", m_model);
-    m_vectorShader.uniform1b("prepareVector", true);
-    m_vectorShader.uniform1b("scalarColor",m_colorVectorsByLength);
-    m_vectorShader.uniform3f("minScalarColor", m_minVecColor);
-    m_vectorShader.uniform3f("maxScalarColor", m_maxVecColor);
-    m_vectorShader.uniform1f("minScalar",m_minVecLength);
-    m_vectorShader.uniform1f("maxScalar",m_maxVecLength);
-    m_vectorShader.uniform3f("constantColor", m_VectorConstColor);
-    m_vectorShader.uniform1f("arrowSize",m_arrowSize);
-
-    if(m_currentVecField >= 0)
+    try
     {
-        unsigned int blockIndex = 0;
-        blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldX");
-        glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex,m_vectorFields[m_currentVecField].second.first);
+        // compile grid - line shader
+        m_gridlineShader.clearDefinitions();
+        m_gridlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+        m_gridlineShader.rebuild();
+        m_cs->setShaderUniforms(m_gridlineShader);
+        m_gridlineShader.uniform3f("constantColor", m_gridlineColor);
+        m_gridlineShader.uniformMat4("viewMat", m_view);
+        m_gridlineShader.uniformMat4("projectionMat", m_projection);
+        m_gridlineShader.uniformMat4("modelMat", m_model);
 
-        blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldY");
-        glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex,m_vectorFields[m_currentVecField].second.second);
+        // compile grid center shader
+        m_gridCenterShader.clearDefinitions();
+        m_gridCenterShader.addDefinition(glsp::definition("RENDER_GRID_CELL_POINTS"));
+        m_gridCenterShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+        m_gridCenterShader.rebuild();
+        m_cs->setShaderUniforms(m_gridCenterShader);
+        m_gridCenterShader.uniform3f("constantColor", m_gridpointColor);
+        m_gridCenterShader.uniformMat4("viewMat", m_view);
+        m_gridCenterShader.uniformMat4("projectionMat", m_projection);
+        m_gridCenterShader.uniformMat4("modelMat", m_model);
+
+        // compile scalar field shader
+        m_scalarShader.clearDefinitions();
+        m_scalarShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+        m_scalarShader.rebuild();
+        m_cs->setShaderUniforms(m_scalarShader);
+        m_scalarShader.uniform3f("constantColor", m_scalarConstColor);
+        m_scalarShader.uniformMat4("viewMat", m_view);
+        m_scalarShader.uniformMat4("projectionMat", m_projection);
+        m_scalarShader.uniformMat4("modelMat", m_model);
+        m_scalarShader.uniform1f("gapSize", m_gap);
+        m_scalarShader.uniform3f("minScalarColor", m_scalarMinColor);
+        m_scalarShader.uniform3f("maxScalarColor", m_scalarMaxColor);
+        m_scalarShader.uniform1f("minScalar",m_minScalar);
+        m_scalarShader.uniform1f("maxScalar",m_maxScalar);
+        m_scalarShader.uniform1b("scalarColor",(m_currentScalarField >= 0));
+        glBindAttribLocation(static_cast<GLuint>(m_scalarShader),
+                             (m_currentScalarField >= 0) ? m_scalarFields[m_currentScalarField].second : 0, "scalar");
+
+        // compile vector shader
+        m_vectorShader.clearDefinitions();
+        m_vectorShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+        m_vectorShader.rebuild();
+        m_cs->setShaderUniforms(m_vectorShader);
+        m_vectorShader.uniformMat4("viewMat", m_view);
+        m_vectorShader.uniformMat4("projectionMat", m_projection);
+        m_vectorShader.uniformMat4("modelMat", m_model);
+        m_vectorShader.uniform1b("prepareVector", true);
+        m_vectorShader.uniform1b("scalarColor",m_colorVectorsByLength);
+        m_vectorShader.uniform3f("minScalarColor", m_minVecColor);
+        m_vectorShader.uniform3f("maxScalarColor", m_maxVecColor);
+        m_vectorShader.uniform1f("minScalar",m_minVecLength);
+        m_vectorShader.uniform1f("maxScalar",m_maxVecLength);
+        m_vectorShader.uniform3f("constantColor", m_VectorConstColor);
+        m_vectorShader.uniform1f("arrowSize",m_arrowSize);
+
+        if(m_currentVecField >= 0)
+        {
+            unsigned int blockIndex = 0;
+            blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldX");
+            glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex,m_vectorFields[m_currentVecField].second.first);
+
+            blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldY");
+            glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex,m_vectorFields[m_currentVecField].second.second);
+        }
+    }
+    catch (const std::runtime_error& e)
+    {
+        logERROR("Renderer") << "Shader compilation failed! Fix shader and try again.";
+        int r = tinyfd_messageBox("Error","Shader compilation failed! Check shader and press \"ok\". \nSee log for more information.",
+                "okcancel", "error",1);
+        if(r == 0)
+            throw e;
+        else
+            compileShader();
     }
 }
 
