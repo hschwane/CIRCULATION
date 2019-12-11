@@ -21,7 +21,7 @@
 //-------------------------------------------------------------------
 Application::Application(int width, int height)
     : m_window(width,height,"CIRCULATION"),
-    m_camera(mpu::gph::Camera::trackball, glm::vec3(0,0,2), glm::vec3(0,0,0)),
+    m_camera(mpu::gph::Camera::trackball, glm::vec3(0,0,2), glm::vec3(0,0,0),glm::vec3(0,0,1)),
     m_renderer(width,height)
 {
     // add shader include pathes
@@ -152,7 +152,7 @@ void Application::resetCamera()
     float diagonal = glm::length(size);
     glm::vec3 center = aabbMin + size/2;
 
-    m_camera.setPosition(glm::vec3(0,diagonal,diagonal));
+    m_camera.setPosition(glm::vec3(0,-0.75*diagonal,diagonal));
     m_camera.setTarget(center);
 }
 
