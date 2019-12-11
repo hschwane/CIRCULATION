@@ -311,17 +311,37 @@ void Application::newSimulationModal()
         static int selctedCoordinates = 0;
         static int3 numGridCells{128,128,32};
 
+        // variables for render demo model
+        static bool randomVectors=true;
+        static float2 vectorValue{1,1};
+
         // variables for cartesian grids
         static float3 minCoords{-1,-1,-1};
         static float3 maxCoords{1,1,1};
 
         // variables for geographical grids
-        static float minLat{-M_PIf32};
-        static float maxLat{M_PIf32};
+        static float minLat{-3.14f};
+        static float maxLat{3.14f};
         static float radius{1.0f};
 
         // select simulation model and coordinate system
         ImGui::Combo("Model",&selctedModel,"Render Demo\0\0");
+
+        // options depending on simulation model
+        switch(static_cast<SimModel>(selctedModel))
+        {
+            case SimModel::renderDemo:
+            {
+                ImGui::PushID("RenderDemoOptions");
+                ImGui::Checkbox("Random Vectors", &randomVectors);
+                if(!randomVectors)
+                    ImGui::DragFloat2("Vector", &vectorValue.x);
+                ImGui::PopID();
+                break;
+            }
+        }
+
+        ImGui::Separator();
         ImGui::Combo("Coordinate System",&selctedCoordinates,"2D Cartesian Coordinates\0 2D Geographical Coordinates\0\0");
 
         // options depending on coordinate system
@@ -329,6 +349,7 @@ void Application::newSimulationModal()
         {
             case CSType::cartesian2d:
             {
+                ImGui::PushID("Cartesian2dOptions");
                 ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
                 ImGui::DragFloat2("Min coordinates", &minCoords.x);
                 ImGui::DragFloat2("Max coordinates", &maxCoords.x);
@@ -343,10 +364,12 @@ void Application::newSimulationModal()
                 ImGui::DragInt("Total number of cells", &numOfCells);
                 ImGui::PopItemFlag();
                 ImGui::PopStyleVar();
+                ImGui::PopID();
                 break;
             }
             case CSType::geographical2d:
             {
+                ImGui::PushID("Geographical2dOptions");
                 ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
                 ImGui::DragFloat("Min latitude", &minLat);
                 ImGui::DragFloat("Max latitude", &maxLat);
@@ -362,12 +385,10 @@ void Application::newSimulationModal()
                 ImGui::DragInt("Total number of cells", &numOfCells);
                 ImGui::PopItemFlag();
                 ImGui::PopStyleVar();
+                ImGui::PopID();
                 break;
             }
         }
-
-        // options depending on simulation model
-        // ...
 
         // cancel and create button
 
@@ -405,7 +426,7 @@ void Application::newSimulationModal()
                 case SimModel::renderDemo:
                 {
                     m_demoGrid = RenderDemoGrid(m_currentCS->getNumGridCells());
-                    generateDemoData(m_demoGrid);
+                    generateDemoData(m_demoGrid,randomVectors,vectorValue);
 
                     m_demoGrid.addRenderBufferToVao(m_renderer.getVAO(), 0);
                     m_demoGrid.bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
@@ -432,7 +453,7 @@ void Application::newSimulationModal()
     }
 }
 
-void Application::generateDemoData(RenderDemoGrid& grid)
+void Application::generateDemoData(RenderDemoGrid& grid, bool randomVectors, float2 vector)
 {
     std::default_random_engine rng(mpu::getRanndomSeed());
     std::normal_distribution<float> dist(10,4);
@@ -445,8 +466,15 @@ void Application::generateDemoData(RenderDemoGrid& grid)
         float velY = vdist(rng);
 
         grid.write<AT::density>(i,density);
-        grid.write<AT::velocityX>(i,velX);
-        grid.write<AT::velocityY>(i,velY);
+        if(randomVectors)
+        {
+            grid.write<AT::velocityX>(i, velX);
+            grid.write<AT::velocityY>(i, velY);
+        }
+        else {
+            grid.write<AT::velocityX>(i, vector.x);
+            grid.write<AT::velocityY>(i, vector.y);
+        }
     }
 
     grid.swapAndRender();
