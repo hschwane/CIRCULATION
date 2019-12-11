@@ -12,7 +12,7 @@ uniform CartesianCoordinates2D_internal csInternalData;
 
 vec3 cs_getCartesian(const vec3 coord)
 {
-    return vec3(coord.x,0,coord.y);
+    return vec3(coord.x,0,-coord.y);
 }
 
 vec3 cs_getCoord(const vec3 cartesian)
