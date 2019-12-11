@@ -27,10 +27,10 @@ out vec3 cellColor;
 
 // vertices for drawing an arrow
 vec4 vertices[] = {
-                    vec4(-0.5f,  0,   0.25f,  1),
-                    vec4(-0.25f,    0,  0.0f, 1),
-                    vec4(0.5f,    0,  0.0f,  1),
-                    vec4(-0.5f,   0, -0.25f,  1)
+                    vec4(-0.5f,  0.01f, -0.25f,1),
+                    vec4(-0.25f, 0.01f,  0.0f, 1),
+                    vec4( 0.5f,  0.01f,  0.0f, 1),
+                    vec4(-0.5f,  0.01f,  0.25f,1)
                   };
 
 void main()
@@ -41,7 +41,7 @@ void main()
     cellColor = cellColorGeom[0]; // forward color
 
     mat4 move = transpose( mat4( arrowSize,0,0,cellCoordCart.x,
-                                  0,arrowSize,0,cellCoordCart.y,
+                                  0,1,0,cellCoordCart.y,
                                   0,0,arrowSize,cellCoordCart.z,
                                   0,0,0,1));
 

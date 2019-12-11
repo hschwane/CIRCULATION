@@ -320,8 +320,8 @@ void Application::newSimulationModal()
         static float3 maxCoords{1,1,1};
 
         // variables for geographical grids
-        static float minLat{-3.14f};
-        static float maxLat{3.14f};
+        static float minLat{-1.57f};
+        static float maxLat{1.57f};
         static float radius{1.0f};
 
         // select simulation model and coordinate system
@@ -371,16 +371,16 @@ void Application::newSimulationModal()
             {
                 ImGui::PushID("Geographical2dOptions");
                 ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
-                ImGui::DragFloat("Min latitude", &minLat);
-                ImGui::DragFloat("Max latitude", &maxLat);
+                ImGui::DragFloat("Min latitude", &minLat,0.001);
+                ImGui::DragFloat("Max latitude", &maxLat,0.001);
                 ImGui::DragFloat("Radius", &radius);
 
                 float2 size = make_float2(2* M_PIf32, maxLat) - make_float2(0,minLat);
-                float2 cellSize = size / make_float2(make_int2(numGridCells));
+                float2 cellSize = size / make_float2( (numGridCells.x<2) ? 1 : numGridCells.x-1, (numGridCells.y<2) ? 1 : numGridCells.y-1);
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                 ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-                ImGui::DragFloat2("Size", &size.x);
-                ImGui::DragFloat2("Cell Size", &cellSize.x);
+                ImGui::DragFloat2("Angular size", &size.x);
+                ImGui::DragFloat2("Angular cell Size", &cellSize.x);
                 int numOfCells = numGridCells.x * numGridCells.y;
                 ImGui::DragInt("Total number of cells", &numOfCells);
                 ImGui::PopItemFlag();

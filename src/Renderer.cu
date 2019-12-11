@@ -43,6 +43,7 @@ Renderer::Renderer(int w, int h)
     rebuildProjectionMat();
 
     // initial settings
+    glEnable(GL_DEPTH_TEST);
     glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, 1.0f);
 }
 

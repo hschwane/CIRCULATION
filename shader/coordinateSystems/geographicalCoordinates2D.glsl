@@ -15,7 +15,7 @@ uniform GeographicalCoordinates2D_internal csInternalData;
 
 vec3 cs_getCartesian(const vec3 coord)
 {
-    float phi = PI - coord.y;
+    float phi = PI*0.5 - coord.y;
     float sinPhi = sin(phi);
     return vec3( csInternalData.m_radius * cos(coord.x) * sinPhi,
                  csInternalData.m_radius * sin(coord.x) * sinPhi,
@@ -26,7 +26,7 @@ vec3 cs_getCoord(const vec3 cartesian)
 {
     float r = sqrt( cartesian.x * cartesian.x + cartesian.y * cartesian.y + cartesian.z * cartesian.z );
     float phi = acos(cartesian.z / r);
-    return vec3(  atan(cartesian.y,cartesian.x), PI - phi, 0);
+    return vec3(  atan(cartesian.y,cartesian.x), PI*0.5 - phi, 0);
 }
 
 vec3 cs_getCellCoordinate3d(const ivec3 cellId3d)
