@@ -152,7 +152,7 @@ void GeographicalCoordinates2D::setShaderUniforms(mpu::gph::ShaderProgram& shade
     shader.uniform2f("csInternalData.m_size", glm::vec2(m_size.x,m_size.y));
     shader.uniform2f("csInternalData.m_cellSize", glm::vec2(m_cellSize.x,m_cellSize.y));
     shader.uniform2i("csInternalData.m_numGridCells", glm::ivec2(m_numGridCells.x,m_numGridCells.y));
-    shader.uniform1i("csInternalData.m_numTotalGridCells", m_totalNumGridCells);
+    shader.uniform1i("csInternalData.m_totalNumGridCells", m_totalNumGridCells);
     shader.uniform1f("csInternalData.m_radius", m_radius);
 }
 

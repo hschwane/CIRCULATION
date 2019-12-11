@@ -60,12 +60,20 @@ void Renderer::showGui(bool* show)
                 m_model = glm::scale(glm::mat4(1.0f),glm::vec3(m_scale));
                 m_gridlineShader.uniformMat4("modelMat", m_model);
                 m_gridCenterShader.uniformMat4("modelMat", m_model);
+                m_vectorShader.uniformMat4("modelMat", m_model);
+                m_scalarShader.uniformMat4("modelMat", m_model);
                 setClip(0.001,m_unscaledFar*m_scale);
                 updateMVP();
             }
 
             if(ImGui::Checkbox("Hide back-faces",&m_backfaceCulling))
                 setBackfaceCulling(m_backfaceCulling);
+
+            if(ImGui::Checkbox("Color by cell id",&m_colorCodeCellID))
+            {
+                m_scalarShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
+                m_gridCenterShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
+            }
 
             if(ImGui::Button("Rebuild Shader"))
                 compileShader();
@@ -232,6 +240,7 @@ void Renderer::compileShader()
         m_gridCenterShader.uniformMat4("viewMat", m_view);
         m_gridCenterShader.uniformMat4("projectionMat", m_projection);
         m_gridCenterShader.uniformMat4("modelMat", m_model);
+        m_gridCenterShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
 
         // compile scalar field shader
         m_scalarShader.clearDefinitions();
@@ -250,6 +259,7 @@ void Renderer::compileShader()
         m_scalarShader.uniform1b("scalarColor",(m_currentScalarField >= 0));
         glBindAttribLocation(static_cast<GLuint>(m_scalarShader),
                              (m_currentScalarField >= 0) ? m_scalarFields[m_currentScalarField].second : 0, "scalar");
+        m_scalarShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
 
         // compile vector shader
         m_vectorShader.clearDefinitions();

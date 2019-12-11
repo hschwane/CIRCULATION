@@ -17,6 +17,7 @@ uniform mat4 projectionMat;
 uniform mat4 viewMat;
 uniform mat4 modelMat;
 uniform mat4 modelViewProjectionMat;
+uniform bool colorCodeCellID;
 
 uniform vec3 constantColor;
 uniform bool scalarColor = false;
@@ -97,7 +98,13 @@ void main()
     }
     else
     {
-        cellColorGeom = constantColor * float(gl_VertexID) / 3.0f;
-        cellColor = constantColor * float(gl_VertexID) / 3.0f;
+        cellColorGeom = constantColor;
+        cellColor = constantColor;
+
+        if(colorCodeCellID)
+        {
+            cellColorGeom *= float(gl_VertexID) / float(cs_getNumGridCells());
+            cellColor *= float(gl_VertexID) / float(cs_getNumGridCells());
+        }
     }
 }

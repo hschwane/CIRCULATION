@@ -58,6 +58,7 @@ private:
     glm::vec3 m_backgroundColor{0.2,0.2,0.2}; //!< background color
     float m_scale{1.0}; //!< global scale factor
     bool m_backfaceCulling{false}; //!< is backface culling on / off?
+    bool m_colorCodeCellID{false}; //!< is backface culling on / off?
 
     bool m_renderGridlines{false};   //!< should grid lines be rendered
     glm::vec3 m_gridlineColor{1.0,1.0,1.0}; //!< gridline color
