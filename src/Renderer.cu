@@ -63,6 +63,10 @@ void Renderer::showGui(bool* show)
                 setClip(0.001,m_unscaledFar*m_scale);
                 updateMVP();
             }
+
+            if(ImGui::Checkbox("Hide back-faces",&m_backfaceCulling))
+                setBackfaceCulling(m_backfaceCulling);
+
             if(ImGui::Button("Rebuild Shader"))
                 compileShader();
         }
@@ -193,6 +197,11 @@ void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
     float diagonal = glm::length(size);
     m_unscaledFar = diagonal * 4;
     setClip(0.001,m_unscaledFar*m_scale);
+
+    if(cs->getCartesianDimension() == 3)
+        setBackfaceCulling(true);
+    else
+        setBackfaceCulling(false);
 
     compileShader();
 }
@@ -361,4 +370,19 @@ void Renderer::setVecFields(std::vector<std::pair<std::string,std::pair<int,int>
 {
     m_currentVecField = -1;
     m_vectorFields = std::move(fields);
+}
+
+void Renderer::setBackfaceCulling(bool enable)
+{
+    m_backfaceCulling = enable;
+    if(enable)
+    {
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+    }
+    else
+    {
+        glDisable(GL_CULL_FACE);
+    }
+
 }

@@ -57,6 +57,7 @@ private:
     // settings
     glm::vec3 m_backgroundColor{0.2,0.2,0.2}; //!< background color
     float m_scale{1.0}; //!< global scale factor
+    bool m_backfaceCulling{false}; //!< is backface culling on / off?
 
     bool m_renderGridlines{false};   //!< should grid lines be rendered
     glm::vec3 m_gridlineColor{1.0,1.0,1.0}; //!< gridline color
@@ -110,6 +111,7 @@ private:
     void setClip(float near, float far); //!< change clipping distance
     void rebuildProjectionMat(); //!< set the projection matrix using a aspect ratio
     void updateMVP(); //!< update model  view projection on all shaders
+    void setBackfaceCulling(bool enable); //!< enable / disable backface culling
 };
 
 
