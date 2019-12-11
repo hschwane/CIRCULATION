@@ -28,7 +28,7 @@
 //--------------------
 
 /**
- * @brief Types of simulation model available
+ * Types of simulation model available
  */
 enum class SimModel : int
 {
@@ -43,29 +43,6 @@ enum class CSType : int
     cartesian2d = 0,
     geographical2d = 1
 };
-
-/**
- * @brief create a coordinate system
- * @param csType type of coordinate system to create
- * @param min min value of coordinates
- * @param max max value of coordinates
- * @param cells grid cells per dimension
- * @return
- */
-inline std::unique_ptr<CoordinateSystem> coordinateSystemFactory(CSType csType, const float3& min, const float3& max, const int3& cells)
-{
-    std::unique_ptr<CoordinateSystem> cs;
-    switch(csType)
-    {
-        case CSType::cartesian2d:
-            cs = std::make_unique<CartesianCoordinates2D>(min,max,cells);
-            break;
-        case CSType::geographical2d:
-            cs = std::make_unique<GeographicalCoordinates2D>(min.y,max.y,cells,max.z);
-            break;
-    }
-    return cs;
-}
 
 //-------------------------------------------------------------------
 /**

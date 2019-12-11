@@ -310,49 +310,66 @@ void Application::newSimulationModal()
         static int selctedModel = 0;
         static int selctedCoordinates = 0;
         static int3 numGridCells{128,128,32};
+
+        // variables for cartesian grids
         static float3 minCoords{-1,-1,-1};
         static float3 maxCoords{1,1,1};
+
+        // variables for geographical grids
+        static float minLat{-M_PIf32};
+        static float maxLat{M_PIf32};
+        static float radius{1.0f};
 
         // select simulation model and coordinate system
         ImGui::Combo("Model",&selctedModel,"Render Demo\0\0");
         ImGui::Combo("Coordinate System",&selctedCoordinates,"2D Cartesian Coordinates\0 2D Geographical Coordinates\0\0");
 
-        // figure out dimension
-        auto cs = coordinateSystemFactory(static_cast<CSType>(selctedCoordinates),{0,0,0},{0,0,0},{0,0,0});
-
-        // depending on the dimension number of selected system
-        if(cs->getDimension() == 2)
+        // options depending on coordinate system
+        switch(static_cast<CSType>(selctedCoordinates))
         {
-            ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
-            ImGui::DragFloat2("Min coordinates", &minCoords.x);
-            ImGui::DragFloat2("Max coordinates", &maxCoords.x);
+            case CSType::cartesian2d:
+            {
+                ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
+                ImGui::DragFloat2("Min coordinates", &minCoords.x);
+                ImGui::DragFloat2("Max coordinates", &maxCoords.x);
 
-            float3 size = maxCoords - minCoords;
-            float3 cellSize = size / make_float3(numGridCells);
-            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-            ImGui::DragFloat2("Size", &size.x);
-            ImGui::DragFloat2("Cell Size", &cellSize.x);
-            int numOfCells = numGridCells.x * numGridCells.y;
-            ImGui::DragInt("Total number of cells", &numOfCells);
-            ImGui::PopItemFlag();
-            ImGui::PopStyleVar();
-        }
-        else
-        {
-            ImGui::DragInt3("Number of Grid Cells", &numGridCells.x);
-            ImGui::DragFloat3("Min coordinates", &minCoords.x);
-            ImGui::DragFloat3("Max coordinates", &maxCoords.x);
+                float3 size = maxCoords - minCoords;
+                float3 cellSize = size / make_float3(numGridCells);
+                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+                ImGui::DragFloat2("Size", &size.x);
+                ImGui::DragFloat2("Cell Size", &cellSize.x);
+                int numOfCells = numGridCells.x * numGridCells.y;
+                ImGui::DragInt("Total number of cells", &numOfCells);
+                ImGui::PopItemFlag();
+                ImGui::PopStyleVar();
+                break;
+            }
+            case CSType::geographical2d:
+            {
+                ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
+                ImGui::DragFloat("Min latitude", &minLat);
+                ImGui::DragFloat("Max latitude", &maxLat);
+                ImGui::DragFloat("Radius", &radius);
 
-            float3 size = maxCoords - minCoords;
-            float3 cellSize = size / make_float3(numGridCells);
-            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-            ImGui::DragFloat3("Size", &size.x);
-            ImGui::DragFloat3("Cell Size", &cellSize.x);
-            ImGui::PopItemFlag();
-            ImGui::PopStyleVar();
+                float2 size = make_float2(2* M_PIf32, maxLat) - make_float2(0,minLat);
+                float2 cellSize = size / make_float2(make_int2(numGridCells));
+                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+                ImGui::DragFloat2("Size", &size.x);
+                ImGui::DragFloat2("Cell Size", &cellSize.x);
+                int numOfCells = numGridCells.x * numGridCells.y;
+                ImGui::DragInt("Total number of cells", &numOfCells);
+                ImGui::PopItemFlag();
+                ImGui::PopStyleVar();
+                break;
+            }
         }
+
+        // options depending on simulation model
+        // ...
+
+        // cancel and create button
 
         if(ImGui::Button("Cancel"))
             ImGui::CloseCurrentPopup();
@@ -362,53 +379,57 @@ void Application::newSimulationModal()
         {
             ImGui::CloseCurrentPopup();
 
-//            if(cs->getDimension() == 2)
-//            {
-//                minCoords.z=0;
-//                maxCoords.z=0;
-//                numGridCells.z=0;
-//            }
+            logINFO("Application") << "Creating new simulation with sim model " << int(selctedModel) << " coordinate system "
+                                   << int(selctedCoordinates) << "] and grid cell count " << numGridCells;
 
-            createNewSim(static_cast<SimModel>(selctedModel), static_cast<CSType>(selctedCoordinates), minCoords, maxCoords, numGridCells);
+            // create coordinate system
+            switch(static_cast<CSType>(selctedCoordinates))
+            {
+                case CSType::cartesian2d:
+                {
+                    minCoords.z = 0;
+                    maxCoords.z = 0;
+                    numGridCells.z = 0;
+                    m_currentCS = std::make_shared<CartesianCoordinates2D>(minCoords,maxCoords,numGridCells);
+                    break;
+                }
+                case CSType::geographical2d:
+                {
+                    m_currentCS = std::make_shared<GeographicalCoordinates2D>(minLat,maxLat,numGridCells,radius);
+                }
+            }
+
+            // create simulation and grid
+            switch(static_cast<SimModel>(selctedModel))
+            {
+                case SimModel::renderDemo:
+                {
+                    m_demoGrid = RenderDemoGrid(m_currentCS->getNumGridCells());
+                    generateDemoData(m_demoGrid);
+
+                    m_demoGrid.addRenderBufferToVao(m_renderer.getVAO(), 0);
+                    m_demoGrid.bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
+
+                    std::vector<std::pair<std::string,int>> scalarFields;
+                    scalarFields.emplace_back("density",0);
+                    scalarFields.emplace_back("velocity_x",1);
+                    scalarFields.emplace_back("velocity_y",2);
+                    m_renderer.setScalarFields(scalarFields);
+
+                    std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
+                    vectorFields.emplace_back("velocity",std::pair<int,int>(1,2));
+                    m_renderer.setVecFields(vectorFields);
+                    break;
+                }
+            }
+            // make changes known to all modules
+            m_renderer.setCS(m_currentCS);
+            resetCamera();
         }
         ImGui::SetItemDefaultFocus();
 
         ImGui::EndPopup();
     }
-}
-
-void Application::createNewSim(SimModel model, CSType coordinateSystem, const float3& min, const float3& max, const int3& cells)
-{
-    logINFO("Application") << "Creating new simulation with sim model " << int(model) << " coordinate system "
-                           << int(coordinateSystem) << " coordinate range [" << min << "|" << max << "] and grid cell count " << cells;
-
-    m_currentCS = coordinateSystemFactory(coordinateSystem, min, max, cells);
-    m_renderer.setCS(m_currentCS);
-
-    switch(model)
-    {
-        case SimModel::renderDemo:
-        {
-            m_demoGrid = RenderDemoGrid(m_currentCS->getNumGridCells());
-            generateDemoData(m_demoGrid);
-
-            m_demoGrid.addRenderBufferToVao(m_renderer.getVAO(), 0);
-            m_demoGrid.bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
-
-            std::vector<std::pair<std::string,int>> scalarFields;
-            scalarFields.emplace_back("density",0);
-            scalarFields.emplace_back("velocity_x",1);
-            scalarFields.emplace_back("velocity_y",2);
-            m_renderer.setScalarFields(scalarFields);
-
-            std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
-            vectorFields.emplace_back("velocity",std::pair<int,int>(1,2));
-            m_renderer.setVecFields(vectorFields);
-            break;
-        }
-    }
-
-    resetCamera();
 }
 
 void Application::generateDemoData(RenderDemoGrid& grid)
