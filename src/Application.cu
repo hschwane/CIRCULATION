@@ -354,8 +354,8 @@ void Application::newSimulationModal()
                 ImGui::DragFloat2("Min coordinates", &minCoords.x);
                 ImGui::DragFloat2("Max coordinates", &maxCoords.x);
 
-                float3 size = maxCoords - minCoords;
-                float3 cellSize = size / make_float3(numGridCells);
+                float2 size = make_float2(maxCoords - minCoords);
+                float2 cellSize = size / make_float2( (numGridCells.x<2) ? 1 : numGridCells.x-1, (numGridCells.y<2) ? 1 : numGridCells.y-1);
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                 ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
                 ImGui::DragFloat2("Size", &size.x);

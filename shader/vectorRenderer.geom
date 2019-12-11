@@ -27,10 +27,10 @@ out vec3 cellColor;
 
 // vertices for drawing an arrow
 vec4 vertices[] = {
-                    vec4(-0.25f,  0, -0.5f,  1),
-                    vec4(0.0f,    0, -0.25f, 1),
-                    vec4(0.0f,    0,  0.5f,  1),
-                    vec4(0.25f,   0, -0.5f,  1)
+                    vec4(-0.5f,  0,   0.25f,  1),
+                    vec4(-0.25f,    0,  0.0f, 1),
+                    vec4(0.5f,    0,  0.0f,  1),
+                    vec4(-0.5f,   0, -0.25f,  1)
                   };
 
 void main()

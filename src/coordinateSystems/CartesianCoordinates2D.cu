@@ -28,18 +28,18 @@ CartesianCoordinates2D::CartesianCoordinates2D(float3 min, float3 max, int3 numG
     m_numGridCells(make_int2(numGridCells)),
     m_totalNumGridCells(numGridCells.x*numGridCells.y),
     m_size(m_max-m_min),
-    m_cellSize( m_size / make_float2(m_numGridCells))
+    m_cellSize( m_size / make_float2( (m_numGridCells.x<2) ? 1 : m_numGridCells.x-1, (m_numGridCells.y<2) ? 1 : m_numGridCells.y-1))
 {
 }
 
 float3 CartesianCoordinates2D::getCartesian(const float3& coord) const
 {
-    return float3{coord.x,0,coord.y};
+    return float3{coord.x,0,-coord.y};
 }
 
 float3 CartesianCoordinates2D::getCoord(const float3& cartesian) const
 {
-    return float3{cartesian.x,cartesian.z,0};
+    return float3{cartesian.x,-cartesian.z,0};
 }
 
 float3 CartesianCoordinates2D::getCellCoordinate(int cellId) const

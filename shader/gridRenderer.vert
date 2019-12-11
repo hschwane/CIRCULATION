@@ -34,6 +34,9 @@ out vec3 cellColorGeom;
 out vec3 cellColor;
 out float angle;
 
+// includes
+#include "mathConst.glsl"
+
 // include oordinate system
 #if defined(CARTESIAN_COORDINATES_2D)
     #include "coordinateSystems/cartesianCoordinates2D.glsl"
@@ -94,7 +97,7 @@ void main()
     }
     else
     {
-        cellColorGeom = constantColor;
-        cellColor = constantColor;
+        cellColorGeom = constantColor * float(gl_VertexID) / 3.0f;
+        cellColor = constantColor * float(gl_VertexID) / 3.0f;
     }
 }

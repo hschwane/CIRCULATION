@@ -36,10 +36,10 @@ void main()
     vertexCoord = cellCoord + vec3(-0.5,0.5, 0.5) * cs_getCellSize();
     vec3 corner1 = cs_getCartesian(vertexCoord);
 
-    vertexCoord = cellCoord + vec3(0.5,0.5, 0.5) * cs_getCellSize();
+    vertexCoord = cellCoord + vec3(-0.5,-0.5, 0.5) * cs_getCellSize();
     vec3 corner2 = cs_getCartesian(vertexCoord);
 
-    vertexCoord = cellCoord + vec3(-0.5,-0.5, 0.5) * cs_getCellSize();
+    vertexCoord = cellCoord + vec3(0.5,0.5, 0.5) * cs_getCellSize();
     vec3 corner3 = cs_getCartesian(vertexCoord);
 
     vertexCoord = cellCoord + vec3(0.5,-0.5, 0.5) * cs_getCellSize();
