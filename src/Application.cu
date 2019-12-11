@@ -376,7 +376,7 @@ void Application::newSimulationModal()
                 ImGui::DragFloat("Radius", &radius);
 
                 float2 size = make_float2(2* M_PIf32, maxLat) - make_float2(0,minLat);
-                float2 cellSize = size / make_float2( (numGridCells.x<2) ? 1 : numGridCells.x-1, (numGridCells.y<2) ? 1 : numGridCells.y-1);
+                float2 cellSize = size / make_float2( numGridCells.x, (numGridCells.y<2) ? 1 : numGridCells.y-1);
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                 ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
                 ImGui::DragFloat2("Angular size", &size.x);

@@ -23,7 +23,8 @@ GeographicalCoordinates2D::GeographicalCoordinates2D(float minLat, float maxLat,
     : m_radius(radius), m_numGridCells(make_int2(numGridCells)),
         m_min(make_float2(0,minLat)), m_max(make_float2(2* M_PIf32, maxLat)),
         m_totalNumGridCells(numGridCells.x*numGridCells.y), m_size(m_max - m_min),
-        m_cellSize( m_size / make_float2( (m_numGridCells.x<2) ? 1 : m_numGridCells.x-1, (m_numGridCells.y<2) ? 1 : m_numGridCells.y-1) )
+        m_cellSize( m_size / make_float2( m_numGridCells.x, (m_numGridCells.y<2) ? 1 : m_numGridCells.y-1) )
+        // pretend there was one cel less to fix overlap
 {
 }
 
