@@ -33,17 +33,18 @@ void main()
     cellColor = cellColorGeom[0];
 
     // generate local positions
-    vertexCoord = cellCoord + vec3(-0.5,0.5, 0.5) * cs_getCellSize();
-    vec3 corner1 = cs_getCartesian(vertexCoord);
+    vec3 corner1 = cellCoord + vec3(-0.5,0.5, 0.5) * cs_getCellSize();
+    corner1.y = clamp(corner1.y,cs_getMinCoord().y,cs_getMaxCoord().y);
 
-    vertexCoord = cellCoord + vec3(-0.5,-0.5, 0.5) * cs_getCellSize();
-    vec3 corner2 = cs_getCartesian(vertexCoord);
+    vec3 corner2 = cellCoord + vec3(-0.5,-0.5, 0.5) * cs_getCellSize();
+    corner2.y = clamp(corner2.y,cs_getMinCoord().y,cs_getMaxCoord().y);
 
-    vertexCoord = cellCoord + vec3(0.5,0.5, 0.5) * cs_getCellSize();
-    vec3 corner3 = cs_getCartesian(vertexCoord);
+    vec3 corner3 = cellCoord + vec3(0.5,0.5, 0.5) * cs_getCellSize();
+    corner3.y = clamp(corner3.y,cs_getMinCoord().y,cs_getMaxCoord().y);
 
-    vertexCoord = cellCoord + vec3(0.5,-0.5, 0.5) * cs_getCellSize();
-    vec3 corner4 = cs_getCartesian(vertexCoord);
+    vec3 corner4 = cellCoord + vec3(0.5,-0.5, 0.5) * cs_getCellSize();
+    corner4.y = clamp(corner4.y,cs_getMinCoord().y,cs_getMaxCoord().y);
+
 
     // move corners along diagonal
     vec3 diag1 = normalize(corner1-corner4);
@@ -55,13 +56,13 @@ void main()
     corner2 -= diag2 * gapSize;
 
     // emmit vertices
-    gl_Position = modelViewProjectionMat * vec4(corner1,1);
+    gl_Position = modelViewProjectionMat * vec4( cs_getCartesian(corner1) ,1);
     EmitVertex();
-    gl_Position = modelViewProjectionMat * vec4(corner2,1);
+    gl_Position = modelViewProjectionMat * vec4( cs_getCartesian(corner2),1);
     EmitVertex();
-    gl_Position = modelViewProjectionMat * vec4(corner3,1);
+    gl_Position = modelViewProjectionMat * vec4( cs_getCartesian(corner3),1);
     EmitVertex();
-    gl_Position = modelViewProjectionMat * vec4(corner4,1);
+    gl_Position = modelViewProjectionMat * vec4( cs_getCartesian(corner4),1);
     EmitVertex();
 
     EndPrimitive();
