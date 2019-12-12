@@ -31,7 +31,7 @@ uniform bool prepareVector = false;
 // out
 out vec3 cellColorGeom;
 out vec3 cellColor;
-out float angle;
+out vec3 vectorOrientationCart;
 
 // includes
 #include "mathConst.glsl"
@@ -62,6 +62,7 @@ void main()
 
     if(prepareVector)
     {
+        // interpolate vector
         vec2 inVec = vec2(vecX[gl_VertexID],vecY[gl_VertexID]);
 
         int left = cs_getLeftNeighbor(gl_VertexID);
@@ -78,12 +79,15 @@ void main()
             inVec.y *= 0.5;
         }
 
-        inVec = vec2(1,1);
-        vec3 vector = cs_getCartesian(vec3(inVec,0));
-        float s = length(vector);
+        // find current position
+        vec3 cellPosition = cs_getCellCoordinate(gl_VertexID);
 
-        // also figure out vector orientation
-        angle = atan(vector.y, vector.x);
+        // compose cartesian vector using unit vectors
+        vec3 vector = cs_getUnitVectorX(cellPosition) * inVec.x + cs_getUnitVectorY(cellPosition) * inVec.y;
+
+        // calculate length and orientation
+        float s = length(vector);
+        vectorOrientationCart = normalize(vector);
     }
 
     if(scalarColor)

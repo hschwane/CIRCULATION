@@ -52,7 +52,7 @@ float3 GeographicalCoordinates2D::getUnitVectorY(float3 position) const
     float phi = M_PI_2f32 - position.y;
     float cosPhi = cos(phi);
     float sinTheta = sin(position.x);
-    return make_float3( cos(position.x)*cosPhi, sinTheta*cosPhi, -sinTheta);
+    return make_float3( -cos(position.x)*cosPhi, -sinTheta*cosPhi, sinTheta);
 }
 
 float3 GeographicalCoordinates2D::getUnitVectorZ(float3 position) const
