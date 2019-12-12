@@ -69,12 +69,6 @@ void Renderer::showGui(bool* show)
             if(ImGui::Checkbox("Hide back-faces",&m_backfaceCulling))
                 setBackfaceCulling(m_backfaceCulling);
 
-            if(ImGui::Checkbox("Color by cell id",&m_colorCodeCellID))
-            {
-                m_scalarShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
-                m_gridCenterShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
-            }
-
             if(ImGui::Button("Rebuild Shader"))
                 compileShader();
         }
@@ -115,6 +109,13 @@ void Renderer::showGui(bool* show)
             {
                 if(ImGui::ColorEdit3("Color##scalarconstcolor", glm::value_ptr(m_scalarConstColor)))
                     m_scalarShader.uniform3f("constantColor", m_scalarConstColor);
+
+                if(ImGui::Checkbox("Color by cell id",&m_colorCodeCellID))
+                {
+                    m_scalarShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
+                    m_gridCenterShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
+                }
+
             } else
             {
                 if(ImGui::ColorEdit3("Min Color##scalarmnincolor", glm::value_ptr(m_scalarMinColor)))
