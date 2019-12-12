@@ -42,6 +42,24 @@ float3 GeographicalCoordinates2D::getCoord(const float3& cartesian) const
     return make_float3(  atan2(cartesian.y,cartesian.x), M_PI_2f32 - phi, 0);
 }
 
+float3 GeographicalCoordinates2D::getUnitVectorX(float3 position) const
+{
+    return make_float3( -sin(position.x), cos(position.x), 0.0f);
+}
+
+float3 GeographicalCoordinates2D::getUnitVectorY(float3 position) const
+{
+    float phi = M_PI_2f32 - position.y;
+    float cosPhi = cos(phi);
+    float sinTheta = sin(position.x);
+    return make_float3( cos(position.x)*cosPhi, sinTheta*cosPhi, -sinTheta);
+}
+
+float3 GeographicalCoordinates2D::getUnitVectorZ(float3 position) const
+{
+    return make_float3(0.0f,0.0f,0.0f);
+}
+
 float3 GeographicalCoordinates2D::getCellCoordinate(int cellId) const
 {
     return getCellCoordinate3d({cellId%m_numGridCells.x, cellId/m_numGridCells.x,0});

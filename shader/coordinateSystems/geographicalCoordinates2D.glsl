@@ -29,6 +29,24 @@ vec3 cs_getCoord(const vec3 cartesian)
     return vec3(  atan(cartesian.y,cartesian.x), PI*0.5 - phi, 0);
 }
 
+vec3 cs_getUnitVectorX(const float3 position)
+{
+    return vec3(-sin(position.x), cos(position.x), 0.0f);
+}
+
+vec3 cs_getUnitVectorY(const float3 position)
+{
+    float phi = PI * 0.5 - position.y;
+    float cosPhi = cos(phi);
+    float sinTheta = sin(position.x);
+    return vec3( cos(position.x)*cosPhi, sinTheta*cosPhi, -sinTheta);
+}
+
+vec3 cs_getUnitVectorZ(const float3 position)
+{
+    return vec3(0.0f,0.0f,0.0f);
+}
+
 vec3 cs_getCellCoordinate3d(const ivec3 cellId3d)
 {
     ivec2 cellId2d = ivec2(cellId3d);

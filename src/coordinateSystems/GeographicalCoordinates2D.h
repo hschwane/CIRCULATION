@@ -26,6 +26,8 @@
  * 2D geographical coordinates (one layer). First component is longitude 0<long<2pi, second is latitude. Grid cell access is row major.
  * No bounds checking is done!
  *
+ * notation and formulas from http://mathworld.wolfram.com/SphericalCoordinates.html
+ *
  */
 class GeographicalCoordinates2D : public CoordinateSystem
 {
@@ -36,6 +38,11 @@ public:
     // convert
     float3 getCartesian(const float3& coord) const override; //!< converts a coordinate into cartesian coordinates
     float3 getCoord(const float3& cartesian) const override; //!< converts cartesian coordinate into this coordinate system
+
+    // unit vectors
+    float3 getUnitVectorX(float3 position) const override; //!< get the unit vector of the first coordinate at position
+    float3 getUnitVectorY(float3 position) const override; //!< get the unit vector of the second coordinate at position
+    float3 getUnitVectorZ(float3 position) const override; //!< get the unit vector of the third coordinate at position
 
     // for quantities stored at cell center
     float3 getCellCoordinate(int cellId) const override; //!< get the coordinates of a specific cell

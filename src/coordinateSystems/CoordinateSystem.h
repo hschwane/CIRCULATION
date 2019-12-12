@@ -43,6 +43,11 @@ public:
     virtual float3 getCartesian(const float3& coord) const =0; //!< converts a coordinate into cartesian coordinates
     virtual float3 getCoord(const float3& cartesian) const =0; //!< converts cartesian coordinate into this coordinate system
 
+    // unit vectors
+    virtual float3 getUnitVectorX(float3 position) const =0; //!< get the unit vector of the first coordinate at position
+    virtual float3 getUnitVectorY(float3 position) const =0; //!< get the unit vector of the second coordinate at position
+    virtual float3 getUnitVectorZ(float3 position) const =0; //!< get the unit vector of the third coordinate at position
+
     // for quantities stored at cell center
     virtual float3 getCellCoordinate(int cellId) const =0; //!< get the coordinates of a specific cell
     virtual float3 getCellCoordinate3d(const int3& cellId3d) const =0; //!< get the coordinates of the multi dimensional cell id

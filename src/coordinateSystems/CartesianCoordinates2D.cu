@@ -37,6 +37,21 @@ float3 CartesianCoordinates2D::getCoord(const float3& cartesian) const
     return float3{cartesian.x,cartesian.y,0};
 }
 
+float3 CartesianCoordinates2D::getUnitVectorX(float3 position) const
+{
+    return make_float3(1.0f,0.0f,0.0f);
+}
+
+float3 CartesianCoordinates2D::getUnitVectorY(float3 position) const
+{
+    return make_float3(0.0f,1.0f,0.0f);
+}
+
+float3 CartesianCoordinates2D::getUnitVectorZ(float3 position) const
+{
+    return make_float3(0.0f,0.0f,1.0f);
+}
+
 float3 CartesianCoordinates2D::getCellCoordinate(int cellId) const
 {
     return getCellCoordinate3d({cellId%m_numGridCells.x, cellId/m_numGridCells.x,0});

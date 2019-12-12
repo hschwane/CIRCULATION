@@ -20,6 +20,21 @@ vec3 cs_getCoord(const vec3 cartesian)
     return vec3(cartesian.x,cartesian.y,0);
 }
 
+vec3 cs_getUnitVectorX(const float3 position)
+{
+    return vec3(1.0f,0.0f,0.0f);
+}
+
+vec3 cs_getUnitVectorY(const float3 position)
+{
+    return vec3(0.0f,1.0f,0.0f);
+}
+
+vec3 cs_getUnitVectorZ(const float3 position)
+{
+    return vec3(0.0f,0.0f,1.0f);
+}
+
 vec3 cs_getCellCoordinate3d(const ivec3 cellId3d)
 {
     ivec2 cellId2d = ivec2(cellId3d);
