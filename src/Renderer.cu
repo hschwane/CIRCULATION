@@ -16,7 +16,6 @@
 #include "Renderer.h"
 //--------------------
 
-
 // function definitions of the Renderer class
 //-------------------------------------------------------------------
 
@@ -84,7 +83,10 @@ void Renderer::showGui(bool* show)
         {
             ImGui::Checkbox("show scalar field",&m_renderScalarField);
             if(ImGui::DragFloat("gap between cells", &m_gap, 0.0001f,0.0000000001f,20.0f,"%.4f"))
-                m_scalarShader.uniform1f("gapSize",m_gap);
+            {
+                m_scalarShader.uniform1f("gapSize", m_gap);
+                m_vectorShader.uniform1f("gapSize", m_gap);
+            }
 
             if( ImGui::BeginCombo("Attribute##scalarfieldselection", (m_currentScalarField<0) ? "Solid Color"
                                             : m_scalarFields[m_currentScalarField].first.c_str() ))
@@ -278,6 +280,7 @@ void Renderer::compileShader()
         m_vectorShader.uniform1f("maxScalar",m_maxVecLength);
         m_vectorShader.uniform3f("constantColor", m_VectorConstColor);
         m_vectorShader.uniform1f("arrowSize",m_arrowSize);
+        m_vectorShader.uniform1f("gapSize", m_gap);
 
         if(m_currentVecField >= 0)
         {

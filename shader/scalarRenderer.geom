@@ -34,15 +34,12 @@ void main()
 
     // generate local positions
     vec3 corner1 = cellCoord + vec3(-0.5,0.5, 0.5) * cs_getCellSize();
-    corner1.y = clamp(corner1.y,cs_getMinCoord().y,cs_getMaxCoord().y);
-
     vec3 corner2 = cellCoord + vec3(-0.5,-0.5, 0.5) * cs_getCellSize();
-    corner2.y = clamp(corner2.y,cs_getMinCoord().y,cs_getMaxCoord().y);
-
     vec3 corner3 = cellCoord + vec3(0.5,0.5, 0.5) * cs_getCellSize();
-    corner3.y = clamp(corner3.y,cs_getMinCoord().y,cs_getMaxCoord().y);
-
     vec3 corner4 = cellCoord + vec3(0.5,-0.5, 0.5) * cs_getCellSize();
+    corner1.y = clamp(corner1.y,cs_getMinCoord().y,cs_getMaxCoord().y);
+    corner2.y = clamp(corner2.y,cs_getMinCoord().y,cs_getMaxCoord().y);
+    corner3.y = clamp(corner3.y,cs_getMinCoord().y,cs_getMaxCoord().y);
     corner4.y = clamp(corner4.y,cs_getMinCoord().y,cs_getMaxCoord().y);
 
 

@@ -28,8 +28,6 @@ uniform vec3 maxScalarColor;
 
 uniform bool prepareVector = false;
 
-uniform float vectorAngle;
-
 // out
 out vec3 cellColorGeom;
 out vec3 cellColor;
@@ -80,11 +78,12 @@ void main()
             inVec.y *= 0.5;
         }
 
+        inVec = vec2(1,1);
         vec3 vector = cs_getCartesian(vec3(inVec,0));
         float s = length(vector);
 
         // also figure out vector orientation
-        angle = -atan(vector.z, vector.x);
+        angle = atan(vector.y, vector.x);
     }
 
     if(scalarColor)
