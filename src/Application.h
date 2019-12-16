@@ -89,8 +89,6 @@ private:
     void addInputs(); //!< add some useful input functions
     void setKeybindings(); //!< set keybindings for all the functions
     void resetCamera(); //!< resets the camera
-    void createNewSim(SimModel model, CSType coordinateSystem, const float3& min, const float3& max,
-            const int3& cells); //!< creates a new simulation and makes it current
     void generateDemoData(RenderDemoGrid& grid, bool randomVectors, float2 vector); //!< generates some random data to test rendering
 
 
