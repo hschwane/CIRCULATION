@@ -55,7 +55,7 @@ public:
     }
 
 private:
-    std::vector<T> m_data;
+    mpu::DeviceVector<T> m_data;
 };
 
 //-------------------------------------------------------------------
@@ -66,9 +66,31 @@ template <AT attributeType, typename T>
 class RenderAttribute
 {
 public:
-    explicit RenderAttribute(int numCells=0) : m_data(numCells) {}
+    RenderAttribute() : m_data(), m_bufferMapper() {}
+    explicit RenderAttribute(int numCells) : m_data(numCells), m_bufferMapper()
+    {
+        if(m_data.size()>0)
+            m_bufferMapper = mpu::mapBufferToCuda(m_data);
+    }
 
-    void write(const GridAttribute<attributeType,T> & source) {m_data.write(source.m_data);}
+    // copy constructor
+    RenderAttribute(const RenderAttribute& other) : m_data(other.m_data), m_bufferMapper()
+    {
+        if(m_data.size())
+            m_bufferMapper = mpu::mapBufferToCuda(m_data);
+    }
+
+    void write(const GridAttribute<attributeType,T> & source)
+    {
+//        m_bufferMapper.map();
+//        assert_true(m_bufferMapper.size() == source.m_data.size(), "Grid", "Render Attribute does not have same size as GridAttribute");
+//        cudaMemcpy(m_bufferMapper.data(),source.m_data.data(),source.m_data.size(),cudaMemcpyDeviceToDevice);
+//        m_bufferMapper.unmap();
+//
+        std::vector<T> buffer(source.m_data);
+        m_data.write(buffer);
+
+    }
     void bind(GLuint binding, GLenum target) {m_data.bindBase(binding,target);}
     void addToVao(mpu::gph::VertexArray& vao, int binding) {vao.addAttributeBufferArray(binding,binding,m_data,0,sizeof(T),
                                                                                         sizeof(T)/sizeof(float),0);}
@@ -78,11 +100,12 @@ public:
     {
         using std::swap;
         swap(first.m_data,second.m_data);
-//        swap(first.m_bufferMapper,second.m_bufferMapper);
+        swap(first.m_bufferMapper,second.m_bufferMapper);
     }
 
 private:
     mpu::gph::Buffer<T,true> m_data;
+    mpu::GlBufferMapper<T> m_bufferMapper;
 };
 
 
