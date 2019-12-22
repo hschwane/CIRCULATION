@@ -48,6 +48,12 @@ public:
     using RenderType = RenderAttribute<attributeType, T>;
     friend class RenderAttribute<attributeType,T>;
 
+    friend void swap(GridAttribute& first, GridAttribute& second)
+    {
+        using std::swap;
+        swap(first.m_data,second.m_data);
+    }
+
 private:
     std::vector<T> m_data;
 };
@@ -72,7 +78,7 @@ public:
     {
         using std::swap;
         swap(first.m_data,second.m_data);
-        swap(first.m_bufferMapper,second.m_bufferMapper);
+//        swap(first.m_bufferMapper,second.m_bufferMapper);
     }
 
 private:
@@ -117,6 +123,13 @@ public:
     void write(int cellId, T&& data);
 
     friend class RenderBuffer<typename Attributes::RenderType...>;
+
+    friend void swap(GridBuffer& first, GridBuffer& second)
+    {
+        using std::swap;
+        int t[] = {0, ( swap(static_cast<Attributes&>(first) , static_cast<Attributes&>(second) ) ,1)...};
+        (void)t[0];
+    }
 };
 
 //!< selects the first attribute with type == param from attributes
@@ -167,6 +180,14 @@ public:
     void write(GridBuffer<SourceAttribs...>& source);
     void bind(GLuint binding, GLenum target);
     void addToVao(mpu::gph::VertexArray& vao, int binding);
+
+    friend void swap(RenderBuffer& first, RenderBuffer& second)
+    {
+        using std::swap;
+        int t[] = {0, ( swap(static_cast<Attributes&>(first) , static_cast<Attributes&>(second) ) ,1)...};
+        (void)t[0];
+    }
+
 private:
     template<size_t ... I>
     void addToVaoImpl(mpu::gph::VertexArray& vao, int binding, std::index_sequence<I ...>);
