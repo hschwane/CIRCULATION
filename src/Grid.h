@@ -25,6 +25,8 @@
 enum class AT;
 template <AT attributeType, typename T> class RenderAttribute;
 template <typename ...Atrribs> class RenderBuffer;
+template <AT attributeType, typename T> class GridAttributeReference;
+template <typename ...AttribRefs> class GridReference;
 
 //-------------------------------------------------------------------
 /**
@@ -46,6 +48,7 @@ public:
 
     static constexpr AT type = attributeType;
     using RenderType = RenderAttribute<attributeType, T>;
+    using ReferenceType = GridAttributeReference<attributeType, T>;
     friend class RenderAttribute<attributeType,T>;
 
     friend void swap(GridAttribute& first, GridAttribute& second)
@@ -272,6 +275,7 @@ class Grid
 public:
     using BufferType = GridBuffer<GridAttribs...>;
     using RenderBufferType = RenderBuffer<typename GridAttribs::RenderType ...>;
+    using ReferenceType = GridReference<typename GridAttribs::ReferenceType...>;
 
     explicit Grid(int numCells=1);
 
@@ -406,6 +410,8 @@ public:
         first.m_renderAwaitBuffer = firstRenderAwait;
     }
 
+    template <typename ...AttribRefs> class GridReference;
+
 private:
     int m_numCells; //!< number of grid cells
 
@@ -428,6 +434,9 @@ private:
 
     void prepareForRendering(); //!< copies data from renderAwaitBuffer to renderBuffer
 };
+
+// include forward defined classes
+#include "GridReference.h"
 
 // template function definitions of the Grid class
 //-------------------------------------------------------------------
