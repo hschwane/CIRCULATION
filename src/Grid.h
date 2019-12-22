@@ -225,7 +225,7 @@ public:
     using BufferType = GridBuffer<GridAttribs...>;
     using RenderBufferType = RenderBuffer<typename GridAttribs::RenderType ...>;
 
-    explicit Grid(int numCells=0);
+    explicit Grid(int numCells=1);
 
     // copy and move constructor (copy swap idom)
     Grid(const Grid& other);
@@ -404,6 +404,7 @@ Grid<GridAttribs...>::Grid(int numCells)
     m_bufferC(numCells), m_numCells(numCells),
     m_renderBuffer(numCells)
 {
+    assert_critical(numCells>0,"Grid","Number of cells must be at least one");
     m_readBuffer  = &m_bufferA;
     m_writeBuffer = &m_bufferB;
     m_unusedBuffer = nullptr;
