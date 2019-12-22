@@ -78,9 +78,9 @@ bool Application::run()
 
     // -------------------------
     // rendering
-    m_camera.update();
-    m_renderer.setViewMat(m_camera.viewMatrix());
-    m_renderer.draw();
+//    m_camera.update();
+//    m_renderer.setViewMat(m_camera.viewMatrix());
+//    m_renderer.draw();
 
     m_window.frameEnd();
     return true;
@@ -203,7 +203,7 @@ void Application::mainMenuBar()
             ImGui::EndMenu();
         }
 
-        ImGui::EndMenuBar();
+        ImGui::EndMainMenuBar();
     }
 
     // open modal
