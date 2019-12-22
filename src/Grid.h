@@ -34,9 +34,8 @@ template <AT attributeType, typename T>
 class GridAttribute
 {
 public:
-    explicit GridAttribute(int numCells=0) : m_data(numCells)
-    {
-    }
+    GridAttribute() : m_data() {}
+    explicit GridAttribute(int numCells) : m_data(numCells) {}
 
     T read(int cellId) {return m_data[cellId];}
     template <typename Tin>
@@ -68,6 +67,13 @@ public:
     void addToVao(mpu::gph::VertexArray& vao, int binding) {vao.addAttributeBufferArray(binding,binding,m_data,0,sizeof(T),
                                                                                         sizeof(T)/sizeof(float),0);}
     static constexpr AT type = attributeType;
+
+    friend void swap(RenderAttribute& first, RenderAttribute& second)
+    {
+        using std::swap;
+        swap(first.m_data,second.m_data);
+        swap(first.m_bufferMapper,second.m_bufferMapper);
+    }
 
 private:
     mpu::gph::Buffer<T,true> m_data;
@@ -102,7 +108,8 @@ template <typename ...Attributes>
 class GridBuffer : Attributes...
 {
 public:
-    explicit GridBuffer(int numCells=0) : Attributes(numCells)...{};
+    GridBuffer() : Attributes()...{};
+    explicit GridBuffer(int numCells) : Attributes(numCells)...{};
 
     template <AT Param>
     auto read(int cellId);
@@ -154,7 +161,7 @@ template <typename ...Attributes>
 class RenderBuffer : Attributes...
 {
 public:
-    explicit RenderBuffer(int numCells=0) : Attributes(numCells)...{};
+    explicit RenderBuffer(int numCells=1) : Attributes(numCells)...{};
 
     template<typename ...SourceAttribs>
     void write(GridBuffer<SourceAttribs...>& source);
@@ -579,6 +586,7 @@ template <typename ...GridAttribs>
 void Grid<GridAttribs...>::prepareForRendering()
 {
     m_renderBuffer.write( *m_renderAwaitBuffer);
+
     m_newRenderdataWaiting = false;
     m_renderbufferNotRendered = true;
 }
