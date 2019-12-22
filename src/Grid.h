@@ -82,15 +82,12 @@ public:
 
     void write(const GridAttribute<attributeType,T> & source)
     {
-//        m_bufferMapper.map();
-//        assert_true(m_bufferMapper.size() == source.m_data.size(), "Grid", "Render Attribute does not have same size as GridAttribute");
-//        cudaMemcpy(m_bufferMapper.data(),source.m_data.data(),source.m_data.size(),cudaMemcpyDeviceToDevice);
-//        m_bufferMapper.unmap();
-//
-        std::vector<T> buffer(source.m_data);
-        m_data.write(buffer);
-
+        m_bufferMapper.map();
+        assert_true(m_bufferMapper.size() == source.m_data.size(), "Grid", "Render Attribute does not have same size as GridAttribute");
+        mpu::cudaCopy(m_bufferMapper.data(),source.m_data.data(),m_bufferMapper.size());
+        m_bufferMapper.unmap();
     }
+
     void bind(GLuint binding, GLenum target) {m_data.bindBase(binding,target);}
     void addToVao(mpu::gph::VertexArray& vao, int binding) {vao.addAttributeBufferArray(binding,binding,m_data,0,sizeof(T),
                                                                                         sizeof(T)/sizeof(float),0);}
