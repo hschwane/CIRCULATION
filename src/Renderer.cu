@@ -21,7 +21,11 @@
 
 Renderer::Renderer(int w, int h)
 {
-    setViewMat(glm::mat4(1.0f));
+    // add shader include pathes
+    mpu::gph::addShaderIncludePath(MPU_LIB_SHADER_PATH"include");
+    mpu::gph::addShaderIncludePath(PROJECT_SHADER_PATH"include");
+
+    // add shader files
 
     m_gridlineShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.vert"});
     m_gridlineShader.setShaderModule({PROJECT_SHADER_PATH"gridineRenderer.geom"});
@@ -38,7 +42,11 @@ Renderer::Renderer(int w, int h)
     m_vectorShader.setShaderModule({PROJECT_SHADER_PATH"vectorRenderer.geom"});
     m_vectorShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
 
+    // try compiling shaders
+    compileShader();
+
     m_aspect = float(w)/float(h);
+    setViewMat(glm::mat4(1.0f));
     rebuildProjectionMat();
 
     // initial settings
@@ -220,15 +228,17 @@ void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)
 
 void Renderer::compileShader()
 {
-    logINFO("Renderer") << "recompiling all visualization shdaders";
+    logINFO("Renderer") << "recompiling all visualization shaders";
 
     try
     {
         // compile grid - line shader
         m_gridlineShader.clearDefinitions();
-        m_gridlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+        if(m_cs)
+            m_gridlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
         m_gridlineShader.rebuild();
-        m_cs->setShaderUniforms(m_gridlineShader);
+        if(m_cs)
+            m_cs->setShaderUniforms(m_gridlineShader);
         m_gridlineShader.uniform3f("constantColor", m_gridlineColor);
         m_gridlineShader.uniformMat4("viewMat", m_view);
         m_gridlineShader.uniformMat4("projectionMat", m_projection);
@@ -237,9 +247,11 @@ void Renderer::compileShader()
         // compile grid center shader
         m_gridCenterShader.clearDefinitions();
         m_gridCenterShader.addDefinition(glsp::definition("RENDER_GRID_CELL_POINTS"));
-        m_gridCenterShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+        if(m_cs)
+            m_gridCenterShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
         m_gridCenterShader.rebuild();
-        m_cs->setShaderUniforms(m_gridCenterShader);
+        if(m_cs)
+            m_cs->setShaderUniforms(m_gridCenterShader);
         m_gridCenterShader.uniform3f("constantColor", m_gridpointColor);
         m_gridCenterShader.uniformMat4("viewMat", m_view);
         m_gridCenterShader.uniformMat4("projectionMat", m_projection);
@@ -248,9 +260,11 @@ void Renderer::compileShader()
 
         // compile scalar field shader
         m_scalarShader.clearDefinitions();
-        m_scalarShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+        if(m_cs)
+            m_scalarShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
         m_scalarShader.rebuild();
-        m_cs->setShaderUniforms(m_scalarShader);
+        if(m_cs)
+            m_cs->setShaderUniforms(m_scalarShader);
         m_scalarShader.uniform3f("constantColor", m_scalarConstColor);
         m_scalarShader.uniformMat4("viewMat", m_view);
         m_scalarShader.uniformMat4("projectionMat", m_projection);
@@ -267,9 +281,11 @@ void Renderer::compileShader()
 
         // compile vector shader
         m_vectorShader.clearDefinitions();
-        m_vectorShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+        if(m_cs)
+            m_vectorShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
         m_vectorShader.rebuild();
-        m_cs->setShaderUniforms(m_vectorShader);
+        if(m_cs)
+            m_cs->setShaderUniforms(m_vectorShader);
         m_vectorShader.uniformMat4("viewMat", m_view);
         m_vectorShader.uniformMat4("projectionMat", m_projection);
         m_vectorShader.uniformMat4("modelMat", m_model);

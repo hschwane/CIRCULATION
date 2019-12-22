@@ -24,10 +24,6 @@ Application::Application(int width, int height)
     m_camera(mpu::gph::Camera::trackball, glm::vec3(0,0,2), glm::vec3(0,0,0),glm::vec3(0,0,1)),
     m_renderer(width,height)
 {
-    // add shader include pathes
-    mpu::gph::addShaderIncludePath(MPU_LIB_SHADER_PATH"include");
-    mpu::gph::addShaderIncludePath(PROJECT_SHADER_PATH"include");
-
     // setup GUI
     ImGui::create(m_window);
 
@@ -78,9 +74,9 @@ bool Application::run()
 
     // -------------------------
     // rendering
-//    m_camera.update();
-//    m_renderer.setViewMat(m_camera.viewMatrix());
-//    m_renderer.draw();
+    m_camera.update();
+    m_renderer.setViewMat(m_camera.viewMatrix());
+    m_renderer.draw();
 
     m_window.frameEnd();
     return true;
