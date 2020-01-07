@@ -48,6 +48,7 @@ public:
     CUDAHOSTDEV float3 getCellCoordinate(int cellId) const final; //!< get the coordinates of a specific cell
     CUDAHOSTDEV float3 getCellCoordinate3d(const int3& cellId3d) const final; //!< get the coordinates of the multi dimensional cell id
     CUDAHOSTDEV int getCellId(const float3& coord) const final; //!< get the the cell id that belongs coordinates "coord"
+    CUDAHOSTDEV int getCellId(const int3& cellId3d) const override; //!< get the the cell id from the multidimensional cell id
     CUDAHOSTDEV int3 getCellId3d(const float3& coord) const final; //!< get the multi dimensional cell id
 
     // adjacency
