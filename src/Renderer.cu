@@ -200,9 +200,8 @@ void Renderer::showGui(bool* show)
 //                m_gridCenterShader.uniform3f("constantColor", m_gridpointColor);
 
 //        }
-
-        ImGui::End();
     }
+    ImGui::End();
 }
 
 void Renderer::setCS(std::shared_ptr<CoordinateSystem> cs)

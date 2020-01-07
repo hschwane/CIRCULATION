@@ -219,6 +219,7 @@ void Application::showPerfWindow(bool* show)
         if(ImGui::Checkbox("V-Sync",&m_vsync))
             mpu::gph::enableVsync(m_vsync);
     }
+    ImGui::End();
 }
 
 void Application::showAboutWindow(bool* show)
@@ -258,6 +259,7 @@ void Application::showAboutWindow(bool* show)
         if(ImGui::Button("Close"))
             *show = false;
     }
+    ImGui::End();
 }
 
 void Application::showKeybindingsWindow(bool* show)
@@ -298,6 +300,7 @@ void Application::showKeybindingsWindow(bool* show)
         if(ImGui::Button("Close"))
             *show = false;
     }
+    ImGui::End()
 }
 
 void Application::newSimulationModal()
