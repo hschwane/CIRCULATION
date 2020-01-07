@@ -117,20 +117,36 @@ __global__ void testSimulation(RenderDemoGrid::ReferenceType grid, csT cs)
         int cellId = cs.getCellId(cell);
 
         float rho = grid.read<AT::density>(cellId);
+        float velx = grid.read<AT::velocityX>(cellId);
+        float vely = grid.read<AT::velocityY>(cellId);
 
         // calculate gradient using central difference
         // remember, velocities are defined half way between the nodes,
         // so velocity stored at id i is located halfway between cell i and i+1
-        float right     = grid.read<AT::density>(cs.getRightNeighbor(cellId));
-        float forward   = grid.read<AT::density>(cs.getForwardNeighbor(cellId));
+        float rhoRight     = grid.read<AT::density>(cs.getRightNeighbor(cellId));
+        float rhoForward   = grid.read<AT::density>(cs.getForwardNeighbor(cellId));
 
         float2 gradRho;
-        gradRho.x = (right - rho) / cs.getCellSize().x;
-        gradRho.y = (forward - rho) / cs.getCellSize().y;
+        gradRho.x = (rhoRight - rho) / cs.getCellSize().x;
+        gradRho.y = (rhoForward - rho) / cs.getCellSize().y;
 
-        grid.write<AT::velocityX>(cellId, gradRho.x);
-        grid.write<AT::velocityY>(cellId, gradRho.y);
-        grid.write<AT::density>(cellId,rho);
+        // calculate divergence of the velocity field
+        // remember, velocities are defined half way between the nodes,
+        // we want the divergence at the node, so we get a central difference by looking at the velocities left and backwards from us
+        // and compare them to our velocities
+        float velLeft = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
+        float velBackward = grid.read<AT::velocityX>(cs.getBackwardNeighbor(cellId));
+
+        float divVel =  ( (velx-velLeft) / cs.getCellSize().x )
+                      + ( (vely-velBackward) / cs.getCellSize().x );
+
+        grid.write<AT::velocityX>(cellId, velx);
+        grid.write<AT::velocityY>(cellId, vely);
+        grid.write<AT::density>(cellId, divVel);
+
+//        grid.write<AT::velocityX>(cellId, gradRho.x);
+//        grid.write<AT::velocityY>(cellId, gradRho.y);
+//        grid.write<AT::density>(cellId,rho);
     }
 }
 
