@@ -27,6 +27,7 @@
 #include "Renderer.h"
 #include "simulationModels/Simulation.h"
 #include "simulationModels/RenderDemoSimulation.h"
+#include "simulationModels/TestSimulation.h"
 //--------------------
 
 /**

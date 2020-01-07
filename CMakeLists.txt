@@ -47,6 +47,7 @@ add_executable(CIRCULATION
             "src/coordinateSystems/CartesianCoordinates2D.cu"
             "src/coordinateSystems/GeographicalCoordinates2D.cu"
             "src/Renderer.cu"
+            "src/simulationModels/TestSimulation.cu"
         )
 
 # -------------------------------------------------------------

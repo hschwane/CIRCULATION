@@ -382,13 +382,13 @@ void Application::newSimulationModal()
         static float radius{1.0f};
 
         // variables to select a simulation
-        static auto testSim = std::make_unique<RenderDemoSimulation>();
+        static auto testSim = std::make_unique<TestSimulation>();
         static auto rdSim = std::make_unique<RenderDemoSimulation>();
         static Simulation* selectedeModel = rdSim.get();
         static int selctedModelId = 0;
 
         // select simulation model
-        if( ImGui::Combo("Model", &selctedModelId, "Render Demo\0\0") )
+        if( ImGui::Combo("Model", &selctedModelId, "Render Demo \0 Test Simulation \0\0") )
         {
             switch(static_cast<SimModel>(selctedModelId))
             {
@@ -406,7 +406,7 @@ void Application::newSimulationModal()
         ImGui::Separator();
 
         // select coordinate system
-        ImGui::Combo("Coordinate System",&selctedCoordinates,"2D Cartesian Coordinates\0 2D Geographical Coordinates\0\0");
+        ImGui::Combo("Coordinate System",&selctedCoordinates,"2D Cartesian Coordinates \0 2D Geographical Coordinates \0\0");
 
         // options depending on coordinate system
         switch(static_cast<CSType>(selctedCoordinates))
@@ -494,6 +494,7 @@ void Application::newSimulationModal()
             switch(static_cast<SimModel>(selctedModelId))
             {
                 case SimModel::renderDemo:
+                case SimModel::testSimulation:
                 {
                     m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
                     m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
