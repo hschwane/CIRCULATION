@@ -86,7 +86,7 @@ void main()
         vec3 vector = cs_getUnitVectorX(cellPosition) * inVec.x + cs_getUnitVectorY(cellPosition) * inVec.y;
 
         // calculate length and orientation
-        float s = length(vector);
+        s = length(vector);
         vectorOrientationCart = normalize(vector);
     }
 
