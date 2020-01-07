@@ -26,6 +26,7 @@ enum class AT;
 template <AT attributeType, typename T> class RenderAttribute;
 template <typename ...Atrribs> class RenderBuffer;
 template <AT attributeType, typename T> class GridAttributeReference;
+template <typename ...AttribRefs> class GridBufferReference;
 template <typename ...AttribRefs> class GridReference;
 
 //-------------------------------------------------------------------
@@ -50,6 +51,7 @@ public:
     using RenderType = RenderAttribute<attributeType, T>;
     using ReferenceType = GridAttributeReference<attributeType, T>;
     friend class RenderAttribute<attributeType,T>;
+    friend class GridAttributeReference<attributeType,T>;
 
     friend void swap(GridAttribute& first, GridAttribute& second)
     {
@@ -146,6 +148,7 @@ public:
     void write(int cellId, T&& data);
 
     friend class RenderBuffer<typename Attributes::RenderType...>;
+    friend class GridBufferReference<typename Attributes::ReferenceType...>;
 
     friend void swap(GridBuffer& first, GridBuffer& second)
     {
@@ -330,7 +333,9 @@ public:
     template <AT Param, typename T>
     void write(int cellId, T&& data); //!< read data from grid cell cellId parameter Param
 
-    int size(); //!< returns the number of available grid cells
+    int size() const; //!< returns the number of available grid cells
+
+    ReferenceType getGridReference(); //!< get a grid reference object for use in device code
 
     // for copy swap idom
     friend void swap(Grid& first, Grid& second) //!< swap two instances of buffer
@@ -437,7 +442,7 @@ public:
         first.m_renderAwaitBuffer = firstRenderAwait;
     }
 
-    template <typename ...AttribRefs> class GridReference;
+    friend class GridReference<typename GridAttribs::ReferenceType...>; //!< reference type needs to be friends
 
 private:
     int m_numCells; //!< number of grid cells
@@ -681,7 +686,7 @@ void Grid<GridAttribs...>::addRenderBufferToVao(mpu::gph::VertexArray& vao, int 
 }
 
 template <typename ...GridAttribs>
-int Grid<GridAttribs...>::size()
+int Grid<GridAttribs...>::size() const
 {
     return m_numCells;
 }
@@ -696,6 +701,12 @@ template <typename... GridAttribs>
 void Grid<GridAttribs...>::pushCachToDevice()
 {
     logWARNING("Grid") << "host cache is not implemented jet";
+}
+
+template <typename... GridAttribs>
+Grid<GridAttribs...>::ReferenceType Grid<GridAttribs...>::getGridReference()
+{
+    return Grid::ReferenceType(*this);
 }
 
 // template function definitions of the Grid class

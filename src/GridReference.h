@@ -27,7 +27,7 @@ template <AT attributeType, typename T>
 class GridAttributeReference
 {
 public:
-    CUDAHOSTDEV explicit GridAttributeReference(const GridAttribute<attributeType,T>& attrib ) : m_data(attrib) {}
+    explicit GridAttributeReference( GridAttribute<attributeType,T>* attrib ) : m_data(attrib->m_data.getVectorReference()) {}
 
     CUDAHOSTDEV T read(int cellId) {return m_data[cellId];}
     template <typename Tin>
@@ -38,7 +38,6 @@ public:
 
     static constexpr AT type = attributeType;
     using ReferencedType = GridAttribute<attributeType, T>;
-    friend class RenderAttribute<attributeType,T>;
 
 private:
     mpu::VectorReference<T> m_data;
@@ -52,8 +51,8 @@ template <typename ...AttribRefs>
 class GridBufferReference : AttribRefs...
 {
 public:
-    explicit GridBufferReference(const GridBuffer<typename AttribRefs::ReferencedType...>& buffer )
-        : AttribRefs(static_cast<typename AttribRefs::ReferencedType &>(buffer))... {};
+    explicit GridBufferReference( GridBuffer<typename AttribRefs::ReferencedType...>& buffer )
+        : AttribRefs(static_cast<typename AttribRefs::ReferencedType *>(&buffer))... {};
 
     template <AT Param>
     CUDAHOSTDEV auto read(int cellId);
@@ -91,8 +90,8 @@ class GridReference
 public:
     using BufferType = GridBufferReference<AttribRefs...>;
 
-    explicit GridReference(const Grid<typename AttribRefs::ReferencedType...>& grid)
-        : m_readBuffer(*grid.m_readBuffer,*grid.m_writeBuffer) {}
+    explicit GridReference( Grid<typename AttribRefs::ReferencedType...>& grid)
+        : m_readBuffer(*grid.m_readBuffer), m_writeBuffer(*grid.m_writeBuffer), m_numGridcells(grid.size()) {}
 
     template <AT Param>
     CUDAHOSTDEV auto read(int cellId); //!< read data from grid cell cellId parameter Param
