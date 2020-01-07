@@ -42,6 +42,7 @@ public:
     // creation
     virtual void drawCreationOptions()=0; //!< draws part of a ui window that enables changing of options in the "create new simulation"-dialog
     virtual std::shared_ptr<GridBase> recreate(std::shared_ptr<CoordinateSystem> cs)=0; //!< recreate simulation using current creation options, returns new coordinate system
+    virtual std::unique_ptr<Simulation> clone() const =0; //!< deep copy of the simulation
 
     // running the simulation
     virtual void run()=0; //!< runs simulation

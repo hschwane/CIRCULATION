@@ -70,6 +70,11 @@ public:
         return m_grid;
     }
 
+    std::unique_ptr<Simulation> clone() const override
+    {
+        return std::make_unique<RenderDemoSimulation>(*this);
+    }
+
     void run() override
     {
         // nothing to do, as this is only a rendering demo
