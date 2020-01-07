@@ -82,7 +82,7 @@ public:
         {
             std::string state;
             if(m_isPaused)
-                ImGui::Text("State:pPaused");
+                ImGui::Text("State: Paused");
             else
                 ImGui::Text("State: running");
 
