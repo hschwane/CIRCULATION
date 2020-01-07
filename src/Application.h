@@ -28,25 +28,8 @@
 #include "simulationModels/Simulation.h"
 #include "simulationModels/RenderDemoSimulation.h"
 #include "simulationModels/TestSimulation.h"
+#include "enums.h"
 //--------------------
-
-/**
- * Types of simulation model available
- */
-enum class SimModel : int
-{
-    renderDemo = 0,
-    testSimulation = 1
-};
-
-/**
- * Types of coordinate systems available
- */
-enum class CSType : int
-{
-    cartesian2d = 0,
-    geographical2d = 1
-};
 
 //-------------------------------------------------------------------
 /**
