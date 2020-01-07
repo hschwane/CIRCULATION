@@ -405,14 +405,16 @@ void Renderer::updateMVP()
 
 void Renderer::setScalarFields(std::vector<std::pair<std::string, int>> fields)
 {
-    m_currentScalarField = -1;
     m_scalarFields = std::move(fields);
+    if(m_currentScalarField >= m_scalarFields.size())
+        m_currentScalarField = -1;
 }
 
 void Renderer::setVecFields(std::vector<std::pair<std::string,std::pair<int,int>>> fields)
 {
-    m_currentVecField = -1;
     m_vectorFields = std::move(fields);
+    if(m_currentVecField >= m_vectorFields.size())
+        m_currentVecField = -1;
 }
 
 void Renderer::setBackfaceCulling(bool enable)
