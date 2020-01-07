@@ -19,6 +19,8 @@
 #include <mpUtils/mpUtils.h>
 #include <mpUtils/mpCuda.h>
 #include <mpUtils/mpGraphics.h>
+
+#include "../enums.h"
 //--------------------
 
 //-------------------------------------------------------------------
@@ -80,6 +82,9 @@ public:
     // openGL support
     virtual std::string getShaderDefine() const =0; //!< returns name of a file to be included in a shader which defines above functions in glsl
     virtual void setShaderUniforms(mpu::gph::ShaderProgram& shader) const =0; //!< sets the necessary uniforms to a shader that included th shader file from "getShaderFileName()" function
+
+    // type for downcasting
+    virtual CSType getType()=0; //!< identify the type of coordinate system using CSType from enums.h for downcasting
 };
 
 

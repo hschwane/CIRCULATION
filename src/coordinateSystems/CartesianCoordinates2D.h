@@ -34,46 +34,49 @@ public:
     ~CartesianCoordinates2D() override = default;
 
     // convert
-    float3 getCartesian(const float3& coord) const override; //!< converts a coordinate into cartesian coordinates
-    float3 getCoord(const float3& cartesian) const override; //!< converts cartesian coordinate into this coordinate system
+    CUDAHOSTDEV float3 getCartesian(const float3& coord) const override; //!< converts a coordinate into cartesian coordinates
+    CUDAHOSTDEV float3 getCoord(const float3& cartesian) const override; //!< converts cartesian coordinate into this coordinate system
 
     // unit vectors
-    float3 getUnitVectorX(float3 position) const override; //!< get the unit vector of the first coordinate at position
-    float3 getUnitVectorY(float3 position) const override; //!< get the unit vector of the second coordinate at position
-    float3 getUnitVectorZ(float3 position) const override; //!< get the unit vector of the third coordinate at position
+    CUDAHOSTDEV float3 getUnitVectorX(float3 position) const override; //!< get the unit vector of the first coordinate at position
+    CUDAHOSTDEV float3 getUnitVectorY(float3 position) const override; //!< get the unit vector of the second coordinate at position
+    CUDAHOSTDEV float3 getUnitVectorZ(float3 position) const override; //!< get the unit vector of the third coordinate at position
 
-    // for quantities stored at cell center
-    float3 getCellCoordinate(int cellId) const override; //!< get the coordinates of a specific cell
-    float3 getCellCoordinate3d(const int3& cellId3d) const override; //!< get the coordinates of the multi dimensional cell id
-    int getCellId(const float3& coord) const override; //!< get the the cell id that belongs coordinates "coord"
-    int3 getCellId3d(const float3& coord) const override; //!< get the multi dimensional cell id
+    // coordinates and ids
+    CUDAHOSTDEV float3 getCellCoordinate(int cellId) const override; //!< get the coordinates of a specific cell
+    CUDAHOSTDEV float3 getCellCoordinate3d(const int3& cellId3d) const override; //!< get the coordinates of the multi dimensional cell id
+    CUDAHOSTDEV int getCellId(const float3& coord) const override; //!< get the the cell id that belongs coordinates "coord"
+    CUDAHOSTDEV int3 getCellId3d(const float3& coord) const override; //!< get the multi dimensional cell id
 
     // adjacency
-    int getRightNeighbor(int cellId) const override; //!< get neighbors for given cell along first positive axis
-    int getLeftNeighbor(int cellId) const override; //!< get neighbors for given cell along first negative axis
-    int getForwardNeighbor(int cellId) const override; //!< get neighbors for given cell along second positive axis
-    int getBackwardNeighbor(int cellId) const override; //!< get neighbors for given cell along negative axis
-    int getUpNeighbor(int cellId) const override; //!< get neighbors for given cell along third positive axis
-    int getDownNeighbor(int cellId) const override; //!< get neighbors for given cell along third megative axis
+    CUDAHOSTDEV int getRightNeighbor(int cellId) const override; //!< get neighbors for given cell along first positive axis
+    CUDAHOSTDEV int getLeftNeighbor(int cellId) const override; //!< get neighbors for given cell along first negative axis
+    CUDAHOSTDEV int getForwardNeighbor(int cellId) const override; //!< get neighbors for given cell along second positive axis
+    CUDAHOSTDEV int getBackwardNeighbor(int cellId) const override; //!< get neighbors for given cell along negative axis
+    CUDAHOSTDEV int getUpNeighbor(int cellId) const override; //!< get neighbors for given cell along third positive axis
+    CUDAHOSTDEV int getDownNeighbor(int cellId) const override; //!< get neighbors for given cell along third megative axis
 
     // boundaries
-    float3 getMinCoord() const override; //!< get the lower bound for all dimensions
-    float3 getMaxCoord() const override; //!< get the upper bound for all dimensions
-    int getNumGridCells() const override; //!< total number of grid cells
-    int3 getNumGridCells3d() const override; //!< number of grid cells in each dimension
+    CUDAHOSTDEV float3 getMinCoord() const override; //!< get the lower bound for all dimensions
+    CUDAHOSTDEV float3 getMaxCoord() const override; //!< get the upper bound for all dimensions
+    CUDAHOSTDEV int getNumGridCells() const override; //!< total number of grid cells
+    CUDAHOSTDEV int3 getNumGridCells3d() const override; //!< number of grid cells in each dimension
 
     // dimensions
-    float3 getCellSize() const override; //! get the size of the cell in target coordinates (uniform grid)
-    int getDimension() const override; //!< get the number of dimensions
-    int getCartesianDimension() const override; //!< get the number of dimensions in cartesian coordinates (eg surface of sphere dim=2 cartesian_dim = 3)
+    CUDAHOSTDEV float3 getCellSize() const override; //! get the size of the cell in target coordinates (uniform grid)
+    CUDAHOSTDEV int getDimension() const override; //!< get the number of dimensions
+    CUDAHOSTDEV int getCartesianDimension() const override; //!< get the number of dimensions in cartesian coordinates (eg surface of sphere dim=2 cartesian_dim = 3)
 
     // bounding box
-    float3 getAABBMin() const override; //!< get the lower left  bounding box corner in cartesian coords
-    float3 getAABBMax() const override; //!< get the upper right bounding box corner in cartesian coords
+    CUDAHOSTDEV float3 getAABBMin() const override; //!< get the lower left  bounding box corner in cartesian coords
+    CUDAHOSTDEV float3 getAABBMax() const override; //!< get the upper right bounding box corner in cartesian coords
 
     // openGL support
-    virtual std::string getShaderDefine() const; //!< returns name of a file to be included in a shader which defines above functions in glsl
-    virtual void setShaderUniforms(mpu::gph::ShaderProgram& shader) const; //!< sets the necessary uniforms to a shader that included th shader file from "getShaderFileName()" function
+    std::string getShaderDefine() const override ; //!< returns name of a file to be included in a shader which defines above functions in glsl
+    void setShaderUniforms(mpu::gph::ShaderProgram& shader) const override; //!< sets the necessary uniforms to a shader that included th shader file from "getShaderFileName()" function
+
+    // downcasting
+    CSType getType() override; //!< identify the type of coordinate system using CSType from enums.h for downcasting
 
 private:
     const float2 m_min; //!< smallest possible coordinate
