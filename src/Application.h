@@ -25,6 +25,8 @@
 #include "coordinateSystems/GeographicalCoordinates2D.h"
 #include "Grid.h"
 #include "Renderer.h"
+#include "simulationModels/Simulation.h"
+#include "simulationModels/RenderDemoSimulation.h"
 //--------------------
 
 /**
@@ -32,7 +34,8 @@
  */
 enum class SimModel : int
 {
-    renderDemo = 0
+    renderDemo = 0,
+    testSimulation = 1
 };
 
 /**
@@ -74,8 +77,7 @@ private:
     // simulation
     std::shared_ptr<CoordinateSystem> m_currentCS{nullptr}; //!< coordinate system currently in use
     std::shared_ptr<GridBase> m_grid; //!< grid used by the current simulation
-
-    // rendering
+    std::unique_ptr<Simulation> m_simulation; //!< the currently active simulation model
 
     // user interface
     bool m_showImGuiDemoWindow{false}; //!< is true ImGUI demo window will be shown
@@ -89,8 +91,6 @@ private:
     void addInputs(); //!< add some useful input functions
     void setKeybindings(); //!< set keybindings for all the functions
     void resetCamera(); //!< resets the camera
-    void generateDemoData(RenderDemoGrid& grid, bool randomVectors, float2 vector); //!< generates some random data to test rendering
-
 
     // ui windows and menus
     void mainMenuBar(); //!< draw and handle the main menu bar

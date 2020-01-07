@@ -72,7 +72,6 @@ bool Application::run()
     // -------------------------
     // simulation
 
-
     // -------------------------
     // rendering
     m_camera.update();
@@ -300,20 +299,15 @@ void Application::showKeybindingsWindow(bool* show)
         if(ImGui::Button("Close"))
             *show = false;
     }
-    ImGui::End()
+    ImGui::End();
 }
 
 void Application::newSimulationModal()
 {
     if(ImGui::BeginPopupModal("New Simulation",nullptr,ImGuiWindowFlags_AlwaysAutoResize))
     {
-        static int selctedModel = 0;
         static int selctedCoordinates = 0;
         static int3 numGridCells{128,128,32};
-
-        // variables for render demo model
-        static bool randomVectors=true;
-        static float2 vectorValue{1,1};
 
         // variables for cartesian grids
         static float3 minCoords{-1,-1,-1};
@@ -324,24 +318,31 @@ void Application::newSimulationModal()
         static float maxLat{1.57f};
         static float radius{1.0f};
 
-        // select simulation model and coordinate system
-        ImGui::Combo("Model",&selctedModel,"Render Demo\0\0");
+        // variables to select a simulation
+        static auto testSim = std::make_unique<RenderDemoSimulation>();
+        static auto rdSim = std::make_unique<RenderDemoSimulation>();
+        static Simulation* selectedeModel = rdSim.get();
+        static int selctedModelId = 0;
 
-        // options depending on simulation model
-        switch(static_cast<SimModel>(selctedModel))
+        // select simulation model
+        if( ImGui::Combo("Model", &selctedModelId, "Render Demo\0\0") )
         {
-            case SimModel::renderDemo:
+            switch(static_cast<SimModel>(selctedModelId))
             {
-                ImGui::PushID("RenderDemoOptions");
-                ImGui::Checkbox("Random Vectors", &randomVectors);
-                if(!randomVectors)
-                    ImGui::DragFloat2("Vector", &vectorValue.x);
-                ImGui::PopID();
-                break;
+                case SimModel::renderDemo:
+                    selectedeModel = rdSim.get();
+                    break;
+                case SimModel::testSimulation:
+                    selectedeModel = testSim.get();
+                    break;
             }
         }
 
+        // handle model settings
+        selectedeModel->drawCreationOptions();
         ImGui::Separator();
+
+        // select coordinate system
         ImGui::Combo("Coordinate System",&selctedCoordinates,"2D Cartesian Coordinates\0 2D Geographical Coordinates\0\0");
 
         // options depending on coordinate system
@@ -390,17 +391,17 @@ void Application::newSimulationModal()
             }
         }
 
-        // cancel and create button
-
+        // cancel button
         if(ImGui::Button("Cancel"))
             ImGui::CloseCurrentPopup();
         ImGui::SameLine();
 
+        // create button
         if(ImGui::Button("Create"))
         {
             ImGui::CloseCurrentPopup();
 
-            logINFO("Application") << "Creating new simulation with sim model " << int(selctedModel) << " coordinate system "
+            logINFO("Application") << "Creating new simulation with sim model " << int(selctedModelId) << " coordinate system "
                                    << int(selctedCoordinates) << "] and grid cell count " << numGridCells;
 
             // create coordinate system
@@ -419,15 +420,17 @@ void Application::newSimulationModal()
                     m_currentCS = std::make_shared<GeographicalCoordinates2D>(minLat,maxLat,numGridCells,radius);
                 }
             }
+            m_renderer.setCS(m_currentCS);
 
             // create simulation and grid
-            switch(static_cast<SimModel>(selctedModel))
+            m_simulation = selectedeModel->clone();
+            m_grid = m_simulation->recreate(m_currentCS);
+
+            // setup visualization
+            switch(static_cast<SimModel>(selctedModelId))
             {
                 case SimModel::renderDemo:
                 {
-                    m_grid = std::make_shared<RenderDemoGrid>(m_currentCS->getNumGridCells());
-                    generateDemoData(dynamic_cast<RenderDemoGrid&>(*m_grid),randomVectors,vectorValue);
-
                     m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
                     m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
 
@@ -443,39 +446,12 @@ void Application::newSimulationModal()
                     break;
                 }
             }
-            // make changes known to all modules
-            m_renderer.setCS(m_currentCS);
+
+
             resetCamera();
         }
         ImGui::SetItemDefaultFocus();
 
         ImGui::EndPopup();
     }
-}
-
-void Application::generateDemoData(RenderDemoGrid& grid, bool randomVectors, float2 vector)
-{
-    std::default_random_engine rng(mpu::getRanndomSeed());
-    std::normal_distribution<float> dist(10,4);
-    std::normal_distribution<float> vdist(0,4);
-
-    for(int i : mpu::Range<int>(grid.size()))
-    {
-        float density = fmax(0,dist(rng));
-        float velX = vdist(rng);
-        float velY = vdist(rng);
-
-        grid.write<AT::density>(i,density);
-        if(randomVectors)
-        {
-            grid.write<AT::velocityX>(i, velX);
-            grid.write<AT::velocityY>(i, velY);
-        }
-        else {
-            grid.write<AT::velocityX>(i, vector.x);
-            grid.write<AT::velocityY>(i, vector.y);
-        }
-    }
-
-    grid.swapAndRender();
 }
