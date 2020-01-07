@@ -45,9 +45,28 @@ public:
     virtual std::unique_ptr<Simulation> clone() const =0; //!< deep copy of the simulation
 
     // running the simulation
-    virtual void run()=0; //!< runs simulation
+    void run(int iterations=1); //!< runs simulation for iteration timesteps, does nothing if simulation is paused
     virtual void showGui(bool* show)=0; //!< show user interface for simulation
+    void pause() {m_isPaused=true;} //!< pauses the simulation
+    void resume() {m_isPaused=false;} //!< resumes the simulation
+    bool isPaused() {return m_isPaused;} //!< checks if the simulation should be paused
+
+protected:
+    bool m_isPaused{false};
+
+private:
+    virtual void simulateOnce()=0; //!< simulate one timestep
+    virtual GridBase& getGrid()=0; //!< access to the simulation grid
 };
+
+inline void Simulation::run(int iterations)
+{
+    if(m_isPaused)
+        return;
+
+    for(int i=0; i<iterations; i++)
+        simulateOnce();
+}
 
 
 #endif //CIRCULATION_SIMULATION_H

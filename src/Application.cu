@@ -72,7 +72,7 @@ bool Application::run()
 
     // -------------------------
     // simulation
-    if(m_simulation && !m_simPaused)
+    if(m_simulation)
         m_simulation->run();
 
     // -------------------------
@@ -101,7 +101,11 @@ void Application::addInputs()
             [this](Window&) { this->resetCamera(); });
 
     // hde gui for nice screenshots
-    Input::addButton("ToggleGUI","toggle visibility the user interface", [this](Window&){ImGui::toggleVisibility();});
+    Input::addButton("ToggleGUI","toggle visibility the user interface", [](Window&){ImGui::toggleVisibility();});
+
+    // add buttons to pause and resume
+    Input::addButton("Pause", "Pause the simulation",  [this](Window& wnd) { if(this->m_simulation)this->m_simulation->pause(); });
+    Input::addButton("Resume", "Resume the simulation",  [this](Window& wnd) { if(this->m_simulation)this->m_simulation->resume(); });
 }
 
 void Application::setKeybindings()
@@ -140,6 +144,10 @@ void Application::setKeybindings()
     Input::mapKeyToInput("ToggleFullscreen",GLFW_KEY_F11);
     Input::mapKeyToInput("ResetCamera",GLFW_KEY_X);
     Input::mapKeyToInput("ToggleGUI", GLFW_KEY_TAB);
+
+    // simulation
+    Input::mapKeyToInput("Resume",GLFW_KEY_1);
+    Input::mapKeyToInput("Pause",GLFW_KEY_2);
 }
 
 void Application::resetCamera()
@@ -176,15 +184,15 @@ void Application::mainMenuBar()
 
             ImGui::Separator();
 
-            if(m_simPaused)
+            if(m_simulation && m_simulation->isPaused())
             {
-                if(ImGui::MenuItem("Resume"))
-                    m_simPaused = false;
+                if(ImGui::MenuItem("Resume","1"))
+                    m_simulation->resume();
             }
             else
             {
-                if(ImGui::MenuItem("Pause"))
-                    m_simPaused = true;
+                if(ImGui::MenuItem("Pause","2"))
+                    m_simulation->pause();
             }
 
             if(ImGui::MenuItem("Reset"))
@@ -318,6 +326,14 @@ void Application::showKeybindingsWindow(bool* show)
             ImGui::Text("ESC"); ImGui::NextColumn(); ImGui::Text("Close Application"); ImGui::NextColumn(); ImGui::Separator();
             ImGui::Text("F11"); ImGui::NextColumn(); ImGui::Text("Toggle Fullscreen"); ImGui::NextColumn(); ImGui::Separator();
             ImGui::Text("TAB"); ImGui::NextColumn(); ImGui::Text("Toggle User Interface"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Columns(1);
+        }
+
+        if(ImGui::CollapsingHeader("Simulation"))
+        {
+            ImGui::Columns(2);
+            ImGui::Text("1"); ImGui::NextColumn(); ImGui::Text("Resume Simulation"); ImGui::NextColumn(); ImGui::Separator();
+            ImGui::Text("2"); ImGui::NextColumn(); ImGui::Text("Pause Simulation"); ImGui::NextColumn(); ImGui::Separator();
             ImGui::Columns(1);
         }
 

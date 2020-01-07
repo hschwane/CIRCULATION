@@ -75,22 +75,34 @@ public:
         return std::make_unique<RenderDemoSimulation>(*this);
     }
 
-    void run() override
-    {
-        // nothing to do, as this is only a rendering demo
-    }
-
     void showGui(bool* show) override
     {
         ImGui::SetNextWindowSize({0,0},ImGuiCond_FirstUseEver);
         if(ImGui::Begin("RenderDemoSimulation",show))
         {
-            ImGui::Text("The render demo does not have any simulation settings");
+            std::string state;
+            if(m_isPaused)
+                ImGui::Text("State:pPaused");
+            else
+                ImGui::Text("State: running");
+
+            ImGui::Text("This is a rendering demo, so the simulation does nothing. There are also no settings.");
         }
         ImGui::End();
     }
 
 private:
+
+    void simulateOnce() override
+    {
+        // this is the rendering demo, so we do nothing
+    }
+
+    GridBase& getGrid() override
+    {
+        return *m_grid;
+    }
+
     // creation options
     bool m_randomVectors{true};
     float2 m_vectorValue;

@@ -78,7 +78,6 @@ private:
     std::shared_ptr<CoordinateSystem> m_cs{nullptr}; //!< coordinate system currently in use
     std::shared_ptr<GridBase> m_grid; //!< grid used by the current simulation
     std::unique_ptr<Simulation> m_simulation; //!< the currently active simulation model
-    bool m_simPaused{true}; //!< is simulation paused?
 
     // user interface
     bool m_showImGuiDemoWindow{false}; //!< is true ImGUI demo window will be shown
