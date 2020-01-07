@@ -19,6 +19,7 @@
 #include <memory>
 
 #include <mpUtils/mpUtils.h>
+#include <mpUtils/mpGraphics.h>
 #include <mpUtils/mpCuda.h>
 
 #include "../Grid.h"
