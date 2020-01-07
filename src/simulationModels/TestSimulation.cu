@@ -14,11 +14,9 @@
 // includes
 //--------------------
 #include "TestSimulation.h"
-//--------------------
-
-// namespace
-//--------------------
-
+#include "../GridReference.h"
+#include "../coordinateSystems/CartesianCoordinates2D.h"
+#include "../coordinateSystems/GeographicalCoordinates2D.h"
 //--------------------
 
 // function definitions of the TestSimulation class
@@ -62,6 +60,17 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
     // swap buffers and ready for rendering
     m_grid->swapAndRender();
 
+    // select coordinate system
+    switch(m_cs->getType())
+    {
+        case CSType::cartesian2d:
+            m_simOnceFunc = [this](){ this->simulateOnceImpl( static_cast<CartesianCoordinates2D&>( *(this->m_cs)) ); };
+            break;
+        case CSType::geographical2d:
+            m_simOnceFunc = [this](){ this->simulateOnceImpl( static_cast<GeographicalCoordinates2D&>( *(this->m_cs)) ); };
+            break;
+    }
+
     return m_grid;
 }
 
@@ -88,8 +97,29 @@ void TestSimulation::showGui(bool* show)
 
 void TestSimulation::simulateOnce()
 {
-
+    m_simOnceFunc(); // calls correct template specialization
 }
+
+template <typename csT>
+__global__ void testSimulation(RenderDemoGrid::ReferenceType grid, csT cs)
+{
+    printf("dim: %i\n",cs.getDimension());
+    for(int i : mpu::gridStrideRange(grid.size()))
+    {
+        float rho = grid.read<AT::density>(i);
+        grid.write<AT::density>(i,rho);
+    }
+}
+
+
+template <typename csT>
+void TestSimulation::simulateOnceImpl(csT& cs)
+{
+    testSimulation<<<mpu::numBlocks(m_grid->size(),128),128>>>(m_grid->getGridReference(),cs);
+    cudaDeviceSynchronize();
+}
+
+template void TestSimulation::simulateOnceImpl<CartesianCoordinates2D>(CartesianCoordinates2D& cs);
 
 GridBase& TestSimulation::getGrid()
 {

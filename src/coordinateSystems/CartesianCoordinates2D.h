@@ -31,7 +31,7 @@ class CartesianCoordinates2D : public CoordinateSystem
 {
 public:
     CartesianCoordinates2D(float3 min, float3 max, int3 numGridCells); //!< smallest value, biggest value and number of grid cells in each dimension
-    ~CartesianCoordinates2D() override = default;
+    CUDAHOSTDEV ~CartesianCoordinates2D() override = default;
 
     // convert
     CUDAHOSTDEV float3 getCartesian(const float3& coord) const override; //!< converts a coordinate into cartesian coordinates

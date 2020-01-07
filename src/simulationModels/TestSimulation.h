@@ -38,13 +38,17 @@ private:
     void simulateOnce() override;
     GridBase& getGrid() override;
 
+    template <typename csT>
+    void simulateOnceImpl(csT& cs); //!< implementation of simulate once to allow different coordinate systems to be used
+    std::function<void()> m_simOnceFunc; //!< will be set to use the correct template specialisation based on type of coordinate system used
+
     // creation options
     bool m_randomVectors{true};
     float2 m_vectorValue;
 
     // sim data
-    std::shared_ptr<CoordinateSystem> m_cs;
-    std::shared_ptr<RenderDemoGrid> m_grid;
+    std::shared_ptr<CoordinateSystem> m_cs; //!< the coordinate system to be used
+    std::shared_ptr<RenderDemoGrid> m_grid; //!< the grid to be used
 };
 
 
