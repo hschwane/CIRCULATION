@@ -64,8 +64,16 @@ inline void Simulation::run(int iterations)
     if(m_isPaused)
         return;
 
-    for(int i=0; i<iterations; i++)
+    // simulate all iterations but one
+    for(int i=0; i<iterations-1; i++)
+    {
         simulateOnce();
+        getGrid().swapBuffer();
+    }
+
+    // simulate the final iteration
+    simulateOnce();
+    getGrid().swapAndRender();
 }
 
 

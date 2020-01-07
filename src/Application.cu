@@ -79,7 +79,12 @@ bool Application::run()
     // rendering
     m_camera.update();
     m_renderer.setViewMat(m_camera.viewMatrix());
-    m_renderer.draw();
+    if(m_grid)
+    {
+        m_grid->startRendering();
+        m_renderer.draw();
+        m_grid->renderDone();
+    }
 
     m_window.frameEnd();
     return true;
@@ -483,6 +488,7 @@ void Application::newSimulationModal()
             // create simulation and grid
             m_simulation = selectedeModel->clone();
             m_grid = m_simulation->recreate(m_cs);
+            m_simulation->pause();
 
             // setup visualization
             switch(static_cast<SimModel>(selctedModelId))
