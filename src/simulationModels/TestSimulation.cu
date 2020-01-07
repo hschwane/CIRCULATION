@@ -100,23 +100,48 @@ void TestSimulation::simulateOnce()
     m_simOnceFunc(); // calls correct template specialization
 }
 
+//CUDAHOSTDEV float centralDeriv(float left, float right, float delta)
+//{
+//    return (right-left) / 2.0f*delta;
+//}
+
+//CUDAHOSTDEV float2 gradient2D()
+
 template <typename csT>
 __global__ void testSimulation(RenderDemoGrid::ReferenceType grid, csT cs)
 {
-    printf("dim: %i\n",cs.getDimension());
-    for(int i : mpu::gridStrideRange(grid.size()))
+    for(int x : mpu::gridStrideRange( 1, cs.getNumGridCells3d().x-1 ))
+        for(int y : mpu::gridStrideRangeY( 1, cs.getNumGridCells3d().y-1 ))
     {
-        float rho = grid.read<AT::density>(i);
-        grid.write<AT::density>(i,rho);
+        int3 cell{x,y,0};
+        int cellId = cs.getCellId(cell);
+
+        float rho = grid.read<AT::density>(cellId);
+
+        // calculate gradient using central difference
+        // remember, velocities are defined half way between the nodes,
+        // so velocity stored at id i is located halfway between cell i and i+1
+        float right     = grid.read<AT::density>(cs.getRightNeighbor(cellId));
+        float forward   = grid.read<AT::density>(cs.getForwardNeighbor(cellId));
+
+        float2 gradRho;
+        gradRho.x = (right - rho) / cs.getCellSize().x;
+        gradRho.y = (forward - rho) / cs.getCellSize().y;
+
+        grid.write<AT::velocityX>(cellId, gradRho.x);
+        grid.write<AT::velocityY>(cellId, gradRho.y);
+        grid.write<AT::density>(cellId,rho);
     }
 }
-
 
 template <typename csT>
 void TestSimulation::simulateOnceImpl(csT& cs)
 {
-    testSimulation<<<mpu::numBlocks(m_grid->size(),128),128>>>(m_grid->getGridReference(),cs);
-    cudaDeviceSynchronize();
+    dim3 blocksize{16,16,1};
+    dim3 numBlocks{ static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().x ,blocksize.x)),
+                    static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().y ,blocksize.y)), 1};
+
+    testSimulation<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs);
 }
 
 template void TestSimulation::simulateOnceImpl<CartesianCoordinates2D>(CartesianCoordinates2D& cs);
