@@ -75,9 +75,10 @@ private:
     mpu::gph::Camera m_camera; //!< the camera used by the renderer to draw results
 
     // simulation
-    std::shared_ptr<CoordinateSystem> m_currentCS{nullptr}; //!< coordinate system currently in use
+    std::shared_ptr<CoordinateSystem> m_cs{nullptr}; //!< coordinate system currently in use
     std::shared_ptr<GridBase> m_grid; //!< grid used by the current simulation
     std::unique_ptr<Simulation> m_simulation; //!< the currently active simulation model
+    bool m_simPaused{true}; //!< is simulation paused?
 
     // user interface
     bool m_showImGuiDemoWindow{false}; //!< is true ImGUI demo window will be shown
@@ -86,6 +87,7 @@ private:
     bool m_showAboutWindow{false}; //!< if true about window will be drawn
     bool m_showKeybindingsWindow{false}; //!< if true keybinding window will be drawn
     bool m_showRendererWindow{false}; //!< if true renderer window will be drawn
+    bool m_showSimulationWindow{false}; //!< if true the simulation settings window will be drawn
 
     // internal helper functions
     void addInputs(); //!< add some useful input functions
