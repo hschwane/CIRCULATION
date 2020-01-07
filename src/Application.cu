@@ -72,6 +72,7 @@ bool Application::run()
     // -------------------------
     // simulation
 
+
     // -------------------------
     // rendering
     m_camera.update();
@@ -421,11 +422,11 @@ void Application::newSimulationModal()
             {
                 case SimModel::renderDemo:
                 {
-                    m_demoGrid = RenderDemoGrid(m_currentCS->getNumGridCells());
-                    generateDemoData(m_demoGrid,randomVectors,vectorValue);
+                    m_grid = std::make_shared<RenderDemoGrid>(m_currentCS->getNumGridCells());
+                    generateDemoData(dynamic_cast<RenderDemoGrid&>(*m_grid),randomVectors,vectorValue);
 
-                    m_demoGrid.addRenderBufferToVao(m_renderer.getVAO(), 0);
-                    m_demoGrid.bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
+                    m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
+                    m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
 
                     std::vector<std::pair<std::string,int>> scalarFields;
                     scalarFields.emplace_back("density",0);

@@ -258,6 +258,33 @@ void RenderBuffer<Attributes...>::addToVao(mpu::gph::VertexArray& vao, int bindi
 
 //-------------------------------------------------------------------
 /**
+ * class GridBase
+ *
+ * base class to store and access grids of different types
+ *
+ */
+class GridBase
+{
+public:
+    virtual ~GridBase()=default;
+
+    virtual void swapBuffer()=0; //!< swap working buffers, the old write buffer becomes the read buffer
+    virtual void swapAndRender()=0; //!< swap and ready the current buffer for rendering
+    virtual void swapAndRenderWait()=0; //!< swap and ready the current buffer for rendering, make sure no unrendered data is discarded
+
+    virtual bool newRenderDataReady()=0; //!< the renderbuffer has new data to render
+    virtual void startRendering()=0; //!< lock access to the renderbuffer. Blocks until readyToRender is true. Data in the renderbuffer will be valid until renderDone() was called
+    virtual void renderDone()=0; //!< indicates render buffer can be overwritten
+
+    virtual void bindRenderBuffer(GLuint binding, GLenum target)=0; //!< bind the renderbuffer to target starting with binding id binding
+    virtual void addRenderBufferToVao(mpu::gph::VertexArray& vao, int binding)=0; //!< adds the renderbuffer buffers onto the vao starting with binding id binding
+
+    virtual void cacheOnHost()=0; //!< cache the current buffers data on the host
+    virtual void pushCachToDevice()=0; //!< write changes from the local cache back to the device
+};
+
+//-------------------------------------------------------------------
+/**
  * class Grid
  *
  * Class to manage memory for simulation data of a grid based simulation.
@@ -270,7 +297,7 @@ void RenderBuffer<Attributes...>::addToVao(mpu::gph::VertexArray& vao, int bindi
  *
  */
 template <typename ...GridAttribs>
-class Grid
+class Grid : public GridBase
 {
 public:
     using BufferType = GridBuffer<GridAttribs...>;
@@ -284,19 +311,19 @@ public:
     Grid(Grid&& other) noexcept;
     Grid& operator=(Grid other) noexcept;
 
-    void swapBuffer(); //!< swap working buffers, the old write buffer becomes the read buffer
-    void swapAndRender(); //!< swap and ready the current buffer for rendering
-    void swapAndRenderWait(); //!< swap and ready the current buffer for rendering, make sure no unrendered data is discarded
+    void swapBuffer() override; //!< swap working buffers, the old write buffer becomes the read buffer
+    void swapAndRender() override; //!< swap and ready the current buffer for rendering
+    void swapAndRenderWait() override; //!< swap and ready the current buffer for rendering, make sure no unrendered data is discarded
 
-    bool newRenderDataReady(); //!< the renderbuffer has new data to render
-    void startRendering(); //!< lock access to the renderbuffer. Blocks until readyToRender is true. Data in the renderbuffer will be valid until renderDone() was called
-    void renderDone(); //!< indicates render buffer can be overwritten
+    bool newRenderDataReady() override; //!< the renderbuffer has new data to render
+    void startRendering() override; //!< lock access to the renderbuffer. Blocks until readyToRender is true. Data in the renderbuffer will be valid until renderDone() was called
+    void renderDone() override; //!< indicates render buffer can be overwritten
 
-    void bindRenderBuffer(GLuint binding, GLenum target); //!< bind the renderbuffer to target starting with binding id binding
-    void addRenderBufferToVao(mpu::gph::VertexArray& vao, int binding); //!< adds the renderbuffer buffers onto the vao starting with binding id binding
+    void bindRenderBuffer(GLuint binding, GLenum target) override; //!< bind the renderbuffer to target starting with binding id binding
+    void addRenderBufferToVao(mpu::gph::VertexArray& vao, int binding) override; //!< adds the renderbuffer buffers onto the vao starting with binding id binding
 
-    void cacheOnHost(); //!< cache the current buffers data on the host
-    void pushCachToDevice(); //!< write changes from the local cache back to the device
+    void cacheOnHost() override; //!< cache the current buffers data on the host
+    void pushCachToDevice() override; //!< write changes from the local cache back to the device
 
     template <AT Param>
     auto read(int cellId); //!< read data from grid cell cellId parameter Param

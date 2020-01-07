@@ -73,7 +73,7 @@ private:
 
     // simulation
     std::shared_ptr<CoordinateSystem> m_currentCS{nullptr}; //!< coordinate system currently in use
-    RenderDemoGrid m_demoGrid;
+    std::shared_ptr<GridBase> m_grid; //!< grid used by the current simulation
 
     // rendering
 
