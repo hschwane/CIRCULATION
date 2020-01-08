@@ -19,3 +19,4 @@
 // template instantiations for faster compiling
 //-------------------------------------------------------------------
 template class Grid<GridDensity,GridVelocityX,GridVelocityY>;
+template class Grid<GridDensity, GridVelocityX, GridVelocityY, GridDensityGradX, GridDensityGradY, GridDensityLaplace, GridVelocityDiv, GridVelocityCurl>;

@@ -494,7 +494,6 @@ void Application::newSimulationModal()
             switch(static_cast<SimModel>(selctedModelId))
             {
                 case SimModel::renderDemo:
-                case SimModel::testSimulation:
                 {
                     m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
                     m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
@@ -507,6 +506,28 @@ void Application::newSimulationModal()
 
                     std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
                     vectorFields.emplace_back("velocity",std::pair<int,int>(1,2));
+                    m_renderer.setVecFields(vectorFields);
+                    break;
+                }
+                case SimModel::testSimulation:
+                {
+                    m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
+                    m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
+
+                    std::vector<std::pair<std::string,int>> scalarFields;
+                    scalarFields.emplace_back("density",0);
+                    scalarFields.emplace_back("velocity_x",1);
+                    scalarFields.emplace_back("velocity_y",2);
+                    scalarFields.emplace_back("density_gradient_x",3);
+                    scalarFields.emplace_back("density_gradient_y",4);
+                    scalarFields.emplace_back("density_laplace",5);
+                    scalarFields.emplace_back("velocity_divergence",6);
+                    scalarFields.emplace_back("velocity_curl",7);
+                    m_renderer.setScalarFields(scalarFields);
+
+                    std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
+                    vectorFields.emplace_back("velocity",std::pair<int,int>(1,2));
+                    vectorFields.emplace_back("density_gradient",std::pair<int,int>(3,4));
                     m_renderer.setVecFields(vectorFields);
                     break;
                 }

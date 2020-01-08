@@ -48,7 +48,7 @@ private:
 
     // sim data
     std::shared_ptr<CoordinateSystem> m_cs; //!< the coordinate system to be used
-    std::shared_ptr<RenderDemoGrid> m_grid; //!< the grid to be used
+    std::shared_ptr<TestSimGrid> m_grid; //!< the grid to be used
 };
 
 

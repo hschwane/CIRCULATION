@@ -32,7 +32,7 @@ void TestSimulation::drawCreationOptions()
 std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSystem> cs)
 {
     m_cs = cs;
-    m_grid = std::make_shared<RenderDemoGrid>(m_cs->getNumGridCells());
+    m_grid = std::make_shared<TestSimGrid>(m_cs->getNumGridCells());
 
     // generate some data
     std::default_random_engine rng(mpu::getRanndomSeed());
@@ -108,7 +108,7 @@ void TestSimulation::simulateOnce()
 //CUDAHOSTDEV float2 gradient2D()
 
 template <typename csT>
-__global__ void testSimulation(RenderDemoGrid::ReferenceType grid, csT cs)
+__global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs)
 {
     for(int x : mpu::gridStrideRange( 1, cs.getNumGridCells3d().x-1 ))
         for(int y : mpu::gridStrideRangeY( 1, cs.getNumGridCells3d().y-1 ))
@@ -120,15 +120,22 @@ __global__ void testSimulation(RenderDemoGrid::ReferenceType grid, csT cs)
         float velx = grid.read<AT::velocityX>(cellId);
         float vely = grid.read<AT::velocityY>(cellId);
 
+        grid.write<AT::velocityX>(cellId, velx);
+        grid.write<AT::velocityY>(cellId, vely);
+        grid.write<AT::density>(cellId,rho);
+
         // calculate gradient using central difference
-        // remember, velocities are defined half way between the nodes,
-        // so velocity stored at id i is located halfway between cell i and i+1
+        // since we use the density at at i and i+1 we get the gradient halfway in between the cells,
+        // on the edge between cell i and i+1
         float rhoRight     = grid.read<AT::density>(cs.getRightNeighbor(cellId));
         float rhoForward   = grid.read<AT::density>(cs.getForwardNeighbor(cellId));
 
         float2 gradRho;
         gradRho.x = (rhoRight - rho) / cs.getCellSize().x;
         gradRho.y = (rhoForward - rho) / cs.getCellSize().y;
+
+        grid.write<AT::densityGradX>(cellId, gradRho.x);
+        grid.write<AT::densityGradY>(cellId, gradRho.y);
 
         // calculate divergence of the velocity field
         // remember, velocities are defined half way between the nodes,
@@ -137,16 +144,10 @@ __global__ void testSimulation(RenderDemoGrid::ReferenceType grid, csT cs)
         float velLeft = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
         float velBackward = grid.read<AT::velocityX>(cs.getBackwardNeighbor(cellId));
 
-        float divVel =  ( (velx-velLeft) / cs.getCellSize().x )
+        float velDiv =  ( (velx-velLeft) / cs.getCellSize().x )
                       + ( (vely-velBackward) / cs.getCellSize().x );
 
-        grid.write<AT::velocityX>(cellId, velx);
-        grid.write<AT::velocityY>(cellId, vely);
-        grid.write<AT::density>(cellId, divVel);
-
-//        grid.write<AT::velocityX>(cellId, gradRho.x);
-//        grid.write<AT::velocityY>(cellId, gradRho.y);
-//        grid.write<AT::density>(cellId,rho);
+        grid.write<AT::velocityDiv>(cellId, velDiv);
     }
 }
 

@@ -119,15 +119,25 @@ private:
  */
 enum class AT
 {
+    density,
     velocityX,
     velocityY,
-    density
+    densityGradX,
+    densityGradY,
+    densityLaplace,
+    velocityDiv,
+    velocityCurl
 };
 
 
 using GridDensity = GridAttribute<AT::density,float>;
 using GridVelocityX = GridAttribute<AT::velocityX,float>;
 using GridVelocityY = GridAttribute<AT::velocityY,float>;
+using GridDensityGradX = GridAttribute<AT::densityGradX,float>;
+using GridDensityGradY = GridAttribute<AT::densityGradY,float>;
+using GridDensityLaplace = GridAttribute<AT::densityLaplace,float>;
+using GridVelocityDiv = GridAttribute<AT::velocityDiv,float>;
+using GridVelocityCurl = GridAttribute<AT::velocityCurl,float>;
 
 
 //-------------------------------------------------------------------
@@ -716,5 +726,9 @@ Grid<GridAttribs...>::ReferenceType Grid<GridAttribs...>::getGridReference()
 
 using RenderDemoGrid = Grid<GridDensity,GridVelocityX,GridVelocityY>;
 extern template class Grid<GridDensity,GridVelocityX,GridVelocityY>;
+
+using TestSimGrid = Grid<GridDensity, GridVelocityX, GridVelocityY, GridDensityGradX, GridDensityGradY, GridDensityLaplace, GridVelocityDiv, GridVelocityCurl>;
+extern template class Grid<GridDensity, GridVelocityX, GridVelocityY, GridDensityGradX, GridDensityGradY, GridDensityLaplace, GridVelocityDiv, GridVelocityCurl>;
+
 
 #endif //CIRCULATION_GRID_H
