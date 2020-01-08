@@ -107,7 +107,9 @@ void Renderer::showGui(bool* show)
                     {
                         m_currentScalarField = i;
                         m_scalarShader.uniform1b("scalarColor",true);
-                        glBindAttribLocation(static_cast<GLuint>(m_scalarShader), m_scalarFields[i].second, "scalar");
+
+                        unsigned int blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_scalarShader), GL_SHADER_STORAGE_BLOCK,"scalarField");
+                        glShaderStorageBlockBinding(static_cast<GLuint>(m_scalarShader), blockIndex, m_scalarFields[m_currentScalarField].second);
                     }
                 }
                 ImGui::EndCombo();
@@ -274,8 +276,11 @@ void Renderer::compileShader()
         m_scalarShader.uniform1f("minScalar",m_minScalar);
         m_scalarShader.uniform1f("maxScalar",m_maxScalar);
         m_scalarShader.uniform1b("scalarColor",(m_currentScalarField >= 0));
-        glBindAttribLocation(static_cast<GLuint>(m_scalarShader),
-                             (m_currentScalarField >= 0) ? m_scalarFields[m_currentScalarField].second : 0, "scalar");
+        if(m_currentScalarField >= 0)
+        {
+            unsigned int blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_scalarShader), GL_SHADER_STORAGE_BLOCK,"scalarField");
+            glShaderStorageBlockBinding(static_cast<GLuint>(m_scalarShader), blockIndex, m_scalarFields[m_currentScalarField].second);
+        }
         m_scalarShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
 
         // compile vector shader

@@ -1,8 +1,10 @@
 #version 450 core
 
 // input
-in float scalar; // scalar value for color
-
+layout(std430) buffer scalarField // ssbo for scalar field
+{
+    float scalar[];
+};
 layout(std430) buffer vectorFieldX // ssbo for vector field in x direction
 {
     float vecX[];
@@ -58,7 +60,7 @@ void main()
 #endif
 
 
-    float s = scalar;
+    float s;
 
     if(prepareVector)
     {
@@ -88,6 +90,10 @@ void main()
         // calculate length and orientation
         s = length(vector);
         vectorOrientationCart = normalize(vector);
+    }
+    else
+    {
+        s = scalar[gl_VertexID];
     }
 
     if(scalarColor)
