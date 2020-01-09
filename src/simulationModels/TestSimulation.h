@@ -46,6 +46,12 @@ private:
     bool m_randomVectors{true};
     float2 m_vectorValue;
 
+    // sim options
+    bool m_solveHeatEquation{false};
+    float m_heatCoefficient{1.0f};
+    float m_timestep{0.1f};
+    float m_totalSimulatedTime{0.0f};
+
     // sim data
     std::shared_ptr<CoordinateSystem> m_cs; //!< the coordinate system to be used
     std::shared_ptr<TestSimGrid> m_grid; //!< the grid to be used

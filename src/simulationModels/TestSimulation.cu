@@ -43,10 +43,12 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
     for(int i : mpu::Range<int>(m_grid->size()))
     {
         float density = fmax(0,dist(rng));
+        float temperature = fmax(0,dist(rng));
         float velX = vdist(rng);
         float velY = vdist(rng);
 
         m_grid->write<AT::density>(i,density);
+        m_grid->write<AT::temperature>(i,temperature);
         if(m_randomVectors)
         {
             m_grid->write<AT::velocityX>(i, velX);
@@ -72,6 +74,7 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
             break;
     }
 
+    m_totalSimulatedTime = 0;
     return m_grid;
 }
 
@@ -83,15 +86,23 @@ std::unique_ptr<Simulation> TestSimulation::clone() const
 void TestSimulation::showGui(bool* show)
 {
     ImGui::SetNextWindowSize({0,0},ImGuiCond_FirstUseEver);
-    if(ImGui::Begin("RenderDemoSimulation",show))
+    if(ImGui::Begin("Test Simulation",show))
     {
-        std::string state;
         if(m_isPaused)
+        {
             ImGui::Text("State: Paused");
+            if(ImGui::Button("Resume")) resume();
+        }
         else
+        {
             ImGui::Text("State: running");
+            if(ImGui::Button("Pause")) pause();
+        }
 
-        ImGui::Text("This is a rendering demo, so the simulation does nothing. There are also no settings.");
+        ImGui::Checkbox("solve heat equation",&m_solveHeatEquation);
+        ImGui::DragFloat("Heat Coefficient",&m_heatCoefficient,0.01);
+        ImGui::DragFloat("Timestep",&m_timestep,0.01);
+        ImGui::Text("Simulated Time units: %f", m_totalSimulatedTime);
     }
     ImGui::End();
 }
@@ -102,7 +113,7 @@ void TestSimulation::simulateOnce()
 }
 
 template <typename csT>
-__global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs)
+__global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs, bool solveHeat, float heatCoefficient, float timestep)
 {
     for(int x : mpu::gridStrideRange( 1, cs.getNumGridCells3d().x-1 ))
         for(int y : mpu::gridStrideRangeY( 1, cs.getNumGridCells3d().y-1 ))
@@ -159,6 +170,22 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs)
         float forwardRightCurl = curl2d(velY,velRightY, velX, velForwardX, cs.getCellSize());
         // averaging is done in the next kernel
         grid.write<AT::velocityCurl>(cellId, forwardRightCurl);
+
+        // solve the heat equation
+        if(solveHeat)
+        {
+            float temp = grid.read<AT::temperature>(cellId);
+            float tempLeft = grid.read<AT::temperature>(cs.getLeftNeighbor(cellId));
+            float tempRight = grid.read<AT::temperature>(cs.getRightNeighbor(cellId));
+            float tempForward = grid.read<AT::temperature>(cs.getForwardNeighbor(cellId));
+            float tempBackward = grid.read<AT::temperature>(cs.getBackwardNeighbor(cellId));
+
+            float temp_dt = heatCoefficient * laplace2d(tempLeft,tempRight,tempBackward,tempForward,temp,cs.getCellSize());
+            temp += temp_dt * timestep;
+            grid.write<AT::temperature>(cellId,temp);
+        }
+        else
+            grid.copy<AT::temperature>(cellId);
     }
 }
 
@@ -190,6 +217,7 @@ __global__ void interpolateCurl(TestSimGrid::ReferenceType grid, csT cs)
             grid.copy<AT::densityGradY>(cellId);
             grid.copy<AT::densityLaplace>(cellId);
             grid.copy<AT::velocityDiv>(cellId);
+            grid.copy<AT::temperature>(cellId);
         }
 }
 
@@ -200,7 +228,9 @@ void TestSimulation::simulateOnceImpl(csT& cs)
     dim3 numBlocks{ static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().x ,blocksize.x)),
                     static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().y ,blocksize.y)), 1};
 
-    testSimulation<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs);
+    if(m_solveHeatEquation)
+        m_totalSimulatedTime += m_timestep;
+    testSimulation<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_solveHeatEquation,m_heatCoefficient,m_timestep);
     m_grid->swapBuffer();
     interpolateCurl<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs);
 }
