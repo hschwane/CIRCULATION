@@ -47,7 +47,8 @@ private:
     float2 m_vectorValue;
 
     // sim options
-    bool m_solveHeatEquation{false};
+    bool m_diffuseHeat{false};
+    bool m_advectHeat{false};
     float m_heatCoefficient{1.0f};
     float m_timestep{0.1f};
     float m_totalSimulatedTime{0.0f};
