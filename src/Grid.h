@@ -126,7 +126,8 @@ enum class AT
     densityGradY,
     densityLaplace,
     velocityDiv,
-    velocityCurl
+    velocityCurl,
+    temperature
 };
 
 
@@ -138,6 +139,7 @@ using GridDensityGradY = GridAttribute<AT::densityGradY,float>;
 using GridDensityLaplace = GridAttribute<AT::densityLaplace,float>;
 using GridVelocityDiv = GridAttribute<AT::velocityDiv,float>;
 using GridVelocityCurl = GridAttribute<AT::velocityCurl,float>;
+using GridTemperature = GridAttribute<AT::temperature,float>;
 
 
 //-------------------------------------------------------------------
@@ -737,8 +739,8 @@ Grid<GridAttribs...>::ReferenceType Grid<GridAttribs...>::getGridReference()
 using RenderDemoGrid = Grid<GridDensity,GridVelocityX,GridVelocityY>;
 extern template class Grid<GridDensity,GridVelocityX,GridVelocityY>;
 
-using TestSimGrid = Grid<GridDensity, GridVelocityX, GridVelocityY, GridDensityGradX, GridDensityGradY, GridDensityLaplace, GridVelocityDiv, GridVelocityCurl>;
-extern template class Grid<GridDensity, GridVelocityX, GridVelocityY, GridDensityGradX, GridDensityGradY, GridDensityLaplace, GridVelocityDiv, GridVelocityCurl>;
+using TestSimGrid = Grid<GridDensity, GridVelocityX, GridVelocityY, GridDensityGradX, GridDensityGradY, GridDensityLaplace, GridVelocityDiv, GridVelocityCurl, GridTemperature>;
+extern template class Grid<GridDensity, GridVelocityX, GridVelocityY, GridDensityGradX, GridDensityGradY, GridDensityLaplace, GridVelocityDiv, GridVelocityCurl, GridTemperature>;
 
 
 #endif //CIRCULATION_GRID_H

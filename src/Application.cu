@@ -523,6 +523,7 @@ void Application::newSimulationModal()
                     scalarFields.emplace_back("density_laplace",5);
                     scalarFields.emplace_back("velocity_divergence",6);
                     scalarFields.emplace_back("velocity_curl",7);
+                    scalarFields.emplace_back("temperature",8);
                     m_renderer.setScalarFields(scalarFields);
 
                     std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
