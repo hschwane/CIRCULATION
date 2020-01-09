@@ -342,6 +342,8 @@ public:
     auto read(int cellId); //!< read data from grid cell cellId parameter Param
     template <AT Param, typename T>
     void write(int cellId, T&& data); //!< read data from grid cell cellId parameter Param
+    template <AT Param>
+    void copy(int cellId); //!< copy data from the read to the write grid
 
     int size() const; //!< returns the number of available grid cells
 
@@ -495,6 +497,14 @@ template <AT Param, typename T>
 void Grid<GridAttribs...>::write(int cellId, T&& data)
 {
     return m_writeBuffer->write<Param>(cellId, std::forward<T>(data));
+}
+
+template <typename... GridAttribs>
+template <AT Param>
+void Grid<GridAttribs...>::copy(int cellId)
+{
+    auto data = read<Param>(cellId);
+    write<Param>(cellId,data);
 }
 
 template <typename ...GridAttribs>

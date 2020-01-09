@@ -97,6 +97,9 @@ public:
     CUDAHOSTDEV auto read(int cellId); //!< read data from grid cell cellId parameter Param
     template <AT Param, typename T>
     CUDAHOSTDEV void write(int cellId, T&& data); //!< read data from grid cell cellId parameter Param
+    template <AT Param>
+    CUDAHOSTDEV void copy(int cellId); //!< copy data from the read to the write grid
+
 
     CUDAHOSTDEV int size(); //!< number of grid cells
 
@@ -121,6 +124,14 @@ template <AT Param, typename T>
 void GridReference<AttribRefs...>::write(int cellId, T&& data)
 {
     m_writeBuffer.write<Param>(cellId,data);
+}
+
+template <typename... AttribRefs>
+template <AT Param>
+void GridReference<AttribRefs...>::copy(int cellId)
+{
+    auto data = read<Param>(cellId);
+    write<Param>(cellId,data);
 }
 
 template <typename... AttribRefs>
