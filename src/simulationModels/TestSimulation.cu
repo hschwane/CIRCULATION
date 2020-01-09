@@ -117,11 +117,11 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs)
         int cellId = cs.getCellId(cell);
 
         float rho = grid.read<AT::density>(cellId);
-        float velx = grid.read<AT::velocityX>(cellId);
-        float vely = grid.read<AT::velocityY>(cellId);
+        float velX = grid.read<AT::velocityX>(cellId);
+        float velY = grid.read<AT::velocityY>(cellId);
 
-        grid.write<AT::velocityX>(cellId, velx);
-        grid.write<AT::velocityY>(cellId, vely);
+        grid.write<AT::velocityX>(cellId, velX);
+        grid.write<AT::velocityY>(cellId, velY);
         grid.write<AT::density>(cellId,rho);
 
         // calculate gradient using central difference
@@ -141,14 +141,67 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs)
         // remember, velocities are defined half way between the nodes,
         // we want the divergence at the node, so we get a central difference by looking at the velocities left and backwards from us
         // and compare them to our velocities
-        float velLeft = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
-        float velBackward = grid.read<AT::velocityX>(cs.getBackwardNeighbor(cellId));
+        float velLeftX = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
+        float velBackwardY = grid.read<AT::velocityY>(cs.getBackwardNeighbor(cellId));
 
-        float velDiv =  ( (velx-velLeft) / cs.getCellSize().x )
-                      + ( (vely-velBackward) / cs.getCellSize().x );
+        float velDiv =  ((velX - velLeftX) / cs.getCellSize().x )
+                      + ((velY - velBackwardY) / cs.getCellSize().x );
 
         grid.write<AT::velocityDiv>(cellId, velDiv);
+
+        // laplace
+        float rhoLeft     = grid.read<AT::density>(cs.getLeftNeighbor(cellId));
+        float rhoBackward   = grid.read<AT::density>(cs.getBackwardNeighbor(cellId));
+
+        float laplace =   (rhoRight - 2*rho + rhoLeft) / (cs.getCellSize().x*cs.getCellSize().x)
+                        + ( (rhoForward - 2*rho + rhoBackward) / (cs.getCellSize().y*cs.getCellSize().y) );
+
+        grid.write<AT::densityLaplace>(cellId, laplace*0.001);
+
+        // curl is more difficult, as we can only compute it at cell corners
+        // offsetted from where we want to visualize it
+        // so we need to compute 4 curls and average them
+
+        // forward right quadrant
+        float velRightY = grid.read<AT::velocityY>(cs.getRightNeighbor(cellId));
+        float velForwardX = grid.read<AT::velocityX>(cs.getForwardNeighbor(cellId));
+
+        float forwardRightCurl = ( (velRightY-velY) / cs.getCellSize().x )
+                                -( (velForwardX-velX) / cs.getCellSize().y );
+
+        grid.write<AT::velocityCurl>(cellId, forwardRightCurl);
     }
+}
+
+template <typename csT>
+__global__ void interpolateCurl(TestSimGrid::ReferenceType grid, csT cs)
+{
+    for(int x : mpu::gridStrideRange( 1, cs.getNumGridCells3d().x-1 ))
+        for(int y : mpu::gridStrideRangeY( 1, cs.getNumGridCells3d().y-1 ))
+        {
+            int3 cell{x,y,0};
+            int cellId = cs.getCellId(cell);
+
+            // only forward right curl was computed above, so now curl must be interpolated
+            float curlForwardRight = grid.read<AT::velocityCurl>(cellId);
+            float curlForwardLeft = grid.read<AT::velocityCurl>(cs.getLeftNeighbor(cellId));
+            float curlBackwardsRight = grid.read<AT::velocityCurl>(cs.getBackwardNeighbor(cellId));
+            float curlBackwardsLeft = grid.read<AT::velocityCurl>(cs.getLeftNeighbor(cs.getBackwardNeighbor(cellId)));
+
+            float averageCurl = curlForwardRight + curlForwardLeft + curlBackwardsRight + curlBackwardsLeft;
+            averageCurl *= 0.25;
+
+            grid.write<AT::velocityCurl>(cellId, averageCurl);
+
+            // copy all other values to the new buffer
+            grid.copy<AT::velocityX>(cellId);
+            grid.copy<AT::velocityY>(cellId);
+            grid.copy<AT::density>(cellId);
+            grid.copy<AT::densityGradX>(cellId);
+            grid.copy<AT::densityGradY>(cellId);
+            grid.copy<AT::densityLaplace>(cellId);
+            grid.copy<AT::velocityDiv>(cellId);
+        }
 }
 
 template <typename csT>
@@ -159,6 +212,8 @@ void TestSimulation::simulateOnceImpl(csT& cs)
                     static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().y ,blocksize.y)), 1};
 
     testSimulation<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs);
+    m_grid->swapBuffer();
+    interpolateCurl<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs);
 }
 
 template void TestSimulation::simulateOnceImpl<CartesianCoordinates2D>(CartesianCoordinates2D& cs);
