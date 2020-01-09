@@ -17,6 +17,7 @@
 #include "../GridReference.h"
 #include "../coordinateSystems/CartesianCoordinates2D.h"
 #include "../coordinateSystems/GeographicalCoordinates2D.h"
+#include "../finiteDifferences.h"
 //--------------------
 
 // function definitions of the TestSimulation class
@@ -100,13 +101,6 @@ void TestSimulation::simulateOnce()
     m_simOnceFunc(); // calls correct template specialization
 }
 
-//CUDAHOSTDEV float centralDeriv(float left, float right, float delta)
-//{
-//    return (right-left) / 2.0f*delta;
-//}
-
-//CUDAHOSTDEV float2 gradient2D()
-
 template <typename csT>
 __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs)
 {
@@ -130,9 +124,7 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs)
         float rhoRight     = grid.read<AT::density>(cs.getRightNeighbor(cellId));
         float rhoForward   = grid.read<AT::density>(cs.getForwardNeighbor(cellId));
 
-        float2 gradRho;
-        gradRho.x = (rhoRight - rho) / cs.getCellSize().x;
-        gradRho.y = (rhoForward - rho) / cs.getCellSize().y;
+        float2 gradRho = gradient2d(rho,rhoRight,rho,rhoForward, cs.getCellSize());
 
         grid.write<AT::densityGradX>(cellId, gradRho.x);
         grid.write<AT::densityGradY>(cellId, gradRho.y);
@@ -144,8 +136,7 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs)
         float velLeftX = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
         float velBackwardY = grid.read<AT::velocityY>(cs.getBackwardNeighbor(cellId));
 
-        float velDiv =  ((velX - velLeftX) / cs.getCellSize().x )
-                      + ((velY - velBackwardY) / cs.getCellSize().x );
+        float velDiv = divergence2d(velLeftX,velX,velBackwardY,velY,cs.getCellSize());
 
         grid.write<AT::velocityDiv>(cellId, velDiv);
 
@@ -153,10 +144,9 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs)
         float rhoLeft     = grid.read<AT::density>(cs.getLeftNeighbor(cellId));
         float rhoBackward   = grid.read<AT::density>(cs.getBackwardNeighbor(cellId));
 
-        float laplace =   (rhoRight - 2*rho + rhoLeft) / (cs.getCellSize().x*cs.getCellSize().x)
-                        + ( (rhoForward - 2*rho + rhoBackward) / (cs.getCellSize().y*cs.getCellSize().y) );
+        float laplace = laplace2d(rhoLeft,rhoRight,rhoBackward,rhoForward,rho, cs.getCellSize());
 
-        grid.write<AT::densityLaplace>(cellId, laplace*0.001);
+        grid.write<AT::densityLaplace>(cellId, laplace);
 
         // curl is more difficult, as we can only compute it at cell corners
         // offsetted from where we want to visualize it
@@ -166,9 +156,8 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs)
         float velRightY = grid.read<AT::velocityY>(cs.getRightNeighbor(cellId));
         float velForwardX = grid.read<AT::velocityX>(cs.getForwardNeighbor(cellId));
 
-        float forwardRightCurl = ( (velRightY-velY) / cs.getCellSize().x )
-                                -( (velForwardX-velX) / cs.getCellSize().y );
-
+        float forwardRightCurl = curl2d(velY,velRightY, velX, velForwardX, cs.getCellSize());
+        // averaging is done in the next kernel
         grid.write<AT::velocityCurl>(cellId, forwardRightCurl);
     }
 }
