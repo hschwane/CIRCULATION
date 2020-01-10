@@ -56,6 +56,8 @@ public:
     CUDAHOSTDEV virtual int getCellId(const float3& coord) const =0; //!< get the the cell id that belongs coordinates "coord"
     CUDAHOSTDEV virtual int getCellId(const int3& cellId3d) const =0; //!< get the the cell id from the multidimensional cell id
     CUDAHOSTDEV virtual int3 getCellId3d(const float3& coord) const =0; //!< get the multi dimensional cell id
+    CUDAHOSTDEV virtual int3 getCellId3d(int cellId) const=0; //!< get the multi dimensional cell id from 1d cell id
+
 
     // adjacency
     CUDAHOSTDEV virtual int getRightNeighbor(int cellId) const =0; //!< get neighbors for given cell along first positive axis
@@ -70,6 +72,7 @@ public:
     CUDAHOSTDEV virtual float3 getMaxCoord() const =0; //!< get the upper bound for all dimensions
     CUDAHOSTDEV virtual int getNumGridCells() const =0; //!< total number of grid cells
     CUDAHOSTDEV virtual int3 getNumGridCells3d() const =0; //!< number of grid cells in each dimension
+    CUDAHOSTDEV virtual int3 hasBoundary() const =0; //!< 1 for each dimension which has a boundary, 0 if the dimension does not require a boundary (eg is periodic)
 
     // dimensions
     CUDAHOSTDEV virtual float3 getCellSize() const =0; //! get the size of the cell in target coordinates (uniform grid)

@@ -118,12 +118,32 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT coordinateSy
 {
     csT cs = coordinateSystem;
 
-    for(int x : mpu::gridStrideRange( 1, cs.getNumGridCells3d().x-1 ))
-        for(int y : mpu::gridStrideRangeY( 1, cs.getNumGridCells3d().y-1 ))
+    for(int x : mpu::gridStrideRange( cs.hasBoundary().x, cs.getNumGridCells3d().x-cs.hasBoundary().x ))
+        for(int y : mpu::gridStrideRangeY( cs.hasBoundary().y, cs.getNumGridCells3d().y-cs.hasBoundary().y ))
     {
         int3 cell{x,y,0};
         int cellId = cs.getCellId(cell);
         float2 cellPos = make_float2( cs.getCellCoordinate3d(cell) );
+
+        // do bounds checking
+        int3 leftNeigbour = cs.getCellId3d(cs.getRightNeighbor(cellId));
+        int3 rightNeibor = cs.getCellId3d(cs.getLeftNeighbor(cellId));
+        int3 backwardNeigbor = cs.getCellId3d(cs.getBackwardNeighbor(cellId));
+        int3 forwardNeigbor = cs.getCellId3d(cs.getForwardNeighbor(cellId));
+
+        auto oob = [&](int3 c)->bool
+        {
+            return (c.x >= cs.getNumGridCells3d().x) || (c.x < 0) || (c.y >= cs.getNumGridCells3d().y) || (c.y < 0);
+        };
+
+        if(oob(leftNeigbour))
+            printf("Left neighbor out of bounds! cell (%i,%i) \n",x,y);
+        if(oob(rightNeibor))
+            printf("Right neighbor out of bounds! cell (%i,%i) \n",x,y);
+        if(oob(backwardNeigbor))
+            printf("Backward neighbor out of bounds! cell (%i,%i) \n",x,y);
+        if(oob(forwardNeigbor))
+            printf("Forward neighbor out of bounds! cell (%i,%i) \n",x,y);
 
         float rho = grid.read<AT::density>(cellId);
         float velX = grid.read<AT::velocityX>(cellId);
@@ -207,8 +227,8 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT coordinateSy
 template <typename csT>
 __global__ void interpolateCurl(TestSimGrid::ReferenceType grid, csT cs)
 {
-    for(int x : mpu::gridStrideRange( 1, cs.getNumGridCells3d().x-1 ))
-        for(int y : mpu::gridStrideRangeY( 1, cs.getNumGridCells3d().y-1 ))
+    for(int x : mpu::gridStrideRange( cs.hasBoundary().x, cs.getNumGridCells3d().x-cs.hasBoundary().x ))
+        for(int y : mpu::gridStrideRangeY( cs.hasBoundary().y, cs.getNumGridCells3d().y-cs.hasBoundary().y ))
         {
             int3 cell{x,y,0};
             int cellId = cs.getCellId(cell);

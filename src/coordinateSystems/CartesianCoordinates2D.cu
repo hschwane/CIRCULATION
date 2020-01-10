@@ -64,6 +64,11 @@ float3 CartesianCoordinates2D::getCellCoordinate3d(const int3& cellId3d) const
     return make_float3(coord2d);
 }
 
+int3 CartesianCoordinates2D::getCellId3d(int cellId) const
+{
+    return int3{cellId%m_numGridCells.x, cellId/m_numGridCells.x,0};
+}
+
 int CartesianCoordinates2D::getCellId(const float3& coord) const
 {
     int3 cellId3d = getCellId3d(coord);
@@ -119,6 +124,11 @@ int CartesianCoordinates2D::getNumGridCells() const
 int3 CartesianCoordinates2D::getNumGridCells3d() const
 {
     return make_int3(m_numGridCells,1);
+}
+
+int3 CartesianCoordinates2D::hasBoundary() const
+{
+    return make_int3(1,1,0);
 }
 
 float3 CartesianCoordinates2D::getCellSize() const

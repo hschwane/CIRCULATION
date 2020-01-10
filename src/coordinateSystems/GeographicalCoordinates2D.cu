@@ -83,6 +83,11 @@ int GeographicalCoordinates2D::getCellId(const int3& cellId3d) const
     return cellId3d.y*m_numGridCells.x+ cellId3d.x;
 }
 
+int3 GeographicalCoordinates2D::getCellId3d(int cellId) const
+{
+    return int3{cellId%m_numGridCells.x, cellId/m_numGridCells.x,0};
+}
+
 int3 GeographicalCoordinates2D::getCellId3d(const float3& coord) const
 {
     float2 coord2d =  (make_float2(coord) - m_min) / m_cellSize;
@@ -91,11 +96,16 @@ int3 GeographicalCoordinates2D::getCellId3d(const float3& coord) const
 
 int GeographicalCoordinates2D::getRightNeighbor(int cellId) const
 {
-    return cellId+1;
+    cellId += 1;
+    if(cellId % m_numGridCells.x == 0)
+        cellId -= m_numGridCells.x;
+    return cellId;
 }
 
 int GeographicalCoordinates2D::getLeftNeighbor(int cellId) const
 {
+    if(cellId % m_numGridCells.x == 0)
+        cellId += m_numGridCells.x;
     return cellId-1;
 }
 
@@ -137,6 +147,11 @@ int GeographicalCoordinates2D::getNumGridCells() const
 int3 GeographicalCoordinates2D::getNumGridCells3d() const
 {
     return make_int3(m_numGridCells,1);
+}
+
+int3 GeographicalCoordinates2D::hasBoundary() const
+{
+    return make_int3(0,1,0);
 }
 
 float3 GeographicalCoordinates2D::getCellSize() const
