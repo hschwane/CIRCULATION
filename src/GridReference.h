@@ -19,6 +19,8 @@
 #include "Grid.h"
 //--------------------
 
+//#define ENABLE_BOUNDS_CHECKING
+
 //-------------------------------------------------------------------
 /**
  * @brief References a GridAttribute on the device.
@@ -29,11 +31,24 @@ class GridAttributeReference
 public:
     explicit GridAttributeReference( GridAttribute<attributeType,T>* attrib ) : m_data(attrib->m_data.getVectorReference()) {}
 
-    CUDAHOSTDEV T read(int cellId) {return m_data[cellId];}
+    CUDAHOSTDEV T read(int cellId)
+    {
+    #if defined(ENABLE_BOUNDS_CHECKING)
+        return m_data.at(cellId);
+    #else
+        return m_data[cellId];
+    #endif
+    }
+
     template <typename Tin>
     CUDAHOSTDEV void write(int cellId, Tin&& data)
     {
+    #if defined(ENABLE_BOUNDS_CHECKING)
+        m_data.at(cellId) = std::move<Tin>(data);
+    #else
         m_data[cellId] = std::move<Tin>(data);
+    #endif
+
     }
 
     static constexpr AT type = attributeType;
