@@ -15,6 +15,7 @@
 //--------------------
 #include <mpUtils/mpUtils.h>
 #include <mpUtils/mpCuda.h>
+#include "coordinateSystems/GeographicalCoordinates2D.h"
 //--------------------
 
 /**
@@ -50,12 +51,22 @@ CUDAHOSTDEV inline float central2ndDeriv(float left, float center, float right, 
  * @param right the calue right (+X axis) of the location where the gradient is computed
  * @param backward the value backward (-Y axis) of the location where the gradient is computed
  * @param forward the value forward (+Y axis) of the location where the gradient is computed
- * @param delta distance between the locations where left - right (x-component) and backward - forward (y-component) where taken (z is ignored)
- * @return the gradient calculate at the center between left right backward and forward
+ * @param location the location where the gradient should be taken (the center between left, right, backward and forward)
+ * @param cs the coordinate system to be used when calculating the gradient
+ * @return the gradient calculate at the center between left, right, backward and forward
  */
-CUDAHOSTDEV inline float2 gradient2d(float left, float right, float backward, float forward, const float3& delta)
+template <typename csT>
+CUDAHOSTDEV inline float2 gradient2d(float left, float right, float backward, float forward, const float2& location, const csT& cs)
 {
-    return make_float2( centralDeriv(left,right,delta.x), centralDeriv(backward,forward,delta.y) );
+    static_assert(csT::isCartesian, "This overload only works for cartesian coordinates.");
+    return make_float2( centralDeriv(left,right,cs.getCellSize().x), centralDeriv(backward,forward,cs.getCellSize().y) );
+}
+
+template <>
+CUDAHOSTDEV inline float2 gradient2d<GeographicalCoordinates2D>(float left, float right, float backward, float forward, const float2& location, const GeographicalCoordinates2D& cs)
+{
+    float rinv = 1.0f / cs.getMinCoord().z;
+    return make_float2( rinv /cos(location.y) * centralDeriv(left,right,cs.getCellSize().x), rinv * centralDeriv(backward,forward,cs.getCellSize().y) );
 }
 
 /**
@@ -67,9 +78,22 @@ CUDAHOSTDEV inline float2 gradient2d(float left, float right, float backward, fl
  * @param delta distance between the locations where left - right (x-component) and backward - forward (y-component) where taken (z is ignored)
  * @return the divergence calculate at the center between left, right, backward and forward
  */
-CUDAHOSTDEV inline float divergence2d(float leftX, float rightX, float backwardY, float forwardY, const float3& delta)
+template <typename csT>
+CUDAHOSTDEV inline float divergence2d(float leftX, float rightX, float backwardY, float forwardY, const float2& location, const csT& cs)
 {
-    return centralDeriv(leftX,rightX,delta.x) + centralDeriv(backwardY,forwardY,delta.y);
+    static_assert(csT::isCartesian, "This overload only works for cartesian coordinates.");
+    return centralDeriv(leftX,rightX,cs.getCellSize().x) + centralDeriv(backwardY,forwardY,cs.getCellSize().y);
+}
+
+template <>
+CUDAHOSTDEV inline float divergence2d<GeographicalCoordinates2D>(float leftX, float rightX, float backwardY, float forwardY, const float2& location, const GeographicalCoordinates2D& cs)
+{
+    float rSinePhiInv = 1.0f / ( cs.getMinCoord().z * cos(location.y)); // remember location.y is not phi but phi = pi/2 - location.y
+
+    float locationBackward = location.y - cs.getCellSize().y*0.5f;
+    float locationForward = location.y + cs.getCellSize().y*0.5f;
+
+    return rSinePhiInv * ( centralDeriv(leftX,rightX,cs.getCellSize().x) + centralDeriv( cos(locationBackward) * backwardY, cos(locationForward) * forwardY,cs.getCellSize().y) );
 }
 
 /**
@@ -81,9 +105,23 @@ CUDAHOSTDEV inline float divergence2d(float leftX, float rightX, float backwardY
  * @param delta distance between the locations where left - right (x-component) and backward - forward (y-component) where taken (z is ignored)
  * @return the curl calculated in the center of left, right, backward and forward
  */
-CUDAHOSTDEV inline float curl2d(float leftY, float rightY, float backwardX, float forwardX, const float3& delta)
+template <typename csT>
+CUDAHOSTDEV inline float curl2d(float leftY, float rightY, float backwardX, float forwardX, const float2& location, const csT& cs)
 {
-    return centralDeriv(leftY,rightY,delta.x) - centralDeriv(backwardX,forwardX,delta.y);
+    static_assert(csT::isCartesian, "This overload only works for cartesian coordinates.");
+    return centralDeriv(leftY,rightY,cs.getCellSize().x) - centralDeriv(backwardX,forwardX,cs.getCellSize().y);
+}
+
+template <>
+CUDAHOSTDEV inline float curl2d<GeographicalCoordinates2D>(float leftY, float rightY, float backwardX, float forwardX, const float2& location, const GeographicalCoordinates2D& cs)
+{
+    float rSinePhiInv = 1.0f / ( cs.getMinCoord().z * cos(location.y)); // remember location.y is not phi but phi = pi/2 - location.y
+
+    float locationBackward = location.y - cs.getCellSize().y*0.5f;
+    float locationForward = location.y + cs.getCellSize().y*0.5f;
+
+    // there seems to be a typo on the wolfram math side where a -1 is missing
+    return rSinePhiInv * ( centralDeriv(leftY,rightY,cs.getCellSize().x) - centralDeriv( cos(locationBackward) * backwardX, cos(locationForward) * forwardX,cs.getCellSize().y) );
 }
 
 /**
@@ -96,9 +134,21 @@ CUDAHOSTDEV inline float curl2d(float leftY, float rightY, float backwardX, floa
  * @param delta distance between the locations where left - right (x-component) and backward - forward (y-component) where taken (z is ignored)
  * @return the laplace operator calculated at the location where center was taken, in the center of left, right, backward and forward
  */
-CUDAHOSTDEV inline float laplace2d(float left, float right, float backward, float forward, float center, const float3& delta)
+template <typename csT>
+CUDAHOSTDEV inline float laplace2d(float left, float right, float backward, float forward, float center, const float2& location, const csT& cs)
 {
-    return central2ndDeriv(left,center,right,delta.x) + central2ndDeriv(backward,center,forward,delta.y);
+    static_assert(csT::isCartesian, "This overload only works for cartesian coordinates.");
+    return central2ndDeriv(left,center,right,cs.getCellSize().x) + central2ndDeriv(backward,center,forward,cs.getCellSize().y);
+}
+
+template <>
+CUDAHOSTDEV inline float laplace2d<GeographicalCoordinates2D>(float left, float right, float backward, float forward, float center, const float2& location, const GeographicalCoordinates2D& cs)
+{
+    float sinPhiInv = 1.0f/cos(location.y);
+    float cosPhi = sin(location.y);
+    float rinv2 = 1.0f / (cs.getMinCoord().z * cs.getMinCoord().z);
+
+    return rinv2*sinPhiInv*sinPhiInv * central2ndDeriv(left,center,right,cs.getCellSize().x) + cosPhi*rinv2*sinPhiInv * centralDeriv(backward,forward,2*cs.getCellSize().y) + rinv2 * central2ndDeriv(backward,center,forward,cs.getCellSize().y);
 }
 
 #endif //CIRCULATION_FINITEDIFFERENCES_H

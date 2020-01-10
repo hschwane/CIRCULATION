@@ -80,6 +80,7 @@ public:
 
     // downcasting
     CSType getType() final; //!< identify the type of coordinate system using CSType from enums.h for downcasting
+    static constexpr bool isCartesian{false}; //!< is the coordinate system a cartesian coordinate system
 
 private:
     const float m_radius; //!< radius of the sphere shell

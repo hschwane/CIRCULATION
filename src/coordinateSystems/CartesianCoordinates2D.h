@@ -76,8 +76,9 @@ public:
     std::string getShaderDefine() const override ; //!< returns name of a file to be included in a shader which defines above functions in glsl
     void setShaderUniforms(mpu::gph::ShaderProgram& shader) const override; //!< sets the necessary uniforms to a shader that included th shader file from "getShaderFileName()" function
 
-    // downcasting
+    // downcasting and template things
     CSType getType() override; //!< identify the type of coordinate system using CSType from enums.h for downcasting
+    static constexpr bool isCartesian{true}; //!< is the coordinate system a cartesian coordinate system
 
 private:
     const float2 m_min; //!< smallest possible coordinate

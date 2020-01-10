@@ -114,13 +114,16 @@ void TestSimulation::simulateOnce()
 }
 
 template <typename csT>
-__global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs, bool diffuseHeat, bool advectHeat, float heatCoefficient, float timestep)
+__global__ void testSimulation(TestSimGrid::ReferenceType grid, csT coordinateSystem, bool diffuseHeat, bool advectHeat, float heatCoefficient, float timestep)
 {
+    csT cs = coordinateSystem;
+
     for(int x : mpu::gridStrideRange( 1, cs.getNumGridCells3d().x-1 ))
         for(int y : mpu::gridStrideRangeY( 1, cs.getNumGridCells3d().y-1 ))
     {
         int3 cell{x,y,0};
         int cellId = cs.getCellId(cell);
+        float2 cellPos = make_float2( cs.getCellCoordinate3d(cell) );
 
         float rho = grid.read<AT::density>(cellId);
         float velX = grid.read<AT::velocityX>(cellId);
@@ -136,7 +139,7 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs, bool dif
         float rhoRight     = grid.read<AT::density>(cs.getRightNeighbor(cellId));
         float rhoForward   = grid.read<AT::density>(cs.getForwardNeighbor(cellId));
 
-        float2 gradRho = gradient2d(rho,rhoRight,rho,rhoForward, cs.getCellSize());
+        float2 gradRho = gradient2d(rho, rhoRight, rho, rhoForward, cellPos, cs);
 
         grid.write<AT::densityGradX>(cellId, gradRho.x);
         grid.write<AT::densityGradY>(cellId, gradRho.y);
@@ -148,7 +151,7 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs, bool dif
         float velLeftX = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
         float velBackwardY = grid.read<AT::velocityY>(cs.getBackwardNeighbor(cellId));
 
-        float velDiv = divergence2d(velLeftX,velX,velBackwardY,velY,cs.getCellSize());
+        float velDiv = divergence2d(velLeftX,velX,velBackwardY,velY,cellPos,cs);
 
         grid.write<AT::velocityDiv>(cellId, velDiv);
 
@@ -156,7 +159,7 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs, bool dif
         float rhoLeft     = grid.read<AT::density>(cs.getLeftNeighbor(cellId));
         float rhoBackward   = grid.read<AT::density>(cs.getBackwardNeighbor(cellId));
 
-        float laplace = laplace2d(rhoLeft,rhoRight,rhoBackward,rhoForward,rho, cs.getCellSize());
+        float laplace = laplace2d(rhoLeft,rhoRight,rhoBackward,rhoForward,rho,cellPos,cs);
 
         grid.write<AT::densityLaplace>(cellId, laplace);
 
@@ -168,7 +171,7 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs, bool dif
         float velRightY = grid.read<AT::velocityY>(cs.getRightNeighbor(cellId));
         float velForwardX = grid.read<AT::velocityX>(cs.getForwardNeighbor(cellId));
 
-        float forwardRightCurl = curl2d(velY,velRightY, velX, velForwardX, cs.getCellSize());
+        float forwardRightCurl = curl2d(velY,velRightY, velX, velForwardX,cellPos,cs);
         // averaging is done in the next kernel
         grid.write<AT::velocityCurl>(cellId, forwardRightCurl);
 
@@ -185,7 +188,7 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT cs, bool dif
                 float tempForward = grid.read<AT::temperature>(cs.getForwardNeighbor(cellId));
                 float tempBackward = grid.read<AT::temperature>(cs.getBackwardNeighbor(cellId));
                 temp_dt += heatCoefficient *
-                                laplace2d(tempLeft, tempRight, tempBackward, tempForward, temp, cs.getCellSize());
+                                laplace2d(tempLeft, tempRight, tempBackward, tempForward, temp,cellPos,cs);
             }
 
             if(advectHeat)

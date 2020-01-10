@@ -121,12 +121,12 @@ int GeographicalCoordinates2D::getDownNeighbor(int cellId) const
 
 float3 GeographicalCoordinates2D::getMinCoord() const
 {
-    return make_float3(m_min);
+    return make_float3(m_min,m_radius);
 }
 
 float3 GeographicalCoordinates2D::getMaxCoord() const
 {
-    return make_float3(m_max);
+    return make_float3(m_max,m_radius);
 }
 
 int GeographicalCoordinates2D::getNumGridCells() const
