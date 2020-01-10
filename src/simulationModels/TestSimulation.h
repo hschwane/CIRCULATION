@@ -45,6 +45,7 @@ private:
     // creation options
     bool m_randomVectors{true};
     float2 m_vectorValue;
+    float m_boundaryTemperature{4.0f};
 
     // sim options
     bool m_diffuseHeat{false};

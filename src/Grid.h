@@ -346,6 +346,8 @@ public:
     void write(int cellId, T&& data); //!< read data from grid cell cellId parameter Param
     template <AT Param>
     void copy(int cellId); //!< copy data from the read to the write grid
+    template <AT Param, typename T>
+    void initialize(int cellId, T&& data); //!< writes to this parameter to this cell in all used buffers, eg for boundaries
 
     int size() const; //!< returns the number of available grid cells
 
@@ -498,7 +500,7 @@ template <typename ...GridAttribs>
 template <AT Param, typename T>
 void Grid<GridAttribs...>::write(int cellId, T&& data)
 {
-    return m_writeBuffer->write<Param>(cellId, std::forward<T>(data));
+    m_writeBuffer->write<Param>(cellId, std::forward<T>(data));
 }
 
 template <typename... GridAttribs>
@@ -507,6 +509,15 @@ void Grid<GridAttribs...>::copy(int cellId)
 {
     auto data = read<Param>(cellId);
     write<Param>(cellId,data);
+}
+
+template <typename... GridAttribs>
+template <AT Param, typename T>
+void Grid<GridAttribs...>::initialize(int cellId, T&& data)
+{
+    m_bufferA.write<Param>(cellId, std::forward<T>(data));
+    m_bufferB.write<Param>(cellId, std::forward<T>(data));
+    m_bufferC.write<Param>(cellId, std::forward<T>(data));
 }
 
 template <typename ...GridAttribs>

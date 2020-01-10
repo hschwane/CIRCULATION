@@ -28,6 +28,8 @@ void TestSimulation::drawCreationOptions()
     ImGui::Checkbox("Random Vectors", &m_randomVectors);
     if(!m_randomVectors)
         ImGui::DragFloat2("Vector", &m_vectorValue.x);
+
+    ImGui::DragFloat("Boundary Temperature", &m_boundaryTemperature);
 }
 
 std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSystem> cs)
@@ -58,6 +60,20 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
             m_grid->write<AT::velocityX>(i, m_vectorValue.x);
             m_grid->write<AT::velocityY>(i, m_vectorValue.y);
         }
+    }
+
+    // initialize boundary
+
+    // calculate number of boundary cells
+    int numBoundCells = 2* m_cs->hasBoundary().y * m_cs->getNumGridCells3d().x ;
+    for(int i : mpu::Range<int>(numBoundCells))
+    {
+        // transform boundary cell id into actual cell id
+        int cellId = i;
+        if(cellId >= m_cs->getNumGridCells3d().x)
+            cellId += m_cs->getNumGridCells3d().x * (m_cs->getNumGridCells3d().y-2);
+
+        m_grid->initialize<AT::temperature>(cellId,m_boundaryTemperature);
     }
 
     // swap buffers and ready for rendering
@@ -207,8 +223,9 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT coordinateSy
                 float tempRight = grid.read<AT::temperature>(cs.getRightNeighbor(cellId));
                 float tempForward = grid.read<AT::temperature>(cs.getForwardNeighbor(cellId));
                 float tempBackward = grid.read<AT::temperature>(cs.getBackwardNeighbor(cellId));
-                temp_dt += heatCoefficient *
-                                laplace2d(tempLeft, tempRight, tempBackward, tempForward, temp,cellPos,cs);
+
+                float heatLaplace = laplace2d(tempLeft, tempRight, tempBackward, tempForward, temp,cellPos,cs);
+                temp_dt += heatCoefficient *heatLaplace;
             }
 
             if(advectHeat)
