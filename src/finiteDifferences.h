@@ -42,7 +42,7 @@ CUDAHOSTDEV inline float centralDeriv(float left, float right, float delta)
  */
 CUDAHOSTDEV inline float central2ndDeriv(float left, float center, float right, float delta)
 {
-    return (right - 2*center + left) / delta*delta;
+    return (right - 2*center + left) / (delta*delta);
 }
 
 /**

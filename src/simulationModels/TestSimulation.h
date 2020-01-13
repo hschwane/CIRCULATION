@@ -23,7 +23,7 @@
 /**
  * class TestSimulation
  *
- * usage:
+ * A simulation for testing finite difference approximations
  *
  */
 class TestSimulation : public Simulation

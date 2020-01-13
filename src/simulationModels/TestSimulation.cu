@@ -271,9 +271,6 @@ __global__ void interpolateCurl(TestSimGrid::ReferenceType grid, csT coordinateS
 
                     float heatLaplace = laplace2d(tempLeft,tempRight,tempBackward,tempForward,temp,cellPos,cs);
 
-                    if(threadIdx.x == 0)
-                        printf("laplace: %f, DivOfGrad: %f\n", heatLaplace, heatDivGrad);
-
                     if(useDivOfGrad)
                         temp_dt += heatCoefficient * heatDivGrad;
                     else
