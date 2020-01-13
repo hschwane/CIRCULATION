@@ -345,13 +345,17 @@ public:
     void pushCachToDevice() override; //!< write changes from the local cache back to the device
 
     template <AT Param>
-    auto read(int cellId); //!< read data from grid cell cellId parameter Param
+    auto read(int cellId); //!< read data from grid cell cellId parameter Param at time t
+    template <AT Param>
+    auto readPrev(int cellId); //!< read data from grid cell cellId parameter Param at time t-1
     template <AT Param, typename T>
-    void write(int cellId, T&& data); //!< read data from grid cell cellId parameter Param
+    void write(int cellId, T&& data); //!< write data to grid cell cellId parameter Param at time t+1
+    template <AT Param, typename T>
+    void writeCurrent(int cellId, T&& data); //!< write data to grid cell cellId parameter Param at time t. Beware of possible race conditions when also reading from the time t buffer!
     template <AT Param>
     void copy(int cellId); //!< copy data from the read to the write grid
     template <AT Param, typename T>
-    void initialize(int cellId, T&& data); //!< writes to this parameter to this cell in all used buffers, eg for boundaries
+    void initialize(int cellId, T&& data); //!< write data to grid cell cellId parameter Param in all used buffers (t-1, t, t+1, renderAwait). Beware of possible race conditions when also reading from the time t or t-1 buffer!
 
     int size() const; //!< returns the number of available grid cells
 
@@ -362,12 +366,19 @@ public:
     {
         using std::swap;
 
-        // swap owned things
         swap(first.m_numCells,second.m_numCells);
-        swap(first.m_bufferA,second.m_bufferA);
-        swap(first.m_bufferB,second.m_bufferB);
-        swap(first.m_bufferC,second.m_bufferC);
+
+        swap(first.m_buffers[0],second.m_buffers[0]);
+        swap(first.m_buffers[1],second.m_buffers[1]);
+        swap(first.m_buffers[2],second.m_buffers[2]);
+        swap(first.m_buffers[3],second.m_buffers[3]);
         swap(first.m_renderBuffer,second.m_renderBuffer);
+
+        swap(first.m_readBuffer , second.m_readBuffer );
+        swap(first.m_writeBuffer , second.m_writeBuffer );
+        swap(first.m_previousBuffer , second.m_previousBuffer );
+        swap(first.m_renderAwaitBuffer , second.m_renderAwaitBuffer );
+        swap(first.m_unusedBuffer , second.m_unusedBuffer );
 
         bool b = first.m_renderbufferNotRendered;
         first.m_renderbufferNotRendered = second.m_renderbufferNotRendered.load();
@@ -375,91 +386,6 @@ public:
         b = first.m_newRenderdataWaiting;
         first.m_newRenderdataWaiting = second.m_newRenderdataWaiting.load();
         second.m_newRenderdataWaiting = b;
-
-        // figure out buffer pointer of first element from current values of second
-        BufferType* firstUnused;
-        BufferType* firstRead;
-        BufferType* firstWrite;
-        BufferType* firstRenderAwait;
-
-        if(second.m_readBuffer == &second.m_bufferA)
-            firstRead = &first.m_bufferA;
-        else if(second.m_readBuffer == &second.m_bufferB)
-            firstRead = &first.m_bufferB;
-        else if(second.m_readBuffer == &second.m_bufferC)
-            firstRead = &first.m_bufferC;
-        else
-            firstRead = nullptr;
-
-        if(second.m_writeBuffer == &second.m_bufferA)
-            firstWrite = &first.m_bufferA;
-        else if(second.m_writeBuffer == &second.m_bufferB)
-            firstWrite = &first.m_bufferB;
-        else if(second.m_writeBuffer == &second.m_bufferC)
-            firstWrite = &first.m_bufferC;
-        else
-            firstWrite = nullptr;
-
-        if(second.m_renderAwaitBuffer == &second.m_bufferA)
-            firstRenderAwait = &first.m_bufferA;
-        else if(second.m_renderAwaitBuffer == &second.m_bufferB)
-            firstRenderAwait = &first.m_bufferB;
-        else if(second.m_renderAwaitBuffer == &second.m_bufferC)
-            firstRenderAwait = &first.m_bufferC;
-        else
-            firstRenderAwait = nullptr;
-
-        if(second.m_unusedBuffer == &second.m_bufferA)
-            firstUnused = &first.m_bufferA;
-        else if(second.m_unusedBuffer == &second.m_bufferB)
-            firstUnused = &first.m_bufferB;
-        else if(second.m_unusedBuffer == &second.m_bufferC)
-            firstUnused = &first.m_bufferC;
-        else
-            firstUnused = nullptr;
-
-        // set new values of second from values of first
-        if(first.m_readBuffer == &first.m_bufferA)
-            second.m_readBuffer = &second.m_bufferA;
-        else if(first.m_readBuffer == &first.m_bufferB)
-            second.m_readBuffer = &second.m_bufferB;
-        else if(first.m_readBuffer == &first.m_bufferC)
-            second.m_readBuffer = &second.m_bufferC;
-        else
-            second.m_readBuffer = nullptr;
-
-        if(first.m_writeBuffer == &first.m_bufferA)
-            second.m_writeBuffer = &second.m_bufferA;
-        else if(first.m_writeBuffer == &first.m_bufferB)
-            second.m_writeBuffer = &second.m_bufferB;
-        else if(first.m_writeBuffer == &first.m_bufferC)
-            second.m_writeBuffer = &second.m_bufferC;
-        else
-            second.m_writeBuffer = nullptr;
-
-        if(first.m_renderAwaitBuffer == &first.m_bufferA)
-            second.m_renderAwaitBuffer = &second.m_bufferA;
-        else if(first.m_renderAwaitBuffer == &first.m_bufferB)
-            second.m_renderAwaitBuffer = &second.m_bufferB;
-        else if(first.m_renderAwaitBuffer == &first.m_bufferC)
-            second.m_renderAwaitBuffer = &second.m_bufferC;
-        else
-            second.m_renderAwaitBuffer = nullptr;
-
-        if(first.m_unusedBuffer == &first.m_bufferA)
-            second.m_unusedBuffer = &second.m_bufferA;
-        else if(first.m_unusedBuffer == &first.m_bufferB)
-            second.m_unusedBuffer = &second.m_bufferB;
-        else if(first.m_unusedBuffer == &first.m_bufferC)
-            second.m_unusedBuffer = &second.m_bufferC;
-        else
-            second.m_unusedBuffer = nullptr;
-
-        // set values for first buffer
-        first.m_unusedBuffer = firstUnused;
-        first.m_readBuffer = firstRead;
-        first.m_writeBuffer = firstWrite;
-        first.m_renderAwaitBuffer = firstRenderAwait;
     }
 
     friend class GridReference<typename GridAttribs::ReferenceType...>; //!< reference type needs to be friends
@@ -467,15 +393,14 @@ public:
 private:
     int m_numCells; //!< number of grid cells
 
-    BufferType* m_readBuffer; //!< the buffer data is read from
-    BufferType* m_writeBuffer; //!< the buffer data is written to
+    int m_readBuffer; //!< the buffer data is read from (stores values at t)
+    int m_writeBuffer; //!< the buffer data is written to (stores values at t+1)
+    int m_previousBuffer; //!< the buffer data was read from previously (stores values at t-1)
 
-    BufferType* m_renderAwaitBuffer; //!< data that will be copied to the openGL buffer on the rendering GPU
-    BufferType* m_unusedBuffer; //!< when we read from the renderAwait buffer one buffer will be unused
+    int m_renderAwaitBuffer; //!< data that will be copied to the openGL buffer on the rendering GPU
+    int m_unusedBuffer; //!< when render await buffer == previous buffer one buffer is unused
 
-    BufferType m_bufferA; //!< buffer for cuda grid data
-    BufferType m_bufferB; //!< buffer for cuda grid data
-    BufferType m_bufferC; //!< buffer for cuda grid data
+    BufferType m_buffers[4]; //!< buffers for cuda grid data
     RenderBufferType m_renderBuffer; //!< openGL buffer to render from
 
     std::atomic_bool m_renderbufferNotRendered{false}; //!< indicates that renderbuffer contains data that have not been rendered yet
@@ -497,14 +422,28 @@ template <typename ...GridAttribs>
 template <AT Param>
 auto Grid<GridAttribs...>::read(int cellId)
 {
-    return m_readBuffer->read<Param>(cellId);
+    return m_buffers[m_readBuffer].read<Param>(cellId);
+}
+
+template <typename... GridAttribs>
+template <AT Param>
+auto Grid<GridAttribs...>::readPrev(int cellId)
+{
+    return m_buffers[m_previousBuffer].read<Param>(cellId);
 }
 
 template <typename ...GridAttribs>
 template <AT Param, typename T>
 void Grid<GridAttribs...>::write(int cellId, T&& data)
 {
-    m_writeBuffer->write<Param>(cellId, std::forward<T>(data));
+    m_buffers[m_writeBuffer].write<Param>(cellId, std::forward<T>(data));
+}
+
+template <typename... GridAttribs>
+template <AT Param, typename T>
+void Grid<GridAttribs...>::writeCurrent(int cellId, T&& data)
+{
+    m_buffers[m_readBuffer].write<Param>(cellId, std::forward<T>(data));
 }
 
 template <typename... GridAttribs>
@@ -519,29 +458,35 @@ template <typename... GridAttribs>
 template <AT Param, typename T>
 void Grid<GridAttribs...>::initialize(int cellId, T&& data)
 {
-    m_bufferA.write<Param>(cellId, std::forward<T>(data));
-    m_bufferB.write<Param>(cellId, std::forward<T>(data));
-    m_bufferC.write<Param>(cellId, std::forward<T>(data));
+    m_buffers[0].write<Param>(cellId, std::forward<T>(data));
+    m_buffers[1].write<Param>(cellId, std::forward<T>(data));
+    m_buffers[2].write<Param>(cellId, std::forward<T>(data));
+    m_buffers[3].write<Param>(cellId, std::forward<T>(data));
 }
 
 template <typename ...GridAttribs>
 Grid<GridAttribs...>::Grid(int numCells)
-    : m_bufferA(numCells), m_bufferB(numCells),
-    m_bufferC(numCells), m_numCells(numCells),
-    m_renderBuffer(numCells)
+    : m_buffers{ Grid<GridAttribs...>::BufferType(numCells), Grid<GridAttribs...>::BufferType(numCells),
+                 Grid<GridAttribs...>::BufferType(numCells), Grid<GridAttribs...>::BufferType(numCells)},
+    m_numCells(numCells), m_renderBuffer(numCells)
 {
     assert_critical(numCells>0,"Grid","Number of cells must be at least one");
-    m_readBuffer  = &m_bufferA;
-    m_writeBuffer = &m_bufferB;
-    m_unusedBuffer = nullptr;
-    m_renderAwaitBuffer = &m_bufferC;
+    m_writeBuffer = 3;
+    m_readBuffer  = 2;
+    m_previousBuffer = 1;
+    m_renderAwaitBuffer = 0;
+    m_unusedBuffer = -1;
 }
 
 template <typename... GridAttribs>
 Grid<GridAttribs...>::Grid(const Grid& other)
-    : m_bufferA(other.m_bufferA),
-      m_bufferB(other.m_bufferB),
-      m_bufferC(other.m_bufferC),
+    : m_buffers{ other.m_buffers[0], other.m_buffers[1],
+                 other.m_buffers[2], other.m_buffers[3]},
+      m_readBuffer(other.m_readBuffer),
+      m_writeBuffer(other.m_writeBuffer),
+      m_previousBuffer(other.m_previousBuffer),
+      m_renderAwaitBuffer(other.m_renderAwaitBuffer),
+      m_unusedBuffer(other.m_unusedBuffer),
       m_renderBuffer(other.m_renderBuffer),
       m_renderbufferNotRendered(other.m_renderbufferNotRendered.load()),
       m_newRenderdataWaiting(other.m_newRenderdataWaiting.load()),
@@ -549,41 +494,6 @@ Grid<GridAttribs...>::Grid(const Grid& other)
       m_rabuMtx(),
       m_numCells(other.m_numCells)
 {
-    if(other.m_readBuffer == &other.m_bufferA)
-        m_readBuffer = &m_bufferA;
-    else if(other.m_readBuffer == &other.m_bufferB)
-        m_readBuffer = &m_bufferB;
-    else if(other.m_readBuffer == &other.m_bufferC)
-        m_readBuffer = &m_bufferC;
-    else
-        m_readBuffer = nullptr;
-
-    if(other.m_writeBuffer == &other.m_bufferA)
-        m_writeBuffer = &m_bufferA;
-    else if(other.m_writeBuffer == &other.m_bufferB)
-        m_writeBuffer = &m_bufferB;
-    else if(other.m_writeBuffer == &other.m_bufferC)
-        m_writeBuffer = &m_bufferC;
-    else
-        m_writeBuffer = nullptr;
-
-    if(other.m_renderAwaitBuffer == &other.m_bufferA)
-        m_renderAwaitBuffer = &m_bufferA;
-    else if(other.m_renderAwaitBuffer == &other.m_bufferB)
-        m_renderAwaitBuffer = &m_bufferB;
-    else if(other.m_renderAwaitBuffer == &other.m_bufferC)
-        m_renderAwaitBuffer = &m_bufferC;
-    else
-        m_renderAwaitBuffer = nullptr;
-
-    if(other.m_unusedBuffer == &other.m_bufferA)
-        m_unusedBuffer = &m_bufferA;
-    else if(other.m_unusedBuffer == &other.m_bufferB)
-        m_unusedBuffer = &m_bufferB;
-    else if(other.m_unusedBuffer == &other.m_bufferC)
-        m_unusedBuffer = &m_bufferC;
-    else
-        m_unusedBuffer = nullptr;
 }
 
 template <typename... GridAttribs>
@@ -603,16 +513,18 @@ Grid<GridAttribs...>& Grid<GridAttribs...>::operator=(Grid other) noexcept
 template <typename ...GridAttribs>
 void Grid<GridAttribs...>::swapBuffer()
 {
-    BufferType* tmp = m_writeBuffer;
+    int tmp = m_writeBuffer;
+
     // make sure not to overwrite the render await buffer
-    if(m_readBuffer == m_renderAwaitBuffer)
+    if(m_previousBuffer == m_renderAwaitBuffer)
     {
         m_writeBuffer = m_unusedBuffer;
-        m_unusedBuffer = nullptr;
+        m_unusedBuffer = -1;
     } else
     {
-        m_writeBuffer = m_readBuffer;
+        m_writeBuffer = m_previousBuffer;
     }
+    m_previousBuffer = m_readBuffer;
     m_readBuffer = tmp;
 }
 
@@ -621,16 +533,30 @@ void Grid<GridAttribs...>::swapAndRender()
 {
     std::unique_lock<std::mutex> lck(m_rabuMtx);
 
-    BufferType* tmp = m_writeBuffer;
+    int tmp = m_writeBuffer;
     // make sure not to overwrite the render await buffer
-    if(m_readBuffer == m_renderAwaitBuffer)
+    if(m_previousBuffer == m_renderAwaitBuffer)
         m_writeBuffer = m_unusedBuffer;
     else
-        m_writeBuffer = m_readBuffer;
+        m_writeBuffer = m_previousBuffer;
 
-    m_unusedBuffer = m_renderAwaitBuffer;
+    // do not change the unused buffer if we render muliple times in a row
+    if(m_renderAwaitBuffer != m_readBuffer)
+        m_unusedBuffer = m_renderAwaitBuffer;
+
+    m_previousBuffer = m_readBuffer;
     m_renderAwaitBuffer = tmp;
-    m_readBuffer = m_renderAwaitBuffer;
+    m_readBuffer = tmp;
+
+    /*      i s s r s s r r r s r
+    write   3 1 2 3 1 0 3 1 0 3 2
+    Read    2 3 1 2 3 1 0 3 1 0 3
+    prev    1 2 3 1 2 3 1 0 3 1 0
+
+    render  0 0 0 2 2 2 0 3 1 1 3
+    unused  - - - 0 0 - 2 2 2 2 1
+
+    */
 
     lck.unlock();
 
@@ -651,16 +577,20 @@ void Grid<GridAttribs...>::swapAndRenderWait()
 
     std::unique_lock<std::mutex> lck(m_rabuMtx);
 
-    BufferType* tmp = m_writeBuffer;
+    int tmp = m_writeBuffer;
     // make sure not to overwrite the render await buffer
-    if(m_readBuffer == m_renderAwaitBuffer)
+    if(m_previousBuffer == m_renderAwaitBuffer)
         m_writeBuffer = m_unusedBuffer;
     else
-        m_writeBuffer = m_readBuffer;
+        m_writeBuffer = m_previousBuffer;
 
-    m_unusedBuffer = m_renderAwaitBuffer;
+    // do not change the unused buffer if we render muliple times in a row
+    if(m_renderAwaitBuffer != m_readBuffer)
+        m_unusedBuffer = m_renderAwaitBuffer;
+
+    m_previousBuffer = m_readBuffer;
     m_renderAwaitBuffer = tmp;
-    m_readBuffer = m_renderAwaitBuffer;
+    m_readBuffer = tmp;
 
     lck.unlock();
 
@@ -704,7 +634,7 @@ bool Grid<GridAttribs...>::newRenderDataReady()
 template <typename ...GridAttribs>
 void Grid<GridAttribs...>::prepareForRendering()
 {
-    m_renderBuffer.write( *m_renderAwaitBuffer);
+    m_renderBuffer.write( m_buffers[m_renderAwaitBuffer]);
 
     m_newRenderdataWaiting = false;
     m_renderbufferNotRendered = true;
