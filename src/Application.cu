@@ -41,6 +41,7 @@ Application::Application(int width, int height)
                              });
 
     // add input functions
+    m_camera.setZoomSpeed(0.2);
     m_camera.addInputs();
     addInputs();
     setKeybindings();
