@@ -53,6 +53,7 @@ private:
     float m_heatCoefficient{1.0f};
     float m_timestep{0.1f};
     float m_totalSimulatedTime{0.0f};
+    bool m_useDivOfGrad{false};
 
     // sim data
     std::shared_ptr<CoordinateSystem> m_cs; //!< the coordinate system to be used

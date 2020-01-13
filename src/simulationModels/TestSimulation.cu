@@ -116,6 +116,7 @@ void TestSimulation::showGui(bool* show)
         }
 
         ImGui::Checkbox("diffuse heat",&m_diffuseHeat);
+        ImGui::Checkbox("use divergence of gradient instead of laplacian",&m_useDivOfGrad);
         ImGui::Checkbox("advect heat",&m_advectHeat);
         ImGui::DragFloat("Heat Coefficient",&m_heatCoefficient,0.01);
         ImGui::DragFloat("Timestep",&m_timestep,0.01);
@@ -130,7 +131,7 @@ void TestSimulation::simulateOnce()
 }
 
 template <typename csT>
-__global__ void testSimulation(TestSimGrid::ReferenceType grid, csT coordinateSystem, bool diffuseHeat, bool advectHeat, float heatCoefficient, float timestep)
+__global__ void testSimulation(TestSimGrid::ReferenceType grid, csT coordinateSystem, bool diffuseHeat, bool advectHeat, float heatCoefficient, bool useDivOfGrad, float timestep)
 {
     csT cs = coordinateSystem;
 
@@ -211,44 +212,31 @@ __global__ void testSimulation(TestSimGrid::ReferenceType grid, csT coordinateSy
         // averaging is done in the next kernel
         grid.write<AT::velocityCurl>(cellId, forwardRightCurl);
 
-        // solve the heat equation
-        if(diffuseHeat || advectHeat)
-        {
-            float temp_dt =0;
-            float temp = grid.read<AT::temperature>(cellId);
+        // temperature gradient
 
-            if(diffuseHeat)
-            {
-                float tempLeft = grid.read<AT::temperature>(cs.getLeftNeighbor(cellId));
-                float tempRight = grid.read<AT::temperature>(cs.getRightNeighbor(cellId));
-                float tempForward = grid.read<AT::temperature>(cs.getForwardNeighbor(cellId));
-                float tempBackward = grid.read<AT::temperature>(cs.getBackwardNeighbor(cellId));
+        float temp = grid.read<AT::temperature>(cellId);
+        float tempRight = grid.read<AT::temperature>(cs.getRightNeighbor(cellId));
+        float tempForward = grid.read<AT::temperature>(cs.getForwardNeighbor(cellId));
 
-                float heatLaplace = laplace2d(tempLeft, tempRight, tempBackward, tempForward, temp,cellPos,cs);
-                temp_dt += heatCoefficient *heatLaplace;
-            }
+        float2 tempGrad = gradient2d(temp,tempRight,temp,tempForward,cellPos,cs);
 
-            if(advectHeat)
-            {
-                temp_dt -= velDiv * temp;
-            }
-
-            temp += temp_dt * timestep;
-            grid.write<AT::temperature>(cellId,temp);
-        }
-        else
-            grid.copy<AT::temperature>(cellId);
+        grid.write<AT::temperatureGradX>(cellId,tempGrad.x);
+        grid.write<AT::temperatureGradY>(cellId,tempGrad.y);
+        grid.write<AT::temperature>(cellId,temp);
     }
 }
 
 template <typename csT>
-__global__ void interpolateCurl(TestSimGrid::ReferenceType grid, csT cs)
+__global__ void interpolateCurl(TestSimGrid::ReferenceType grid, csT coordinateSystem, bool diffuseHeat, bool advectHeat, float heatCoefficient, bool useDivOfGrad, float timestep)
 {
+    csT cs = coordinateSystem;
+
     for(int x : mpu::gridStrideRange( cs.hasBoundary().x, cs.getNumGridCells3d().x-cs.hasBoundary().x ))
         for(int y : mpu::gridStrideRangeY( cs.hasBoundary().y, cs.getNumGridCells3d().y-cs.hasBoundary().y ))
         {
             int3 cell{x,y,0};
             int cellId = cs.getCellId(cell);
+            float2 cellPos = make_float2( cs.getCellCoordinate3d(cell) );
 
             // only forward right curl was computed above, so now curl must be interpolated
             float curlForwardRight = grid.read<AT::velocityCurl>(cellId);
@@ -261,6 +249,48 @@ __global__ void interpolateCurl(TestSimGrid::ReferenceType grid, csT cs)
 
             grid.write<AT::velocityCurl>(cellId, averageCurl);
 
+            // solve the heat equation
+            if(diffuseHeat || advectHeat)
+            {
+                float temp_dt =0;
+                float temp = grid.read<AT::temperature>(cellId);
+
+                if(diffuseHeat)
+                {
+                    float tempGradX = grid.read<AT::temperatureGradX>(cellId);
+                    float tempGradY = grid.read<AT::temperatureGradY>(cellId);
+                    float tempGradXLeft = grid.read<AT::temperatureGradX>(cs.getLeftNeighbor(cellId));
+                    float tempGradYBack = grid.read<AT::temperatureGradY>(cs.getBackwardNeighbor(cellId));
+
+                    float heatDivGrad = divergence2d(tempGradXLeft, tempGradX, tempGradYBack, tempGradY, cellPos, cs);
+
+                    float tempLeft = grid.read<AT::temperature>(cs.getLeftNeighbor(cellId));
+                    float tempRight = grid.read<AT::temperature>(cs.getRightNeighbor(cellId));
+                    float tempForward = grid.read<AT::temperature>(cs.getForwardNeighbor(cellId));
+                    float tempBackward = grid.read<AT::temperature>(cs.getBackwardNeighbor(cellId));
+
+                    float heatLaplace = laplace2d(tempLeft,tempRight,tempBackward,tempForward,temp,cellPos,cs);
+
+                    if(threadIdx.x == 0)
+                        printf("laplace: %f, DivOfGrad: %f\n", heatLaplace, heatDivGrad);
+
+                    if(useDivOfGrad)
+                        temp_dt += heatCoefficient * heatDivGrad;
+                    else
+                        temp_dt += heatCoefficient *heatLaplace;
+                }
+
+                if(advectHeat)
+                {
+                    temp_dt -= grid.read<AT::velocityDiv>(cellId) * temp;
+                }
+
+                temp += temp_dt * timestep;
+                grid.write<AT::temperature>(cellId,temp);
+            }
+            else
+                grid.copy<AT::temperature>(cellId);
+
             // copy all other values to the new buffer
             grid.copy<AT::velocityX>(cellId);
             grid.copy<AT::velocityY>(cellId);
@@ -269,7 +299,9 @@ __global__ void interpolateCurl(TestSimGrid::ReferenceType grid, csT cs)
             grid.copy<AT::densityGradY>(cellId);
             grid.copy<AT::densityLaplace>(cellId);
             grid.copy<AT::velocityDiv>(cellId);
-            grid.copy<AT::temperature>(cellId);
+            grid.copy<AT::temperatureGradX>(cellId);
+            grid.copy<AT::temperatureGradY>(cellId);
+//            grid.copy<AT::temperature>(cellId);
         }
 }
 
@@ -282,9 +314,9 @@ void TestSimulation::simulateOnceImpl(csT& cs)
 
     if(m_diffuseHeat)
         m_totalSimulatedTime += m_timestep;
-    testSimulation<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_diffuseHeat,m_advectHeat,m_heatCoefficient,m_timestep);
+    testSimulation<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_diffuseHeat,m_advectHeat,m_heatCoefficient,m_useDivOfGrad,m_timestep);
     m_grid->swapBuffer();
-    interpolateCurl<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs);
+    interpolateCurl<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_diffuseHeat,m_advectHeat,m_heatCoefficient,m_useDivOfGrad,m_timestep);
 }
 
 template void TestSimulation::simulateOnceImpl<CartesianCoordinates2D>(CartesianCoordinates2D& cs);

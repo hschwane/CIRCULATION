@@ -144,7 +144,7 @@ CUDAHOSTDEV inline float laplace2d(float left, float right, float backward, floa
 template <>
 CUDAHOSTDEV inline float laplace2d<GeographicalCoordinates2D>(float left, float right, float backward, float forward, float center, const float2& location, const GeographicalCoordinates2D& cs)
 {
-    float sinPhiInv = 1.0f/cos(location.y);
+    float sinPhiInv = 1.0f/cos(location.y); // location y is (pi/2-phi)
     float cosPhi = sin(location.y);
     float rinv2 = 1.0f / (cs.getMinCoord().z * cs.getMinCoord().z);
 
