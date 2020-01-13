@@ -25,11 +25,32 @@
 
 void TestSimulation::drawCreationOptions()
 {
-    ImGui::Checkbox("Random Vectors", &m_randomVectors);
+    ImGui::Checkbox("Random velocity vectors", &m_randomVectors);
     if(!m_randomVectors)
         ImGui::DragFloat2("Vector", &m_vectorValue.x);
 
-    ImGui::DragFloat("Boundary Temperature", &m_boundaryTemperature);
+    ImGui::Text("X-Axis Boundary:");
+    if(ImGui::RadioButton("Isolated##X",m_boundaryIsolatedX))
+        m_boundaryIsolatedX = true;
+
+    ImGui::SameLine();
+    if(ImGui::RadioButton("Const. temperature##X", !m_boundaryIsolatedX))
+        m_boundaryIsolatedX = false;
+
+    if(!m_boundaryIsolatedX)
+        ImGui::DragFloat("Temperature on boundary##X", &m_boundaryTemperatureX, 0.1);
+
+
+    ImGui::Text("Y-Axis Boundary:");
+    if(ImGui::RadioButton("Isolated##Y",m_boundaryIsolatedY))
+        m_boundaryIsolatedY = true;
+
+    ImGui::SameLine();
+    if(ImGui::RadioButton("Const. temperature##Y", !m_boundaryIsolatedY))
+        m_boundaryIsolatedY = false;
+
+    if(!m_boundaryIsolatedY)
+        ImGui::DragFloat("Temperature on boundary##Y", &m_boundaryTemperatureY, 0.1);
 }
 
 std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSystem> cs)
@@ -63,18 +84,7 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
     }
 
     // initialize boundary
-
-    // calculate number of boundary cells
-    int numBoundCells = 2* m_cs->hasBoundary().y * m_cs->getNumGridCells3d().x ;
-    for(int i : mpu::Range<int>(numBoundCells))
-    {
-        // transform boundary cell id into actual cell id
-        int cellId = i;
-        if(cellId >= m_cs->getNumGridCells3d().x)
-            cellId += m_cs->getNumGridCells3d().x * (m_cs->getNumGridCells3d().y-2);
-
-        m_grid->initialize<AT::temperature>(cellId,m_boundaryTemperature);
-    }
+    setFixedTemperatureBoundaries(m_cs->hasBoundary().x, m_cs->hasBoundary().y);
 
     // swap buffers and ready for rendering
     m_grid->swapAndRender();
@@ -92,6 +102,37 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
 
     m_totalSimulatedTime = 0;
     return m_grid;
+}
+
+void TestSimulation::setFixedTemperatureBoundaries(bool boundX, bool boundY)
+{
+    if(boundX)
+    {
+        int numBoundCellsY = 2 * m_cs->hasBoundary().y * m_cs->getNumGridCells3d().x;
+        for(int i : mpu::Range<int>(numBoundCellsY))
+        {
+            // transform boundary cell id into actual cell id
+            int3 cellId3d{i % m_cs->getNumGridCells3d().x, 0, 0};
+            if(i >= m_cs->getNumGridCells3d().x)
+                cellId3d.y = m_cs->getNumGridCells3d().y - 1;
+            int cellId = m_cs->getCellId(cellId3d);
+
+            m_grid->initialize<AT::temperature>(cellId, m_boundaryTemperatureX);
+        }
+    }
+
+    if(boundY)
+    {
+        int numBoundCellsX = 2 * m_cs->hasBoundary().x * m_cs->getNumGridCells3d().y - 4;
+        for(int i : mpu::Range<int>(numBoundCellsX))
+        {
+            // transform boundary cell id into actual cell id
+            int3 cellId3d{(i % 2) * (m_cs->getNumGridCells3d().x - 1), 1 + i / 2, 0};
+            int cellId = m_cs->getCellId(cellId3d);
+
+            m_grid->initialize<AT::temperature>(cellId, m_boundaryTemperatureY);
+        }
+    }
 }
 
 std::unique_ptr<Simulation> TestSimulation::clone() const
@@ -118,8 +159,8 @@ void TestSimulation::showGui(bool* show)
         ImGui::Checkbox("diffuse heat",&m_diffuseHeat);
         ImGui::Checkbox("use divergence of gradient instead of laplacian",&m_useDivOfGrad);
         ImGui::Checkbox("advect heat",&m_advectHeat);
-        ImGui::DragFloat("Heat Coefficient",&m_heatCoefficient,0.01);
-        ImGui::DragFloat("Timestep",&m_timestep,0.01);
+        ImGui::DragFloat("Heat Coefficient",&m_heatCoefficient,0.0001,0.0001f,1.0,"%.4f");
+        ImGui::DragFloat("Timestep",&m_timestep,0.0001,0.0001f,1.0,"%.4f");
         ImGui::Text("Simulated Time units: %f", m_totalSimulatedTime);
     }
     ImGui::End();

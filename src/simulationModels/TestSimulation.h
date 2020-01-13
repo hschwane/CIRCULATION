@@ -45,13 +45,19 @@ private:
     // creation options
     bool m_randomVectors{true};
     float2 m_vectorValue;
-    float m_boundaryTemperature{4.0f};
+
+    // boundary settings
+    bool m_boundaryIsolatedX{false};
+    float m_boundaryTemperatureX{6.0f};
+    bool m_boundaryIsolatedY{false};
+    float m_boundaryTemperatureY{6.0f};
+    void setFixedTemperatureBoundaries(bool boundX, bool boundY);
 
     // sim options
     bool m_diffuseHeat{false};
     bool m_advectHeat{false};
-    float m_heatCoefficient{1.0f};
-    float m_timestep{0.1f};
+    float m_heatCoefficient{0.1f};
+    float m_timestep{0.01f};
     float m_totalSimulatedTime{0.0f};
     bool m_useDivOfGrad{false};
 
