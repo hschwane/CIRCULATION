@@ -55,14 +55,16 @@ private:
     // sim options
     bool m_diffuseHeat{false};
     bool m_advectHeat{false};
-    float m_heatCoefficient{0.1f};
-    float m_timestep{0.01f};
+    float m_heatCoefficient{0.01f};
+    float m_timestep{0.001f};
     float m_totalSimulatedTime{0.0f};
     bool m_useDivOfGrad{false};
 
     // sim data
     std::shared_ptr<CoordinateSystem> m_cs; //!< the coordinate system to be used
     std::shared_ptr<TestSimGrid> m_grid; //!< the grid to be used
+
+    mpu::DeviceVector<float> m_offsettedCurl; //!< offsetted curl is moved from kernel A to kernel B using this buffer
 };
 
 

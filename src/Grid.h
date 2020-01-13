@@ -347,6 +347,8 @@ public:
     template <AT Param>
     auto read(int cellId); //!< read data from grid cell cellId parameter Param at time t
     template <AT Param>
+    auto readNext(int cellId); //!< read data from grid cell cellId parameter Param at time t +1. Beware of possible race conditions when also writing to the time t+1 buffer!
+    template <AT Param>
     auto readPrev(int cellId); //!< read data from grid cell cellId parameter Param at time t-1
     template <AT Param, typename T>
     void write(int cellId, T&& data); //!< write data to grid cell cellId parameter Param at time t+1
@@ -423,6 +425,13 @@ template <AT Param>
 auto Grid<GridAttribs...>::read(int cellId)
 {
     return m_buffers[m_readBuffer].read<Param>(cellId);
+}
+
+template <typename... GridAttribs>
+template <AT Param>
+auto Grid<GridAttribs...>::readNext(int cellId)
+{
+    return m_buffers[m_writeBuffer].read<Param>(cellId);
 }
 
 template <typename... GridAttribs>

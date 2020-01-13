@@ -112,6 +112,8 @@ public:
     template <AT Param>
     CUDAHOSTDEV auto read(int cellId); //!< read data from grid cell cellId parameter Param at time t
     template <AT Param>
+    CUDAHOSTDEV auto readNext(int cellId); //!< read data from grid cell cellId parameter Param at time t +1. Beware of possible race conditions when also writing to the time t+1 buffer!
+    template <AT Param>
     CUDAHOSTDEV auto readPrev(int cellId); //!< read data from grid cell cellId parameter Param at time t-1
     template <AT Param, typename T>
     CUDAHOSTDEV void write(int cellId, T&& data); //!< write data to grid cell cellId parameter Param at time t+1
@@ -141,6 +143,20 @@ auto GridReference<AttribRefs...>::read(int cellId)
 }
 
 template <typename... AttribRefs>
+template <AT Param>
+auto GridReference<AttribRefs...>::readNext(int cellId)
+{
+    return m_writeBuffer.read<Param>(cellId);
+}
+
+template <typename... AttribRefs>
+template <AT Param>
+auto GridReference<AttribRefs...>::readPrev(int cellId)
+{
+    return m_previousBuffer.read<Param>(cellId);
+}
+
+template <typename... AttribRefs>
 template <AT Param, typename T>
 void GridReference<AttribRefs...>::write(int cellId, T&& data)
 {
@@ -153,13 +169,6 @@ void GridReference<AttribRefs...>::copy(int cellId)
 {
     auto data = read<Param>(cellId);
     write<Param>(cellId,data);
-}
-
-template <typename... AttribRefs>
-template <AT Param>
-auto GridReference<AttribRefs...>::readPrev(int cellId)
-{
-    return m_previousBuffer.read<Param>(cellId);
 }
 
 template <typename... AttribRefs>
