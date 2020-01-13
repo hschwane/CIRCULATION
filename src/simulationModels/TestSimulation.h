@@ -51,7 +51,6 @@ private:
     float m_boundaryTemperatureX{6.0f};
     bool m_boundaryIsolatedY{false};
     float m_boundaryTemperatureY{6.0f};
-    void setFixedTemperatureBoundaries(bool boundX, bool boundY);
 
     // sim options
     bool m_diffuseHeat{false};

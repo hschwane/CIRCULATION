@@ -18,6 +18,7 @@
 #include "../coordinateSystems/CartesianCoordinates2D.h"
 #include "../coordinateSystems/GeographicalCoordinates2D.h"
 #include "../finiteDifferences.h"
+#include "../boundaryConditions.h"
 //--------------------
 
 // function definitions of the TestSimulation class
@@ -70,21 +71,27 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
         float velX = vdist(rng);
         float velY = vdist(rng);
 
-        m_grid->write<AT::density>(i,density);
-        m_grid->write<AT::temperature>(i,temperature);
+        m_grid->initialize<AT::density>(i,density);
+        m_grid->initialize<AT::temperature>(i,temperature);
         if(m_randomVectors)
         {
-            m_grid->write<AT::velocityX>(i, velX);
-            m_grid->write<AT::velocityY>(i, velY);
+            m_grid->initialize<AT::velocityX>(i, velX);
+            m_grid->initialize<AT::velocityY>(i, velY);
         }
         else {
-            m_grid->write<AT::velocityX>(i, m_vectorValue.x);
-            m_grid->write<AT::velocityY>(i, m_vectorValue.y);
+            m_grid->initialize<AT::velocityX>(i, m_vectorValue.x);
+            m_grid->initialize<AT::velocityY>(i, m_vectorValue.y);
         }
     }
 
     // initialize boundary
-    setFixedTemperatureBoundaries(m_cs->hasBoundary().x, m_cs->hasBoundary().y);
+    initializeFixedValueBoundaries<AT::temperature>(!m_boundaryIsolatedX && m_cs->hasBoundary().x,
+                                                    !m_boundaryIsolatedY && m_cs->hasBoundary().y,
+                                                    m_boundaryTemperatureX, m_boundaryTemperatureY, *m_cs, *m_grid);
+
+    handleMirroredBoundaries<AT::temperature>(m_boundaryIsolatedX && m_cs->hasBoundary().x,
+                                              m_boundaryIsolatedY && m_cs->hasBoundary().y,
+                                              *m_cs, *m_grid);
 
     // swap buffers and ready for rendering
     m_grid->swapAndRender();
@@ -102,37 +109,6 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
 
     m_totalSimulatedTime = 0;
     return m_grid;
-}
-
-void TestSimulation::setFixedTemperatureBoundaries(bool boundX, bool boundY)
-{
-    if(boundX)
-    {
-        int numBoundCellsY = 2 * m_cs->hasBoundary().y * m_cs->getNumGridCells3d().x;
-        for(int i : mpu::Range<int>(numBoundCellsY))
-        {
-            // transform boundary cell id into actual cell id
-            int3 cellId3d{i % m_cs->getNumGridCells3d().x, 0, 0};
-            if(i >= m_cs->getNumGridCells3d().x)
-                cellId3d.y = m_cs->getNumGridCells3d().y - 1;
-            int cellId = m_cs->getCellId(cellId3d);
-
-            m_grid->initialize<AT::temperature>(cellId, m_boundaryTemperatureX);
-        }
-    }
-
-    if(boundY)
-    {
-        int numBoundCellsX = 2 * m_cs->hasBoundary().x * m_cs->getNumGridCells3d().y - 4;
-        for(int i : mpu::Range<int>(numBoundCellsX))
-        {
-            // transform boundary cell id into actual cell id
-            int3 cellId3d{(i % 2) * (m_cs->getNumGridCells3d().x - 1), 1 + i / 2, 0};
-            int cellId = m_cs->getCellId(cellId3d);
-
-            m_grid->initialize<AT::temperature>(cellId, m_boundaryTemperatureY);
-        }
-    }
 }
 
 std::unique_ptr<Simulation> TestSimulation::clone() const
@@ -349,6 +325,10 @@ void TestSimulation::simulateOnceImpl(csT& cs)
     dim3 blocksize{16,16,1};
     dim3 numBlocks{ static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().x ,blocksize.x)),
                     static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().y ,blocksize.y)), 1};
+
+    handleMirroredBoundaries<AT::temperature>(m_boundaryIsolatedX && m_cs->hasBoundary().x,
+                                              m_boundaryIsolatedY && m_cs->hasBoundary().y,
+                                              *m_cs, *m_grid);
 
     if(m_diffuseHeat)
         m_totalSimulatedTime += m_timestep;
