@@ -42,7 +42,7 @@ void ShallowWaterModel::showSimulationOptions()
 std::shared_ptr<GridBase> ShallowWaterModel::recreate(std::shared_ptr<CoordinateSystem> cs)
 {
     m_cs = cs;
-    m_grid = std::make_shared<TestSimGrid>(m_cs->getNumGridCells());
+    m_grid = std::make_shared<ShallowWaterGrid>(m_cs->getNumGridCells());
 
     // select coordinate system
     switch(m_cs->getType())
@@ -61,6 +61,16 @@ std::shared_ptr<GridBase> ShallowWaterModel::recreate(std::shared_ptr<Coordinate
 
 void ShallowWaterModel::reset()
 {
+    for(int i : mpu::Range<int>(m_grid->size()))
+    {
+        float velX = 0.0f;
+        float velY = 0.0f;
+        float geopotential = 10.0f;
+
+        m_grid->initialize<AT::geopotential>(i,geopotential);
+        m_grid->initialize<AT::velocityX>(i, velX);
+        m_grid->initialize<AT::velocityY>(i, velY);
+    }
 }
 
 std::unique_ptr<Simulation> ShallowWaterModel::clone() const
@@ -74,7 +84,7 @@ void ShallowWaterModel::simulateOnce()
 }
 
 template <typename csT>
-__global__ void shallowWaterSimulation(TestSimGrid::ReferenceType grid, csT coordinateSystem)
+__global__ void shallowWaterSimulation(ShallowWaterGrid::ReferenceType grid, csT coordinateSystem)
 {
     csT cs = coordinateSystem;
 

@@ -20,3 +20,4 @@
 //-------------------------------------------------------------------
 template class Grid<GridDensity,GridVelocityX,GridVelocityY>;
 template class Grid<GridDensity, GridVelocityX, GridVelocityY, GridDensityGradX, GridDensityGradY, GridDensityLaplace, GridVelocityDiv, GridVelocityCurl, GridTemperature, GridTemperatureGradX, GridTemperatureGradY>;
+template class Grid<GridVelocityX,GridVelocityY,GridGeopotential>;

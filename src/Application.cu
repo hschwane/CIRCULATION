@@ -548,6 +548,20 @@ void Application::newSimulationModal()
                     m_renderer.setVecFields(vectorFields);
                     break;
                 }
+                case SimModel::shallowWaterModel:
+                {
+                    m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
+                    m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
+
+                    std::vector<std::pair<std::string,int>> scalarFields;
+                    scalarFields.emplace_back("geopotential at free surface",2);
+                    m_renderer.setScalarFields(scalarFields);
+
+                    std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
+                    vectorFields.emplace_back("velocity",std::pair<int,int>(0,1));
+                    m_renderer.setVecFields(vectorFields);
+                    break;
+                }
             }
 
 
