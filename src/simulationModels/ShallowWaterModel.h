@@ -47,12 +47,12 @@ private:
     std::function<void()> m_simOnceFunc; //!< will be set to use the correct template specialisation based on type of coordinate system used
 
     // sim settings
-    float m_timestep{0.01}; //!< simulation timestep used
+    float m_timestep{0.00001}; //!< simulation timestep used
 
     // sim data
     std::shared_ptr<CoordinateSystem> m_cs; //!< the coordinate system to be used
     std::shared_ptr<ShallowWaterGrid> m_grid; //!< the grid to be used
-
+    mpu::DeviceVector<float> m_phiPlusKBuffer; //!< stores geopotential + kinetic energy
     float m_totalSimulatedTime{0.0f};
 };
 
