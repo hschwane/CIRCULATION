@@ -109,6 +109,7 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
     }
 
     m_totalSimulatedTime = 0;
+    m_firstTimestep = true;
     return m_grid;
 }
 
@@ -135,9 +136,12 @@ void TestSimulation::showGui(bool* show)
 
         ImGui::Checkbox("diffuse heat",&m_diffuseHeat);
         ImGui::Checkbox("use divergence of gradient instead of laplacian",&m_useDivOfGrad);
+        ImGui::Checkbox("use leapfrog (unstable)",&m_leapfrogIntegrattion);
         ImGui::Checkbox("advect heat",&m_advectHeat);
         ImGui::DragFloat("Heat Coefficient",&m_heatCoefficient,0.0001,0.0001f,1.0,"%.4f");
         ImGui::DragFloat("Timestep",&m_timestep,0.0001,0.0001f,1.0,"%.4f");
+        ImGui::Text("Biggest maybe stable timestep is %f.",
+                    (fmin(m_cs->getCellSize().x,m_cs->getCellSize().y) * fmin(m_cs->getCellSize().x,m_cs->getCellSize().y) / (2*m_heatCoefficient) ) );
         ImGui::Text("Simulated Time units: %f", m_totalSimulatedTime);
     }
     ImGui::End();
@@ -242,7 +246,7 @@ __global__ void testSimulationA(TestSimGrid::ReferenceType grid, csT coordinateS
 
 template <typename csT>
 __global__ void testSimulationB(TestSimGrid::ReferenceType grid, csT coordinateSystem, mpu::VectorReference<const float> offsettedCurl,
-        bool diffuseHeat, bool advectHeat, float heatCoefficient, bool useDivOfGrad, float timestep)
+                                bool useLeapfrog, bool diffuseHeat, bool advectHeat, float heatCoefficient, bool useDivOfGrad, float timestep)
 {
     csT cs = coordinateSystem;
 
@@ -297,8 +301,19 @@ __global__ void testSimulationB(TestSimGrid::ReferenceType grid, csT coordinateS
                     temp_dt -= grid.readNext<AT::velocityDiv>(cellId) * temp;
                 }
 
-                temp += temp_dt * timestep;
-                grid.write<AT::temperature>(cellId,temp);
+                float previousTemp;
+                if(useLeapfrog)
+                {
+                    previousTemp = grid.readPrev<AT::temperature>(cellId);
+                    timestep *=2.0f;
+                }
+                else
+                {
+                    previousTemp = temp;
+                }
+
+                float nextTemp =  previousTemp + temp_dt * timestep;
+                grid.write<AT::temperature>(cellId,nextTemp);
             }
             else
                 grid.copy<AT::temperature>(cellId);
@@ -319,8 +334,12 @@ void TestSimulation::simulateOnceImpl(csT& cs)
     if(m_diffuseHeat)
         m_totalSimulatedTime += m_timestep;
 
-    testSimulationA<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_offsettedCurl.getVectorReference(),m_diffuseHeat,m_advectHeat,m_heatCoefficient,m_useDivOfGrad,m_timestep);
-    testSimulationB<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_offsettedCurl.getVectorReference(),m_diffuseHeat,m_advectHeat,m_heatCoefficient,m_useDivOfGrad,m_timestep);
+    testSimulationA<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_offsettedCurl.getVectorReference(),
+            m_diffuseHeat,m_advectHeat,m_heatCoefficient,m_useDivOfGrad,m_timestep);
+    testSimulationB<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_offsettedCurl.getVectorReference(),
+            !m_firstTimestep && m_leapfrogIntegrattion,m_diffuseHeat,m_advectHeat,m_heatCoefficient,m_useDivOfGrad,m_timestep);
+
+    m_firstTimestep = false;
 }
 
 template void TestSimulation::simulateOnceImpl<CartesianCoordinates2D>(CartesianCoordinates2D& cs);
