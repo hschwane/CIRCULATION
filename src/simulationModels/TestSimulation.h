@@ -29,14 +29,18 @@
 class TestSimulation : public Simulation
 {
 public:
-    void drawCreationOptions() override;
+    void showCreationOptions() override;
+    void showBoundaryOptions(const CoordinateSystem& cs) override;
+
     std::shared_ptr<GridBase> recreate(std::shared_ptr<CoordinateSystem> cs) override;
+    void reset() override;
     std::unique_ptr<Simulation> clone() const override;
-    void showGui(bool* show) override;
 
 private:
+    void showSimulationOptions() override;
     void simulateOnce() override;
     GridBase& getGrid() override;
+    std::string getDisplayName() override;
 
     template <typename csT>
     void simulateOnceImpl(csT& cs); //!< implementation of simulate once to allow different coordinate systems to be used
@@ -67,6 +71,7 @@ private:
 
     mpu::DeviceVector<float> m_offsettedCurl; //!< offsetted curl is moved from kernel A to kernel B using this buffer
     bool m_firstTimestep{true};
+    bool m_needUpdateBoundaries{false};
 };
 
 

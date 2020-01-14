@@ -29,7 +29,7 @@
 class RenderDemoSimulation : public Simulation
 {
 public:
-    void drawCreationOptions() override
+    void showCreationOptions() override
     {
         ImGui::Checkbox("Random Vectors", &m_randomVectors);
         if(!m_randomVectors)
@@ -41,6 +41,24 @@ public:
         m_cs = cs;
         m_grid = std::make_shared<RenderDemoGrid>(m_cs->getNumGridCells());
 
+        // call reset() to initialize data
+        reset();
+
+        return m_grid;
+    }
+
+    std::unique_ptr<Simulation> clone() const override
+    {
+        return std::make_unique<RenderDemoSimulation>(*this);
+    }
+
+    void showBoundaryOptions(const CoordinateSystem& cs) override
+    {
+        ImGui::Text("This is a rendering demo, it does not include any special boundary handling.");
+    }
+
+    void reset() override
+    {
         // generate some data
         std::default_random_engine rng(mpu::getRanndomSeed());
         std::normal_distribution<float> dist(10,4);
@@ -66,29 +84,6 @@ public:
 
         // swap buffers and ready for rendering
         m_grid->swapAndRender();
-
-        return m_grid;
-    }
-
-    std::unique_ptr<Simulation> clone() const override
-    {
-        return std::make_unique<RenderDemoSimulation>(*this);
-    }
-
-    void showGui(bool* show) override
-    {
-        ImGui::SetNextWindowSize({0,0},ImGuiCond_FirstUseEver);
-        if(ImGui::Begin("RenderDemoSimulation",show))
-        {
-            std::string state;
-            if(m_isPaused)
-                ImGui::Text("State: Paused");
-            else
-                ImGui::Text("State: running");
-
-            ImGui::Text("This is a rendering demo, so the simulation does nothing. There are also no settings.");
-        }
-        ImGui::End();
     }
 
 private:
@@ -101,6 +96,16 @@ private:
     GridBase& getGrid() override
     {
         return *m_grid;
+    }
+
+    void showSimulationOptions() override
+    {
+        ImGui::Text("This is a rendering demo, so the simulation does nothing. There are also no settings.");
+    }
+
+    std::string getDisplayName() override
+    {
+        return "Render Demo";
     }
 
     // creation options

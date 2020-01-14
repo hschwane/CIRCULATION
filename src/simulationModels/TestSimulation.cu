@@ -24,34 +24,66 @@
 // function definitions of the TestSimulation class
 //-------------------------------------------------------------------
 
-void TestSimulation::drawCreationOptions()
+void TestSimulation::showCreationOptions()
 {
     ImGui::Checkbox("Random velocity vectors", &m_randomVectors);
     if(!m_randomVectors)
         ImGui::DragFloat2("Vector", &m_vectorValue.x);
+}
 
-    ImGui::Text("X-Axis Boundary:");
-    if(ImGui::RadioButton("Isolated##X",m_boundaryIsolatedX))
-        m_boundaryIsolatedX = true;
+void TestSimulation::showBoundaryOptions(const CoordinateSystem& cs)
+{
+    if(cs.hasBoundary().x)
+    {
+        ImGui::Text("X-Axis Boundary:");
+        if(ImGui::RadioButton("Isolated##X",m_boundaryIsolatedX))
+            m_boundaryIsolatedX = true;
 
-    ImGui::SameLine();
-    if(ImGui::RadioButton("Const. temperature##X", !m_boundaryIsolatedX))
-        m_boundaryIsolatedX = false;
+        ImGui::SameLine();
+        if(ImGui::RadioButton("Const. temperature##X", !m_boundaryIsolatedX))
+        {
+            m_boundaryIsolatedX = false;
+            m_needUpdateBoundaries = true;
+        }
 
-    if(!m_boundaryIsolatedX)
-        ImGui::DragFloat("Temperature on boundary##X", &m_boundaryTemperatureX, 0.1);
+        if(!m_boundaryIsolatedX)
+            if(ImGui::DragFloat("Temperature on boundary##X", &m_boundaryTemperatureX, 0.1))
+                m_needUpdateBoundaries = true;
+    }
 
+    if(cs.hasBoundary().y)
+    {
+        ImGui::Text("Y-Axis Boundary:");
+        if(ImGui::RadioButton("Isolated##Y",m_boundaryIsolatedY))
+            m_boundaryIsolatedY = true;
 
-    ImGui::Text("Y-Axis Boundary:");
-    if(ImGui::RadioButton("Isolated##Y",m_boundaryIsolatedY))
-        m_boundaryIsolatedY = true;
+        ImGui::SameLine();
+        if(ImGui::RadioButton("Const. temperature##Y", !m_boundaryIsolatedY))
+        {
+            m_boundaryIsolatedY = false;
+            m_needUpdateBoundaries = true;
+        }
 
-    ImGui::SameLine();
-    if(ImGui::RadioButton("Const. temperature##Y", !m_boundaryIsolatedY))
-        m_boundaryIsolatedY = false;
+        if(!m_boundaryIsolatedY)
+            if(ImGui::DragFloat("Temperature on boundary##Y", &m_boundaryTemperatureY, 0.1))
+                m_needUpdateBoundaries = true;
+    }
+}
 
-    if(!m_boundaryIsolatedY)
-        ImGui::DragFloat("Temperature on boundary##Y", &m_boundaryTemperatureY, 0.1);
+void TestSimulation::showSimulationOptions()
+{
+    ImGui::Checkbox("diffuse heat",&m_diffuseHeat);
+    ImGui::Checkbox("use divergence of gradient instead of laplacian",&m_useDivOfGrad);
+    ImGui::Checkbox("use leapfrog (unstable)",&m_leapfrogIntegrattion);
+    ImGui::Checkbox("advect heat",&m_advectHeat);
+    ImGui::DragFloat("Heat Coefficient",&m_heatCoefficient,0.0001,0.0001f,1.0,"%.4f");
+    ImGui::DragFloat("Timestep",&m_timestep,0.0001,0.0001f,1.0,"%.4f");
+    ImGui::Text("Biggest maybe stable timestep is %f.",
+                (fmin(m_cs->getCellSize().x,m_cs->getCellSize().y) * fmin(m_cs->getCellSize().x,m_cs->getCellSize().y) / (2*m_heatCoefficient) ) );
+    ImGui::Text("Simulated Time units: %f", m_totalSimulatedTime);
+
+    if( ImGui::CollapsingHeader("Boundaries"))
+        showBoundaryOptions(*m_cs);
 }
 
 std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSystem> cs)
@@ -60,6 +92,23 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
     m_grid = std::make_shared<TestSimGrid>(m_cs->getNumGridCells());
     m_offsettedCurl.resize(m_cs->getNumGridCells());
 
+    // select coordinate system
+    switch(m_cs->getType())
+    {
+        case CSType::cartesian2d:
+            m_simOnceFunc = [this](){ this->simulateOnceImpl( static_cast<CartesianCoordinates2D&>( *(this->m_cs)) ); };
+            break;
+        case CSType::geographical2d:
+            m_simOnceFunc = [this](){ this->simulateOnceImpl( static_cast<GeographicalCoordinates2D&>( *(this->m_cs)) ); };
+            break;
+    }
+
+    reset();
+    return m_grid;
+}
+
+void TestSimulation::reset()
+{
     // generate some data
     std::default_random_engine rng(mpu::getRanndomSeed());
     std::normal_distribution<float> dist(10,4);
@@ -97,54 +146,15 @@ std::shared_ptr<GridBase> TestSimulation::recreate(std::shared_ptr<CoordinateSys
     // swap buffers and ready for rendering
     m_grid->swapAndRender();
 
-    // select coordinate system
-    switch(m_cs->getType())
-    {
-        case CSType::cartesian2d:
-            m_simOnceFunc = [this](){ this->simulateOnceImpl( static_cast<CartesianCoordinates2D&>( *(this->m_cs)) ); };
-            break;
-        case CSType::geographical2d:
-            m_simOnceFunc = [this](){ this->simulateOnceImpl( static_cast<GeographicalCoordinates2D&>( *(this->m_cs)) ); };
-            break;
-    }
-
+    // reset simulation state
     m_totalSimulatedTime = 0;
     m_firstTimestep = true;
-    return m_grid;
+    m_needUpdateBoundaries = false;
 }
 
 std::unique_ptr<Simulation> TestSimulation::clone() const
 {
     return std::make_unique<TestSimulation>(*this);
-}
-
-void TestSimulation::showGui(bool* show)
-{
-    ImGui::SetNextWindowSize({0,0},ImGuiCond_FirstUseEver);
-    if(ImGui::Begin("Test Simulation",show))
-    {
-        if(m_isPaused)
-        {
-            ImGui::Text("State: Paused");
-            if(ImGui::Button("Resume")) resume();
-        }
-        else
-        {
-            ImGui::Text("State: running");
-            if(ImGui::Button("Pause")) pause();
-        }
-
-        ImGui::Checkbox("diffuse heat",&m_diffuseHeat);
-        ImGui::Checkbox("use divergence of gradient instead of laplacian",&m_useDivOfGrad);
-        ImGui::Checkbox("use leapfrog (unstable)",&m_leapfrogIntegrattion);
-        ImGui::Checkbox("advect heat",&m_advectHeat);
-        ImGui::DragFloat("Heat Coefficient",&m_heatCoefficient,0.0001,0.0001f,1.0,"%.4f");
-        ImGui::DragFloat("Timestep",&m_timestep,0.0001,0.0001f,1.0,"%.4f");
-        ImGui::Text("Biggest maybe stable timestep is %f.",
-                    (fmin(m_cs->getCellSize().x,m_cs->getCellSize().y) * fmin(m_cs->getCellSize().x,m_cs->getCellSize().y) / (2*m_heatCoefficient) ) );
-        ImGui::Text("Simulated Time units: %f", m_totalSimulatedTime);
-    }
-    ImGui::End();
 }
 
 void TestSimulation::simulateOnce()
@@ -327,6 +337,13 @@ void TestSimulation::simulateOnceImpl(csT& cs)
     dim3 numBlocks{ static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().x ,blocksize.x)),
                     static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().y ,blocksize.y)), 1};
 
+    if(m_needUpdateBoundaries)
+    {
+        initializeFixedValueBoundaries<AT::temperature>(!m_boundaryIsolatedX && m_cs->hasBoundary().x,
+                                                        !m_boundaryIsolatedY && m_cs->hasBoundary().y,
+                                                        m_boundaryTemperatureX, m_boundaryTemperatureY, *m_cs, *m_grid);
+    }
+
     handleMirroredBoundaries<AT::temperature>(m_boundaryIsolatedX && m_cs->hasBoundary().x,
                                               m_boundaryIsolatedY && m_cs->hasBoundary().y,
                                               *m_cs, *m_grid);
@@ -342,9 +359,12 @@ void TestSimulation::simulateOnceImpl(csT& cs)
     m_firstTimestep = false;
 }
 
-template void TestSimulation::simulateOnceImpl<CartesianCoordinates2D>(CartesianCoordinates2D& cs);
-
 GridBase& TestSimulation::getGrid()
 {
     return *m_grid;
+}
+
+std::string TestSimulation::getDisplayName()
+{
+    return "Test Simulation";
 }

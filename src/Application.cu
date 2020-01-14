@@ -370,8 +370,10 @@ void Application::newSimulationModal()
 {
     if(ImGui::BeginPopupModal("New Simulation",nullptr,ImGuiWindowFlags_AlwaysAutoResize))
     {
+        // variables to select a simulation model
         static int selctedCoordinates = 0;
         static int3 numGridCells{128,128,32};
+        static std::unique_ptr<CoordinateSystem> selectedCS;
 
         // variables for cartesian grids
         static float3 minCoords{-1,-1,-1};
@@ -389,6 +391,7 @@ void Application::newSimulationModal()
         static int selctedModelId = 0;
 
         // select simulation model
+        ImGui::Text("Simulation Model");
         if( ImGui::Combo("Model", &selctedModelId, "Render Demo \0 Test Simulation \0\0") )
         {
             switch(static_cast<SimModel>(selctedModelId))
@@ -403,10 +406,11 @@ void Application::newSimulationModal()
         }
 
         // handle model settings
-        selectedeModel->drawCreationOptions();
+        selectedeModel->showCreationOptions();
         ImGui::Separator();
 
         // select coordinate system
+        ImGui::Text("Coordinate System");
         ImGui::Combo("Coordinate System",&selctedCoordinates,"2D Cartesian Coordinates \0 2D Geographical Coordinates \0\0");
 
         // options depending on coordinate system
@@ -430,6 +434,8 @@ void Application::newSimulationModal()
                 ImGui::PopItemFlag();
                 ImGui::PopStyleVar();
                 ImGui::PopID();
+
+                selectedCS = std::make_unique<CartesianCoordinates2D>(minCoords, maxCoords, numGridCells);
                 break;
             }
             case CSType::geographical2d:
@@ -451,9 +457,17 @@ void Application::newSimulationModal()
                 ImGui::PopItemFlag();
                 ImGui::PopStyleVar();
                 ImGui::PopID();
+
+                selectedCS = std::make_unique<GeographicalCoordinates2D>(minLat, maxLat, numGridCells, radius);
                 break;
             }
         }
+        ImGui::Separator();
+
+        // handle boundary settings
+        ImGui::Text("Boundary Conditions");
+        selectedeModel->showBoundaryOptions(*selectedCS);
+        ImGui::Separator();
 
         // cancel button
         if(ImGui::Button("Cancel"))
