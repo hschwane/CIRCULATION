@@ -47,14 +47,17 @@ public:
     virtual std::unique_ptr<Simulation> clone() const =0; //!< deep copy of the simulation
 
     // running the simulation
-    void run(int iterations=1); //!< runs simulation for iteration timesteps, does nothing if simulation is paused
+    void run(); //!< runs simulation for the selected amount of timesteps, does nothing if simulation is paused
     void showGui(bool* show); //!< show user interface for simulation
     void pause() {m_isPaused=true;} //!< pauses the simulation
     void resume() {m_isPaused=false;} //!< resumes the simulation
     bool isPaused() {return m_isPaused;} //!< checks if the simulation should be paused
 
+    void setIterations(int iterations) {m_simIterations=iterations;} //!< sets number of iterations per run() call
+
 protected:
     bool m_isPaused{false};
+    int m_simIterations{10};
 
 private:
     virtual void showSimulationOptions()=0; //!< draws part of a ui window to handle all live settings that can be changed while the simulation is running if you want you can call "showBoundaryOptions" here as well
@@ -63,13 +66,13 @@ private:
     virtual std::string getDisplayName()=0; //!< name of the simulation to be displayed in the ui
 };
 
-inline void Simulation::run(int iterations)
+inline void Simulation::run()
 {
     if(m_isPaused)
         return;
 
     // simulate all iterations but one
-    for(int i=0; i<iterations-1; i++)
+    for(int i=0; i<m_simIterations-1; i++)
     {
         simulateOnce();
         getGrid().swapBuffer();
@@ -97,6 +100,8 @@ inline void Simulation::showGui(bool* show)
         }
         ImGui::SameLine();
         if( ImGui::Button("Reset")) reset();
+
+        ImGui::DragInt("Timesteps per Rendering",&m_simIterations,0.1);
 
         ImGui::Separator();
         showSimulationOptions();
