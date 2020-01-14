@@ -28,6 +28,7 @@
 #include "simulationModels/Simulation.h"
 #include "simulationModels/RenderDemoSimulation.h"
 #include "simulationModels/TestSimulation.h"
+#include "simulationModels/ShallowWaterModel.h"
 #include "enums.h"
 //--------------------
 

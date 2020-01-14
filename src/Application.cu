@@ -387,12 +387,13 @@ void Application::newSimulationModal()
         // variables to select a simulation
         static auto testSim = std::make_unique<TestSimulation>();
         static auto rdSim = std::make_unique<RenderDemoSimulation>();
-        static Simulation* selectedeModel = rdSim.get();
+        static auto shallowSim = std::make_unique<ShallowWaterModel>();
         static int selctedModelId = 0;
+        static Simulation* selectedeModel = rdSim.get();
 
         // select simulation model
         ImGui::Text("Simulation Model");
-        if( ImGui::Combo("Model", &selctedModelId, "Render Demo \0 Test Simulation \0\0") )
+        if( ImGui::Combo("Model", &selctedModelId, "Render Demo \0Test Simulation \0Shallow Water Model \0\0") )
         {
             switch(static_cast<SimModel>(selctedModelId))
             {
@@ -401,6 +402,9 @@ void Application::newSimulationModal()
                     break;
                 case SimModel::testSimulation:
                     selectedeModel = testSim.get();
+                    break;
+                case SimModel::shallowWaterModel:
+                    selectedeModel = shallowSim.get();
                     break;
             }
         }
@@ -411,7 +415,7 @@ void Application::newSimulationModal()
 
         // select coordinate system
         ImGui::Text("Coordinate System");
-        ImGui::Combo("Coordinate System",&selctedCoordinates,"2D Cartesian Coordinates \0 2D Geographical Coordinates \0\0");
+        ImGui::Combo("Coordinate System",&selctedCoordinates," 2D Cartesian Coordinates \0 2D Geographical Coordinates \0\0");
 
         // options depending on coordinate system
         switch(static_cast<CSType>(selctedCoordinates))
