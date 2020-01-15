@@ -36,11 +36,12 @@ void ShallowWaterModel::showCreationOptions()
 
 void ShallowWaterModel::showBoundaryOptions(const CoordinateSystem& cs)
 {
-
 }
 
 void ShallowWaterModel::showSimulationOptions()
 {
+    ImGui::DragFloat("Geopotential diffusion",&m_geopotDiffusion,0.00001f,0.00001,1.0,"%.5f");
+    ImGui::Checkbox("Use Leapfrog",&m_useLeapfrog);
     ImGui::DragFloat("Timestep",&m_timestep,0.000001,0.000001f,1.0,"%.6f");
     ImGui::Text("Simulated Time units: %f", m_totalSimulatedTime);
 }
@@ -96,6 +97,7 @@ void ShallowWaterModel::reset()
 
     // reset simulation state
     m_totalSimulatedTime = 0.0f;
+    m_firstTimestep = true;
 }
 
 std::unique_ptr<Simulation> ShallowWaterModel::clone() const
@@ -110,10 +112,11 @@ void ShallowWaterModel::simulateOnce()
 
 template <typename csT>
 __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, csT coordinateSystem,
-                                        mpu::VectorReference<float> phiPlusK, float timestep)
+                                        mpu::VectorReference<float> phiPlusK, float timestep, bool useLeapfrog, float diffusion)
 {
     csT cs = coordinateSystem;
 
+    // TODO: fix some grid cells velocities not beeing updated
     for(int x : mpu::gridStrideRange( cs.hasBoundary().x, cs.getNumGridCells3d().x-cs.hasBoundary().x ))
         for(int y : mpu::gridStrideRangeY( cs.hasBoundary().y, cs.getNumGridCells3d().y-cs.hasBoundary().y ))
         {
@@ -127,6 +130,10 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
             const float velForY   = grid.read<AT::velocityY>(cellId);
             const float velLeftX  = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
             const float velBackY  = grid.read<AT::velocityY>(cs.getBackwardNeighbor(cellId));
+            const float phiLeft = grid.read<AT::geopotential>(cs.getLeftNeighbor(cellId));
+            const float phiRight = grid.read<AT::geopotential>(cs.getRightNeighbor(cellId));
+            const float phiFor = grid.read<AT::geopotential>(cs.getForwardNeighbor(cellId));
+            const float phiBack = grid.read<AT::geopotential>(cs.getBackwardNeighbor(cellId));
 
             // compute kinetic energy per unit mass
             const float velX = (velLeftX + velRightX) * 0.5f;
@@ -134,19 +141,31 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
             const float kinEnergy = (velX * velX + velY * velY) * 0.5f;
             phiPlusK[cellId] = kinEnergy + phi;
 
-            // compute geopotential time derivative dPhi/dt
+            // compute geopotential advection time derivative dPhi/dt
             const float divv = divergence2d( velLeftX, velRightX, velBackY, velForY, cellPos, cs);
-            const float dphi_dt = -divv * phi;
+            float dphi_dt = -divv * phi;
+
+            // compute geopotential diffusion
+            const float lapphi = laplace2d(phiLeft,phiRight,phiBack,phiFor,phi,cellPos,cs);
+            dphi_dt += diffusion * lapphi;
 
             // compute values at t+1
-            const float nextPhi = phi + dphi_dt * timestep;
+            float nextPhi;
+            if(useLeapfrog)
+            {
+                const float prevPhi = grid.readPrev<AT::geopotential>(cellId);
+                nextPhi = prevPhi + dphi_dt * 2.0f*timestep;
+            }
+            else
+                nextPhi = phi + dphi_dt * timestep;
+
             grid.write<AT::geopotential>(cellId,nextPhi);
         }
 }
 
 template <typename csT>
 __global__ void shallowWaterSimulationB(ShallowWaterGrid::ReferenceType grid, csT coordinateSystem,
-                                        mpu::VectorReference<const float> phiPlusK, float timestep)
+                                        mpu::VectorReference<const float> phiPlusK, float timestep, bool useLeapfrog)
 {
     csT cs = coordinateSystem;
 
@@ -170,8 +189,22 @@ __global__ void shallowWaterSimulationB(ShallowWaterGrid::ReferenceType grid, cs
             const float dvY_dt = -gradPhiK.y;
 
             // compute values at t+1
-            const float nextVelX = velX + dvX_dt * timestep;
-            const float nextVelY = velY + dvY_dt * timestep;
+
+            float nextVelX;
+            float nextVelY;
+            if(useLeapfrog)
+            {
+                const float prevVelX = grid.readPrev<AT::velocityX>(cellId);
+                const float prevVelY = grid.readPrev<AT::velocityY>(cellId);
+
+                nextVelX = prevVelX + dvX_dt * 2.0f*timestep;
+                nextVelY = prevVelY + dvY_dt * 2.0f*timestep;
+            }
+            else
+            {
+                nextVelX = velX + dvX_dt * timestep;
+                nextVelY = velY + dvY_dt * timestep;
+            }
             grid.write<AT::velocityX>(cellId,nextVelX);
             grid.write<AT::velocityY>(cellId,nextVelY);
         }
@@ -185,10 +218,13 @@ void ShallowWaterModel::simulateOnceImpl(csT& cs)
     dim3 numBlocks{ static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().x ,blocksize.x)),
                     static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().y ,blocksize.y)), 1};
 
-    shallowWaterSimulationA<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_phiPlusKBuffer.getVectorReference(),m_timestep);
-    shallowWaterSimulationB<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_phiPlusKBuffer.getVectorReference(),m_timestep);
+    shallowWaterSimulationA<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_phiPlusKBuffer.getVectorReference(),
+            m_timestep, !m_firstTimestep && m_useLeapfrog, m_geopotDiffusion);
+    shallowWaterSimulationB<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_phiPlusKBuffer.getVectorReference(),
+            m_timestep, !m_firstTimestep && m_useLeapfrog);
 
     m_totalSimulatedTime += m_timestep;
+    m_firstTimestep = false;
 }
 
 GridBase& ShallowWaterModel::getGrid()
