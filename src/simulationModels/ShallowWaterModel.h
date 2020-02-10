@@ -49,7 +49,7 @@ private:
     // sim settings
     float m_timestep{0.00001}; //!< simulation timestep used
     bool m_useLeapfrog{false}; //!< should leapfrog be used
-    float m_geopotDiffusion{0.001}; //!< diffusion amount
+    float m_geopotDiffusion{0.0001}; //!< diffusion amount
 
     // sim data
     std::shared_ptr<CoordinateSystem> m_cs; //!< the coordinate system to be used
