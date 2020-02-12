@@ -24,7 +24,9 @@
 // forward declaration
 enum class AT;
 template <AT attributeType, typename T> class RenderAttribute;
+template <AT attributeType, typename T> class HostAttribute;
 template <typename ...Atrribs> class RenderBuffer;
+template <typename ...Atrribs> class HostBuffer;
 template <AT attributeType, typename T> class GridAttributeReference;
 template <typename ...AttribRefs> class GridBufferReference;
 template <typename ...AttribRefs> class GridReference;
@@ -39,6 +41,8 @@ class GridAttribute
 public:
     GridAttribute() : m_data() {}
     explicit GridAttribute(int numCells) : m_data(numCells) {}
+    GridAttribute(const HostAttribute<attributeType,T>& other) : m_data(other.m_data) {}
+    GridAttribute& operator=(const HostAttribute<attributeType,T>& other) {m_data.assign(other.m_data); return *this;}
 
     T read(int cellId) {return m_data[cellId];}
     template <typename Tin>
@@ -50,6 +54,8 @@ public:
     static constexpr AT type = attributeType;
     using RenderType = RenderAttribute<attributeType, T>;
     using ReferenceType = GridAttributeReference<attributeType, T>;
+    using HostType = HostAttribute<attributeType, T>;
+    friend class HostAttribute<attributeType,T>;
     friend class RenderAttribute<attributeType,T>;
     friend class GridAttributeReference<attributeType,T>;
 
@@ -61,6 +67,39 @@ public:
 
 private:
     mpu::DeviceVector<T> m_data;
+};
+
+//-------------------------------------------------------------------
+/**
+ * @brief Template to create a host attribute that stores an array auf data on the host and has a attribute type
+ */
+template <AT attributeType, typename T>
+class HostAttribute
+{
+public:
+    HostAttribute() : m_data() {}
+    explicit HostAttribute(int numCells) : m_data(numCells) {}
+    HostAttribute(const GridAttribute<attributeType,T>& other) {m_data = std::vector<T>(other.m_data);}
+    HostAttribute& operator=(const GridAttribute<attributeType,T>& other) {m_data = std::vector<T>(other.m_data); return *this;}
+
+    T read(int cellId) {return m_data[cellId];}
+    template <typename Tin>
+    void write(int cellId, Tin&& data)
+    {
+        m_data[cellId] = std::move<Tin>(data);
+    }
+
+    static constexpr AT type = attributeType;
+    using GridType = GridAttribute<attributeType, T>;
+    friend class GridAttribute<attributeType,T>;
+    friend void swap(HostAttribute& first, HostAttribute& second)
+    {
+        using std::swap;
+        swap(first.m_data,second.m_data);
+    }
+
+private:
+    std::vector<T> m_data;
 };
 
 //-------------------------------------------------------------------
@@ -160,12 +199,20 @@ public:
     GridBuffer() : Attributes()...{};
     explicit GridBuffer(int numCells) : Attributes(numCells)...{};
 
+    GridBuffer& operator=(HostBuffer<typename Attributes::HostType ...>& other)
+    {
+        int t[] = {0, ((void) ( static_cast<Attributes&>(*this) = static_cast<typename Attributes::HostType&>(other)) ,1)...};
+        (void)t[0]; // silence compiler warning abut t being unused
+        return *this;
+    }
+
     template <AT Param>
     auto read(int cellId);
     template <AT Param, typename T>
     void write(int cellId, T&& data);
 
     friend class RenderBuffer<typename Attributes::RenderType...>;
+    friend class HostBuffer<typename Attributes::HostType...>;
     friend class GridBufferReference<typename Attributes::ReferenceType...>;
 
     friend void swap(GridBuffer& first, GridBuffer& second)
@@ -279,6 +326,55 @@ void RenderBuffer<Attributes...>::addToVao(mpu::gph::VertexArray& vao, int bindi
 
 //-------------------------------------------------------------------
 /**
+ * @brief buffer object used internally by the grid to store data on the host
+ */
+template <typename ...Attributes>
+class HostBuffer : Attributes...
+{
+public:
+    HostBuffer() : Attributes()...{};
+    explicit HostBuffer(int numCells) : Attributes(numCells)...{};
+
+    HostBuffer& operator=(GridBuffer<typename Attributes::GridType ...>& other)
+    {
+        int t[] = {0, ((void) ( static_cast<Attributes&>(*this) = static_cast<typename Attributes::GridType&>(other)) ,1)...};
+        (void)t[0]; // silence compiler warning abut t being unused
+        return *this;
+    }
+
+    template <AT Param>
+    auto read(int cellId);
+    template <AT Param, typename T>
+    void write(int cellId, T&& data);
+
+    friend class GridBuffer<typename Attributes::GridType...>;
+    friend void swap(HostBuffer& first, HostBuffer& second)
+    {
+        using std::swap;
+        int t[] = {0, ( swap(static_cast<Attributes&>(first) , static_cast<Attributes&>(second) ) ,1)...};
+        (void)t[0];
+    }
+};
+
+// template function definitions of the GridBuffer class
+//-------------------------------------------------------------------
+template <typename... Attributes>
+template <AT Param>
+auto HostBuffer<Attributes...>::read(int cellId)
+{
+    return GridAttributeSelector_t<Param,Attributes...>::read(cellId);
+}
+
+template <typename... Attributes>
+template <AT Param, typename T>
+void HostBuffer<Attributes...>::write(int cellId, T&& data)
+{
+    GridAttributeSelector_t<Param,Attributes...>::write(cellId, std::forward<T>(data));
+}
+
+
+//-------------------------------------------------------------------
+/**
  * class GridBase
  *
  * base class to store and access grids of different types
@@ -302,6 +398,7 @@ public:
 
     virtual void cacheOnHost()=0; //!< cache the current buffers data on the host
     virtual void pushCachToDevice()=0; //!< write changes from the local cache back to the device
+    virtual void cacheOverwrite()=0; //!< activate the cache without doenloading the data first (for initialization)
 };
 
 //-------------------------------------------------------------------
@@ -322,6 +419,7 @@ class Grid : public GridBase
 {
 public:
     using BufferType = GridBuffer<GridAttribs...>;
+    using HostBufferType = HostBuffer<typename GridAttribs::HostType...>;
     using RenderBufferType = RenderBuffer<typename GridAttribs::RenderType ...>;
     using ReferenceType = GridReference<typename GridAttribs::ReferenceType...>;
 
@@ -344,6 +442,7 @@ public:
     void addRenderBufferToVao(mpu::gph::VertexArray& vao, int binding) override; //!< adds the renderbuffer buffers onto the vao starting with binding id binding
 
     void cacheOnHost() override; //!< cache the current buffers data on the host
+    void cacheOverwrite() override; //!< activate the cache without doenloading the data first (for initialization)
     void pushCachToDevice() override; //!< write changes from the local cache back to the device
 
     template <AT Param>
@@ -405,7 +504,10 @@ private:
     int m_unusedBuffer; //!< when render await buffer == previous buffer one buffer is unused
 
     BufferType m_buffers[4]; //!< buffers for cuda grid data
+    HostBufferType m_cachedBuffers[4]; //!< data is stored here when cached on the host
     RenderBufferType m_renderBuffer; //!< openGL buffer to render from
+
+    bool m_cached{false}; //!< is data currently cached on the host
 
     std::atomic_bool m_renderbufferNotRendered{false}; //!< indicates that renderbuffer contains data that have not been rendered yet
     std::atomic_bool m_newRenderdataWaiting{false}; //!< indicate new renderdata are ready to be written to the renderbuffer
@@ -426,59 +528,86 @@ template <typename ...GridAttribs>
 template <AT Param>
 auto Grid<GridAttribs...>::read(int cellId)
 {
-    return m_buffers[m_readBuffer].read<Param>(cellId);
+    if(m_cached)
+        return m_cachedBuffers[m_readBuffer].read<Param>(cellId);
+    else
+        return m_buffers[m_readBuffer].read<Param>(cellId);
 }
 
 template <typename... GridAttribs>
 template <AT Param>
 auto Grid<GridAttribs...>::readNext(int cellId)
 {
-    return m_buffers[m_writeBuffer].read<Param>(cellId);
+    if(m_cached)
+        return m_cachedBuffers[m_writeBuffer].read<Param>(cellId);
+    else
+        return m_buffers[m_writeBuffer].read<Param>(cellId);
 }
 
 template <typename... GridAttribs>
 template <AT Param>
 auto Grid<GridAttribs...>::readPrev(int cellId)
 {
-    return m_buffers[m_previousBuffer].read<Param>(cellId);
+    if(m_cached)
+        return m_cachedBuffers[m_previousBuffer].read<Param>(cellId);
+    else
+        return m_buffers[m_previousBuffer].read<Param>(cellId);
 }
 
 template <typename ...GridAttribs>
 template <AT Param, typename T>
 void Grid<GridAttribs...>::write(int cellId, T&& data)
 {
-    m_buffers[m_writeBuffer].write<Param>(cellId, std::forward<T>(data));
+    if(m_cached)
+        return m_cachedBuffers[m_writeBuffer].write<Param>(cellId, std::forward<T>(data));
+    else
+        m_buffers[m_writeBuffer].write<Param>(cellId, std::forward<T>(data));
 }
 
 template <typename... GridAttribs>
 template <AT Param, typename T>
 void Grid<GridAttribs...>::writeCurrent(int cellId, T&& data)
 {
-    m_buffers[m_readBuffer].write<Param>(cellId, std::forward<T>(data));
+    if(m_cached)
+        return m_cachedBuffers[m_readBuffer].write<Param>(cellId, std::forward<T>(data));
+    else
+        m_buffers[m_readBuffer].write<Param>(cellId, std::forward<T>(data));
 }
 
 template <typename... GridAttribs>
 template <AT Param>
 void Grid<GridAttribs...>::copy(int cellId)
 {
-    auto data = read<Param>(cellId);
-    write<Param>(cellId,data);
+        auto data = read<Param>(cellId);
+        write<Param>(cellId, data);
 }
 
 template <typename... GridAttribs>
 template <AT Param, typename T>
 void Grid<GridAttribs...>::initialize(int cellId, T&& data)
 {
-    m_buffers[0].write<Param>(cellId, std::forward<T>(data));
-    m_buffers[1].write<Param>(cellId, std::forward<T>(data));
-    m_buffers[2].write<Param>(cellId, std::forward<T>(data));
-    m_buffers[3].write<Param>(cellId, std::forward<T>(data));
+    if(m_cached)
+    {
+        m_cachedBuffers[0].write<Param>(cellId, std::forward<T>(data));
+        m_cachedBuffers[1].write<Param>(cellId, std::forward<T>(data));
+        m_cachedBuffers[2].write<Param>(cellId, std::forward<T>(data));
+        m_cachedBuffers[3].write<Param>(cellId, std::forward<T>(data));
+    }
+    else
+    {
+        m_buffers[0].write<Param>(cellId, std::forward<T>(data));
+        m_buffers[1].write<Param>(cellId, std::forward<T>(data));
+        m_buffers[2].write<Param>(cellId, std::forward<T>(data));
+        m_buffers[3].write<Param>(cellId, std::forward<T>(data));
+    }
 }
 
 template <typename ...GridAttribs>
 Grid<GridAttribs...>::Grid(int numCells)
     : m_buffers{ Grid<GridAttribs...>::BufferType(numCells), Grid<GridAttribs...>::BufferType(numCells),
                  Grid<GridAttribs...>::BufferType(numCells), Grid<GridAttribs...>::BufferType(numCells)},
+      m_cachedBuffers{ Grid<GridAttribs...>::HostBufferType(numCells), Grid<GridAttribs...>::HostBufferType(numCells),
+                 Grid<GridAttribs...>::HostBufferType(numCells), Grid<GridAttribs...>::HostBufferType(numCells)},
     m_numCells(numCells), m_renderBuffer(numCells)
 {
     assert_critical(numCells>0,"Grid","Number of cells must be at least one");
@@ -493,6 +622,8 @@ template <typename... GridAttribs>
 Grid<GridAttribs...>::Grid(const Grid& other)
     : m_buffers{ other.m_buffers[0], other.m_buffers[1],
                  other.m_buffers[2], other.m_buffers[3]},
+      m_cachedBuffers{ other.m_cachedBuffers[0], other.m_cachedBuffers[1],
+                 other.m_cachedBuffers[2], other.m_cachedBuffers[3]},
       m_readBuffer(other.m_readBuffer),
       m_writeBuffer(other.m_writeBuffer),
       m_previousBuffer(other.m_previousBuffer),
@@ -672,14 +803,29 @@ int Grid<GridAttribs...>::size() const
 template <typename... GridAttribs>
 void Grid<GridAttribs...>::cacheOnHost()
 {
-    logWARNING("Grid") << "host cache is not implemented jet";
+    m_cachedBuffers[0] = m_buffers[0];
+    m_cachedBuffers[1] = m_buffers[1];
+    m_cachedBuffers[2] = m_buffers[2];
+    m_cachedBuffers[3] = m_buffers[3];
+    m_cached = true;
+}
+
+template <typename... GridAttribs>
+void Grid<GridAttribs...>::cacheOverwrite()
+{
+    m_cached = true;
 }
 
 template <typename... GridAttribs>
 void Grid<GridAttribs...>::pushCachToDevice()
 {
-    logWARNING("Grid") << "host cache is not implemented jet";
+    m_buffers[0] = m_cachedBuffers[0];
+    m_buffers[1] = m_cachedBuffers[1];
+    m_buffers[2] = m_cachedBuffers[2];
+    m_buffers[3] = m_cachedBuffers[3];
+    m_cached = false;
 }
+
 
 template <typename... GridAttribs>
 Grid<GridAttribs...>::ReferenceType Grid<GridAttribs...>::getGridReference()

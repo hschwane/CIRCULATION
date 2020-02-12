@@ -70,6 +70,8 @@ std::shared_ptr<GridBase> ShallowWaterModel::recreate(std::shared_ptr<Coordinate
 void ShallowWaterModel::reset()
 {
 
+    m_grid->cacheOverwrite();
+
     float3 center = m_cs->getMinCoord() + (m_cs->getMaxCoord() - m_cs->getMinCoord())*0.5f;
     logINFO("bla") << m_cs->getMinCoord() << m_cs->getMaxCoord() << center;
     // create initial conditions using gaussian
@@ -87,6 +89,7 @@ void ShallowWaterModel::reset()
         m_grid->initialize<AT::velocityX>(i, velX);
         m_grid->initialize<AT::velocityY>(i, velY);
     }
+    m_grid->pushCachToDevice();
 
     // swap buffers and ready for rendering
     m_grid->swapAndRender();
