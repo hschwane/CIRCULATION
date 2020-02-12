@@ -69,28 +69,24 @@ std::shared_ptr<GridBase> ShallowWaterModel::recreate(std::shared_ptr<Coordinate
 
 void ShallowWaterModel::reset()
 {
-    // create initial conditions
+
+    float3 center = m_cs->getMinCoord() + (m_cs->getMaxCoord() - m_cs->getMinCoord())*0.5f;
+    logINFO("bla") << m_cs->getMinCoord() << m_cs->getMaxCoord() << center;
+    // create initial conditions using gaussian
     for(int i : mpu::Range<int>(m_grid->size()))
     {
         float velX = 0.0f;
         float velY = 0.0f;
-        float geopotential = 1.0f;
+
+        float3 c = m_cs->getCellCoordinate(i);
+
+        float geopotential = fmax(1, 0.1 * glm::gauss<float>(c.x,center.x, 0.1f) * glm::gauss<float>(c.y,center.y, 0.1f));
+
 
         m_grid->initialize<AT::geopotential>(i, geopotential);
         m_grid->initialize<AT::velocityX>(i, velX);
         m_grid->initialize<AT::velocityY>(i, velY);
     }
-
-    // initialize some cells to a higher potential
-    float highPotential = 10.0f;
-    int3 center = int3{ m_cs->getNumGridCells3d().x /2, m_cs->getNumGridCells3d().y /2, 0};
-    int centerId = m_cs->getCellId(center);
-
-    m_grid->initialize<AT::geopotential>( centerId, highPotential);
-    m_grid->initialize<AT::geopotential>( m_cs->getLeftNeighbor(centerId), highPotential);
-    m_grid->initialize<AT::geopotential>( m_cs->getRightNeighbor(centerId), highPotential);
-    m_grid->initialize<AT::geopotential>( m_cs->getBackwardNeighbor(centerId), highPotential);
-    m_grid->initialize<AT::geopotential>( m_cs->getForwardNeighbor(centerId), highPotential);
 
     // swap buffers and ready for rendering
     m_grid->swapAndRender();
