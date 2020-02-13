@@ -40,6 +40,11 @@ void ShallowWaterModel::showBoundaryOptions(const CoordinateSystem& cs)
 
 void ShallowWaterModel::showSimulationOptions()
 {
+    if(m_cs->getType() != CSType::geographical2d)
+        ImGui::DragFloat("Coriolis parameter",&m_coriolisParameter,0.0001f,0.000001,5.0f,"%.7f");
+    else
+        ImGui::DragFloat("Angular Velocity",&m_angularVelocity,0.00001f,0.00001,5.0f,"%.5f");
+
     ImGui::DragFloat("Geopotential diffusion",&m_geopotDiffusion,0.00001f,0.00001,1.0,"%.5f");
     ImGui::Checkbox("Use Leapfrog",&m_useLeapfrog);
     ImGui::DragFloat("Timestep",&m_timestep,0.000001,0.000001f,1.0,"%.6f");
@@ -51,6 +56,7 @@ std::shared_ptr<GridBase> ShallowWaterModel::recreate(std::shared_ptr<Coordinate
     m_cs = cs;
     m_grid = std::make_shared<ShallowWaterGrid>(m_cs->getNumGridCells());
     m_phiPlusKBuffer.resize(m_cs->getNumGridCells());
+    m_vortPlusCor.resize(m_cs->getNumGridCells());
 
     // select coordinate system
     switch(m_cs->getType())
@@ -69,7 +75,6 @@ std::shared_ptr<GridBase> ShallowWaterModel::recreate(std::shared_ptr<Coordinate
 
 void ShallowWaterModel::reset()
 {
-
     m_grid->cacheOverwrite();
 
     float3 center = m_cs->getMinCoord() + (m_cs->getMaxCoord() - m_cs->getMinCoord())*0.5f;
@@ -83,7 +88,6 @@ void ShallowWaterModel::reset()
         float3 c = m_cs->getCellCoordinate(i);
 
         float geopotential = fmax(1, 0.1 * glm::gauss<float>(c.x,center.x, 0.1f) * glm::gauss<float>(c.y,center.y, 0.1f));
-
 
         m_grid->initialize<AT::geopotential>(i, geopotential);
         m_grid->initialize<AT::velocityX>(i, velX);
@@ -111,7 +115,8 @@ void ShallowWaterModel::simulateOnce()
 
 template <typename csT>
 __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, csT coordinateSystem,
-                                        mpu::VectorReference<float> phiPlusK, float timestep, bool useLeapfrog, float diffusion)
+                                        mpu::VectorReference<float> phiPlusK, mpu::VectorReference<float> vortPlusCor,
+                                        float timestep, bool useLeapfrog, float diffusion, float corOrAngvel)
 {
     csT cs = coordinateSystem;
 
@@ -130,12 +135,27 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
             const float velForY   = grid.read<AT::velocityY>(cellId);
             const float velLeftX  = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
             const float velBackY  = grid.read<AT::velocityY>(cs.getBackwardNeighbor(cellId));
+            const float velForX  = grid.read<AT::velocityX>(cs.getForwardNeighbor(cellId)); // used for vorticity
+            const float velRightY  = grid.read<AT::velocityY>(cs.getRightNeighbor(cellId)); // used for vorticity
 
             // compute kinetic energy per unit mass
             const float velX = (velLeftX + velRightX) * 0.5f;
             const float velY = (velForY + velBackY) * 0.5f;
             const float kinEnergy = (velX * velX + velY * velY) * 0.5f;
             phiPlusK[cellId] = kinEnergy + phi;
+
+            // calculate vorticity and coriolis parameter
+            // if this looks strange consider where values are located on the C grid
+            const float2 vortPos = cellPos + 0.5f * make_float2(cs.getCellSize()); // position where vorticity is computed
+            const float vort = curl2d(velForY, velRightY, velRightX, velForX, vortPos, cs);
+            float cor;
+            if(cs.getType() == CSType::geographical2d)
+                cor = 2*corOrAngvel*sin(vortPos.y);
+            else if(cs.getType() == CSType::cartesian2d)
+                cor = corOrAngvel;
+            else
+                cor = 0.0f;
+            vortPlusCor[cellId] = vort + cor;
 
             // compute geopotential advection time derivative dPhi/dt
             const float divv = divergence2d( velLeftX, velRightX, velBackY, velForY, cellPos, cs);
@@ -169,7 +189,7 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
 
 template <typename csT>
 __global__ void shallowWaterSimulationB(ShallowWaterGrid::ReferenceType grid, csT coordinateSystem,
-                                        mpu::VectorReference<const float> phiPlusK, float timestep, bool useLeapfrog)
+                                        mpu::VectorReference<const float> phiPlusK, mpu::VectorReference<float> vortPlusCor, float timestep, bool useLeapfrog)
 {
     csT cs = coordinateSystem;
 
@@ -186,13 +206,16 @@ __global__ void shallowWaterSimulationB(ShallowWaterGrid::ReferenceType grid, cs
             const float phiKRight = phiPlusK[cs.getRightNeighbor(cellId)];
             const float phiKForward = phiPlusK[cs.getForwardNeighbor(cellId)];
             const float phiK = phiPlusK[cellId];
+            const float vortCorLeft = vortPlusCor[cs.getLeftNeighbor(cellId)];
+            const float vortCorBack = vortPlusCor[cs.getBackwardNeighbor(cellId)];
+            const float vortCor = vortPlusCor[cellId];
             const float velX = grid.read<AT::velocityX>(cellId);
             const float velY = grid.read<AT::velocityY>(cellId);
 
             // compute dvX/dt and dvY/dt
             const float2 gradPhiK = gradient2d(phiK,phiKRight,phiK,phiKForward,cellPos,cs);
-            const float dvX_dt = -gradPhiK.x;
-            const float dvY_dt = -gradPhiK.y;
+            const float dvX_dt = (vortCor+vortCorBack)*0.5f*velY -gradPhiK.x;
+            const float dvY_dt = -(vortCor+vortCorLeft)*0.5f*velX -gradPhiK.y;
 
             // compute values at t+1
             float nextVelX;
@@ -224,9 +247,10 @@ void ShallowWaterModel::simulateOnceImpl(csT& cs)
                     static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().y ,blocksize.y)), 1};
 
     shallowWaterSimulationA<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_phiPlusKBuffer.getVectorReference(),
-            m_timestep, !m_firstTimestep && m_useLeapfrog, m_geopotDiffusion);
+            m_vortPlusCor.getVectorReference(), m_timestep, !m_firstTimestep && m_useLeapfrog,
+            m_geopotDiffusion, (m_cs->getType() == CSType::geographical2d) ? m_angularVelocity : m_coriolisParameter);
     shallowWaterSimulationB<<< numBlocks, blocksize>>>(m_grid->getGridReference(),cs,m_phiPlusKBuffer.getVectorReference(),
-            m_timestep, !m_firstTimestep && m_useLeapfrog);
+            m_vortPlusCor.getVectorReference(), m_timestep, !m_firstTimestep && m_useLeapfrog);
 
     m_totalSimulatedTime += m_timestep;
     m_firstTimestep = false;

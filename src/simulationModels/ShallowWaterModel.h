@@ -50,11 +50,14 @@ private:
     float m_timestep{0.0002}; //!< simulation timestep used
     bool m_useLeapfrog{true}; //!< should leapfrog be used
     float m_geopotDiffusion{0.0}; //!< diffusion amount
+    float m_coriolisParameter{0.0}; //!< corrilois parameter for cartesian simulations
+    float m_angularVelocity{7.2921e-5}; //!< angular velocity of earth
 
     // sim data
     std::shared_ptr<CoordinateSystem> m_cs; //!< the coordinate system to be used
     std::shared_ptr<ShallowWaterGrid> m_grid; //!< the grid to be used
     mpu::DeviceVector<float> m_phiPlusKBuffer; //!< stores geopotential + kinetic energy
+    mpu::DeviceVector<float> m_vortPlusCor; //!< stores vorticity + corriolis parameter
     float m_totalSimulatedTime{0.0f};
     bool m_firstTimestep{true};
 };
