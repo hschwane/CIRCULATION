@@ -78,7 +78,6 @@ void ShallowWaterModel::reset()
     m_grid->cacheOverwrite();
 
     float3 center = m_cs->getMinCoord() + (m_cs->getMaxCoord() - m_cs->getMinCoord())*0.5f;
-    logINFO("bla") << m_cs->getMinCoord() << m_cs->getMaxCoord() << center;
     // create initial conditions using gaussian
     for(int i : mpu::Range<int>(m_grid->size()))
     {
