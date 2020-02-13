@@ -31,7 +31,9 @@
 
 void ShallowWaterModel::showCreationOptions()
 {
-
+    ImGui::DragFloat2("position of disturbance", &m_gaussianPosition.x, 0.001);
+    ImGui::DragFloat("standard deviation", &m_stdDev,0.01f);
+    ImGui::DragFloat("multiplier", &m_multiplier,0.01f);
 }
 
 void ShallowWaterModel::showBoundaryOptions(const CoordinateSystem& cs)
@@ -77,7 +79,6 @@ void ShallowWaterModel::reset()
 {
     m_grid->cacheOverwrite();
 
-    float3 center = m_cs->getMinCoord() + (m_cs->getMaxCoord() - m_cs->getMinCoord())*0.5f;
     // create initial conditions using gaussian
     for(int i : mpu::Range<int>(m_grid->size()))
     {
@@ -86,7 +87,7 @@ void ShallowWaterModel::reset()
 
         float3 c = m_cs->getCellCoordinate(i);
 
-        float geopotential = fmax(1, 0.1 * glm::gauss<float>(c.x,center.x, 0.1f) * glm::gauss<float>(c.y,center.y, 0.1f));
+        float geopotential = fmax(1, m_multiplier * glm::gauss<float>(c.x,m_gaussianPosition.x, m_stdDev) * glm::gauss<float>(c.y,m_gaussianPosition.y, m_stdDev));
 
         m_grid->initialize<AT::geopotential>(i, geopotential);
         m_grid->initialize<AT::velocityX>(i, velX);

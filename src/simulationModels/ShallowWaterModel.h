@@ -46,6 +46,11 @@ private:
     void simulateOnceImpl(csT& cs); //!< implementation of simulate once to allow different coordinate systems to be used
     std::function<void()> m_simOnceFunc; //!< will be set to use the correct template specialisation based on type of coordinate system used
 
+    // creation settings
+    float2 m_gaussianPosition{0,0}; //!< position of the gaussian disturbance
+    float m_stdDev{0.1f}; //!< standard deviation of gaussian disturbance
+    float m_multiplier{0.1f}; //!< value is multiplied with the gaussian
+
     // sim settings
     float m_timestep{0.0002}; //!< simulation timestep used
     bool m_useLeapfrog{true}; //!< should leapfrog be used
