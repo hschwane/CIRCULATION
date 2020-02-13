@@ -115,7 +115,8 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
 {
     csT cs = coordinateSystem;
 
-    // TODO: fix some grid cells velocities not beeing updated
+    // updates geopotential for all non boundary cells
+    // also calculates kinetic energy per unit mass
     for(int x : mpu::gridStrideRange( cs.hasBoundary().x, cs.getNumGridCells3d().x-cs.hasBoundary().x ))
         for(int y : mpu::gridStrideRangeY( cs.hasBoundary().y, cs.getNumGridCells3d().y-cs.hasBoundary().y ))
         {
@@ -129,10 +130,6 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
             const float velForY   = grid.read<AT::velocityY>(cellId);
             const float velLeftX  = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
             const float velBackY  = grid.read<AT::velocityY>(cs.getBackwardNeighbor(cellId));
-            const float phiLeft = grid.read<AT::geopotential>(cs.getLeftNeighbor(cellId));
-            const float phiRight = grid.read<AT::geopotential>(cs.getRightNeighbor(cellId));
-            const float phiFor = grid.read<AT::geopotential>(cs.getForwardNeighbor(cellId));
-            const float phiBack = grid.read<AT::geopotential>(cs.getBackwardNeighbor(cellId));
 
             // compute kinetic energy per unit mass
             const float velX = (velLeftX + velRightX) * 0.5f;
@@ -144,9 +141,17 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
             const float divv = divergence2d( velLeftX, velRightX, velBackY, velForY, cellPos, cs);
             float dphi_dt = -divv * phi;
 
-            // compute geopotential diffusion
-            const float lapphi = laplace2d(phiLeft,phiRight,phiBack,phiFor,phi,cellPos,cs);
-            dphi_dt += diffusion * lapphi;
+            if(diffusion > 0)
+            {
+                const float phiLeft = grid.read<AT::geopotential>(cs.getLeftNeighbor(cellId));
+                const float phiRight = grid.read<AT::geopotential>(cs.getRightNeighbor(cellId));
+                const float phiFor = grid.read<AT::geopotential>(cs.getForwardNeighbor(cellId));
+                const float phiBack = grid.read<AT::geopotential>(cs.getBackwardNeighbor(cellId));
+
+                // compute geopotential diffusion
+                const float lapphi = laplace2d(phiLeft,phiRight,phiBack,phiFor,phi,cellPos,cs);
+                dphi_dt += diffusion * lapphi;
+            }
 
             // compute values at t+1
             float nextPhi;
@@ -168,6 +173,8 @@ __global__ void shallowWaterSimulationB(ShallowWaterGrid::ReferenceType grid, cs
 {
     csT cs = coordinateSystem;
 
+    // updates all non boundary velocities
+    // TODO: handle velocities parallel to the boundary
     for(int x : mpu::gridStrideRange( cs.hasBoundary().x, cs.getNumGridCells3d().x-2*cs.hasBoundary().x ))
         for(int y : mpu::gridStrideRangeY( cs.hasBoundary().y, cs.getNumGridCells3d().y-2*cs.hasBoundary().y ))
         {
@@ -188,7 +195,6 @@ __global__ void shallowWaterSimulationB(ShallowWaterGrid::ReferenceType grid, cs
             const float dvY_dt = -gradPhiK.y;
 
             // compute values at t+1
-
             float nextVelX;
             float nextVelY;
             if(useLeapfrog)
