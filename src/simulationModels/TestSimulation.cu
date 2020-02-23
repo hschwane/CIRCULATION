@@ -114,6 +114,7 @@ void TestSimulation::reset()
     std::normal_distribution<float> dist(10,4);
     std::normal_distribution<float> vdist(0,4);
 
+    m_grid->cacheOverwrite();
     for(int i : mpu::Range<int>(m_grid->size()))
     {
         float density = fmax(0,dist(rng));
@@ -139,11 +140,8 @@ void TestSimulation::reset()
                                                     !m_boundaryIsolatedY && m_cs->hasBoundary().y,
                                                     m_boundaryTemperatureX, m_boundaryTemperatureY, *m_cs, *m_grid);
 
-    handleMirroredBoundaries<AT::temperature>(m_boundaryIsolatedX && m_cs->hasBoundary().x,
-                                              m_boundaryIsolatedY && m_cs->hasBoundary().y,
-                                              *m_cs, *m_grid);
-
     // swap buffers and ready for rendering
+    m_grid->pushCachToDevice();
     m_grid->swapAndRender();
 
     // reset simulation state
@@ -339,14 +337,16 @@ void TestSimulation::simulateOnceImpl(csT& cs)
 
     if(m_needUpdateBoundaries)
     {
+//        m_grid->cacheOnHost();
         initializeFixedValueBoundaries<AT::temperature>(!m_boundaryIsolatedX && m_cs->hasBoundary().x,
                                                         !m_boundaryIsolatedY && m_cs->hasBoundary().y,
                                                         m_boundaryTemperatureX, m_boundaryTemperatureY, *m_cs, *m_grid);
+//        m_grid->pushCachToDevice();
     }
 
-    handleMirroredBoundaries<AT::temperature>(m_boundaryIsolatedX && m_cs->hasBoundary().x,
-                                              m_boundaryIsolatedY && m_cs->hasBoundary().y,
-                                              *m_cs, *m_grid);
+    handleMirroredBoundaries<AT::temperature>(m_boundaryIsolatedX && cs.hasBoundary().x,
+                                              m_boundaryIsolatedY && cs.hasBoundary().y,
+                                              cs, *m_grid);
 
     if(m_diffuseHeat)
         m_totalSimulatedTime += m_timestep;
