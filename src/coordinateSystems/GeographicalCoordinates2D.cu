@@ -195,7 +195,7 @@ void GeographicalCoordinates2D::setShaderUniforms(mpu::gph::ShaderProgram& shade
     shader.uniform1f("csInternalData.m_radius", m_radius);
 }
 
-CSType GeographicalCoordinates2D::getType()
+CSType GeographicalCoordinates2D::getType() const
 {
     return CSType::geographical2d;
 }

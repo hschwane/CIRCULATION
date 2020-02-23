@@ -88,7 +88,7 @@ public:
     virtual void setShaderUniforms(mpu::gph::ShaderProgram& shader) const =0; //!< sets the necessary uniforms to a shader that included th shader file from "getShaderFileName()" function
 
     // type for downcasting
-    CUDAHOSTDEV virtual CSType getType()=0; //!< identify the type of coordinate system using CSType from enums.h for downcasting
+    CUDAHOSTDEV virtual CSType getType() const=0; //!< identify the type of coordinate system using CSType from enums.h for downcasting
 };
 
 

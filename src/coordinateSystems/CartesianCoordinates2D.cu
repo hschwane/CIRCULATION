@@ -181,7 +181,7 @@ void CartesianCoordinates2D::setShaderUniforms(mpu::gph::ShaderProgram& shader) 
     shader.uniform1i("csInternalData.m_totalNumGridCells", m_totalNumGridCells);
 }
 
-CSType CartesianCoordinates2D::getType()
+CSType CartesianCoordinates2D::getType() const
 {
     return CSType::cartesian2d;
 }

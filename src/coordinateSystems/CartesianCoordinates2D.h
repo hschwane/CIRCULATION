@@ -79,7 +79,7 @@ public:
     void setShaderUniforms(mpu::gph::ShaderProgram& shader) const override; //!< sets the necessary uniforms to a shader that included th shader file from "getShaderFileName()" function
 
     // downcasting and template things
-    CUDAHOSTDEV CSType getType() override; //!< identify the type of coordinate system using CSType from enums.h for downcasting
+    CUDAHOSTDEV CSType getType() const override; //!< identify the type of coordinate system using CSType from enums.h for downcasting
     static constexpr bool isCartesian{true}; //!< is the coordinate system a cartesian coordinate system
 
 private:
