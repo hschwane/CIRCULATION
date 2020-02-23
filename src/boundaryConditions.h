@@ -56,13 +56,14 @@ template < AT attributeType, typename csT, typename gridRefT>
 __global__ void mirrorBoundariesGPU(int numBoundCellsY, int  numBoundCellsX, csT coordinateSystem, gridRefT grid, bool isOffset)
 {
     csT cs = coordinateSystem;
+    int offset = isOffset ? 2 : 1;
 
     for(int i : mpu::gridStrideRange(numBoundCellsY))
     {
         // transform boundary cell id into actual cell id
-        int3 cellId3d{i % cs.getNumGridCells3d().x, isOffset ? 1 : 0, 0};
+        int3 cellId3d{i % cs.getNumGridCells3d().x, 0, 0};
         if(i >= cs.getNumGridCells3d().x)
-            cellId3d.y = cs.getNumGridCells3d().y - 1;
+            cellId3d.y = cs.getNumGridCells3d().y - offset;
         int cellId = cs.getCellId(cellId3d);
 
         int neighbourId = (cellId3d.y == 0) ? cs.getForwardNeighbor(cellId) : cs.getBackwardNeighbor(cellId);
@@ -74,7 +75,6 @@ __global__ void mirrorBoundariesGPU(int numBoundCellsY, int  numBoundCellsX, csT
     for(int i : mpu::gridStrideRange(numBoundCellsX))
     {
         // transform boundary cell id into actual cell id
-        int offset = isOffset ? 2 : 1;
         int3 cellId3d{(i % 2) * (cs.getNumGridCells3d().x - offset), 1 + i / 2, 0};
         int cellId = cs.getCellId(cellId3d);
 
