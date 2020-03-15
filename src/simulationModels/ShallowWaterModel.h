@@ -52,7 +52,7 @@ private:
     float m_multiplier{0.1f}; //!< value is multiplied with the gaussian
 
     // sim settings
-    float m_timestep{0.0002}; //!< simulation timestep used
+    float m_timestep{0.0001}; //!< simulation timestep used
     bool m_useLeapfrog{true}; //!< should leapfrog be used
     float m_geopotDiffusion{0.0}; //!< diffusion amount
     float m_coriolisParameter{0.0}; //!< corrilois parameter for cartesian simulations

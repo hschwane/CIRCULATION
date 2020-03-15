@@ -371,8 +371,8 @@ void Application::newSimulationModal()
     if(ImGui::BeginPopupModal("New Simulation",nullptr,ImGuiWindowFlags_AlwaysAutoResize))
     {
         // variables to select a simulation model
-        static int selctedCoordinates = 0;
-        static int3 numGridCells{128,128,32};
+        static int selctedCoordinates = 1;
+        static int3 numGridCells{512,256,32};
         static std::unique_ptr<CoordinateSystem> selectedCS;
 
         // variables for cartesian grids
@@ -380,16 +380,16 @@ void Application::newSimulationModal()
         static float3 maxCoords{1,1,1};
 
         // variables for geographical grids
-        static float minLat{-1.57f};
-        static float maxLat{1.57f};
+        static float minLat{-1.55f};
+        static float maxLat{1.55f};
         static float radius{1.0f};
 
         // variables to select a simulation
         static auto testSim = std::make_unique<TestSimulation>();
         static auto rdSim = std::make_unique<RenderDemoSimulation>();
         static auto shallowSim = std::make_unique<ShallowWaterModel>();
-        static int selctedModelId = 0;
-        static Simulation* selectedeModel = rdSim.get();
+        static int selctedModelId = 2;
+        static Simulation* selectedeModel = shallowSim.get();
 
         // select simulation model
         ImGui::Text("Simulation Model");
@@ -555,11 +555,11 @@ void Application::newSimulationModal()
 
                     std::vector<std::pair<std::string,int>> scalarFields;
                     scalarFields.emplace_back("geopotential at free surface",2);
-                    m_renderer.setScalarFields(scalarFields);
+                    m_renderer.setScalarFields(scalarFields, 0);
 
                     std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
                     vectorFields.emplace_back("velocity",std::pair<int,int>(0,1));
-                    m_renderer.setVecFields(vectorFields);
+                    m_renderer.setVecFields(vectorFields, 0);
                     break;
                 }
             }

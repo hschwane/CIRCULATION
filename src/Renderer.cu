@@ -188,12 +188,12 @@ void Renderer::showGui(bool* show)
             }
         }
 
-        if(ImGui::CollapsingHeader("Grid lines"))
-        {
-            ImGui::Checkbox("show grid lines",&m_renderGridlines);
-            if(ImGui::ColorEdit3("Color##linecolor",glm::value_ptr(m_gridlineColor)))
-                m_gridlineShader.uniform3f("constantColor", m_gridlineColor);
-        }
+//        if(ImGui::CollapsingHeader("Grid lines"))
+//        {
+//            ImGui::Checkbox("show grid lines",&m_renderGridlines);
+//            if(ImGui::ColorEdit3("Color##linecolor",glm::value_ptr(m_gridlineColor)))
+//                m_gridlineShader.uniform3f("constantColor", m_gridlineColor);
+//        }
 
 //        if(ImGui::CollapsingHeader("Grid points"))
 //        {
@@ -408,18 +408,46 @@ void Renderer::updateMVP()
     m_vectorShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
 }
 
-void Renderer::setScalarFields(std::vector<std::pair<std::string, int>> fields)
+void Renderer::setScalarFields(std::vector<std::pair<std::string, int>> fields, int active)
 {
     m_scalarFields = std::move(fields);
+    if(active>-2)
+        m_currentScalarField = active;
     if(m_currentScalarField >= m_scalarFields.size())
         m_currentScalarField = -1;
+
+    if(m_currentScalarField == -1)
+    {
+        m_scalarShader.uniform1b("scalarColor",false);
+        m_scalarShader.uniform3f("constantColor", m_scalarConstColor);
+        m_scalarShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
+        m_gridCenterShader.uniform1b("colorCodeCellID",m_colorCodeCellID);
+    } else {
+        m_scalarShader.uniform1b("scalarColor",true);
+        unsigned int blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_scalarShader), GL_SHADER_STORAGE_BLOCK,"scalarField");
+        glShaderStorageBlockBinding(static_cast<GLuint>(m_scalarShader), blockIndex, m_scalarFields[m_currentScalarField].second);
+        m_scalarShader.uniform3f("minScalarColor", m_scalarMinColor);
+        m_scalarShader.uniform3f("maxScalarColor", m_scalarMaxColor);
+        m_scalarShader.uniform1f("minScalar",m_minScalar);
+        m_scalarShader.uniform1f("maxScalar",m_maxScalar);
+    }
 }
 
-void Renderer::setVecFields(std::vector<std::pair<std::string,std::pair<int,int>>> fields)
+void Renderer::setVecFields(std::vector<std::pair<std::string, std::pair<int, int>>> fields, int active)
 {
     m_vectorFields = std::move(fields);
+    if(active>-2)
+        m_currentVecField = active;
     if(m_currentVecField >= m_vectorFields.size())
         m_currentVecField = -1;
+
+    unsigned int blockIndex = 0;
+    blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK, "vectorFieldX");
+    glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex, m_vectorFields[m_currentVecField].second.first);
+
+    blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK, "vectorFieldY");
+    glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex, m_vectorFields[m_currentVecField].second.second);
+
 }
 
 void Renderer::setBackfaceCulling(bool enable)

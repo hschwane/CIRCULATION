@@ -44,8 +44,8 @@ public:
     void setCS(std::shared_ptr<CoordinateSystem> cs); //!< sets the coordinate system
     mpu::gph::VertexArray& getVAO(); //!< get a reference to the vao so buffers can be bound to it
 
-    void setScalarFields(std::vector<std::pair<std::string,int>> fields); //!< set scalar fields names and buffer ids
-    void setVecFields(std::vector<std::pair<std::string,std::pair<int,int>>> fields); //!< set vextor fields names and buffer ids
+    void setScalarFields(std::vector<std::pair<std::string, int>> fields, int active=-2); //!< set scalar fields names and buffer ids
+    void setVecFields(std::vector<std::pair<std::string, std::pair<int, int>>> fields, int active=-2); //!< set vextor fields names and buffer ids
     void setSize(int w, int h); //!< call when window is resized
     void setViewMat(const glm::mat4& view); //!< set the view matrix
 
@@ -75,7 +75,7 @@ private:
     float m_gap{0.0f}; //!< size of gap between scalar values
     int m_currentScalarField{-1}; //!< scalar field to visualize
 
-    bool m_renderVectorField{true}; //!< should a vector field be rendered
+    bool m_renderVectorField{false}; //!< should a vector field be rendered
     float m_arrowSize{0.013}; //!< size of the drawn arrow sprites
     glm::vec3 m_VectorConstColor{0.0,0.8,1.0}; //!< vector color
     bool m_colorVectorsByLength{false}; //!< should vectors be colored by length, or constant?
