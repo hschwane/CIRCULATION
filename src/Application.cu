@@ -45,6 +45,47 @@ Application::Application(int width, int height)
     m_camera.addInputs();
     addInputs();
     setKeybindings();
+
+    // try to load existing settings
+    try {
+        m_persist.open(persistFilename);
+        m_showImGuiDemoWindow = m_persist.getValue<bool>("ui_windows", "ImGuiDemo");
+        m_showCameraDebugWindow = m_persist.getValue<bool>("ui_windows", "cameraWindow");
+        m_showPerfWindow = m_persist.getValue<bool>("ui_windows", "perfWindow");
+        m_showAboutWindow = m_persist.getValue<bool>("ui_windows", "aboutWindow");
+        m_showKeybindingsWindow = m_persist.getValue<bool>("ui_windows", "keybindingWindow");
+        m_showRendererWindow = m_persist.getValue<bool>("ui_windows", "renderWindow");
+        m_showSimulationWindow = m_persist.getValue<bool>("ui_windows", "simulateWindow");
+    }
+    catch (const std::exception& e)
+    {
+        logWARNING("Application") << "Could not load persistence file.";
+        try {
+            m_persist.createAndOpen(persistFilename);
+        }
+        catch (const std::exception& e)
+        {
+            logWARNING("Application") << "Could not create new persistence file.";
+        }
+    }
+}
+
+Application::~Application()
+{
+    // try to load existing settings
+    try {
+        m_persist.setValue<bool>("ui_windows", "ImGuiDemo", m_showImGuiDemoWindow);
+        m_persist.setValue<bool>("ui_windows", "cameraWindow", m_showCameraDebugWindow);
+        m_persist.setValue<bool>("ui_windows", "perfWindow", m_showPerfWindow);
+        m_persist.setValue<bool>("ui_windows", "aboutWindow", m_showAboutWindow);
+        m_persist.setValue<bool>("ui_windows", "keybindingWindow", m_showKeybindingsWindow);
+        m_persist.setValue<bool>("ui_windows", "renderWindow", m_showRendererWindow);
+        m_persist.setValue<bool>("ui_windows", "simulateWindow", m_showSimulationWindow);
+    }
+    catch (const std::exception& e)
+    {
+        logWARNING("Application") << "Could not store settings to persistence file.";
+    }
 }
 
 bool Application::run()

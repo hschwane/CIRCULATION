@@ -30,6 +30,7 @@
 #include "simulationModels/TestSimulation.h"
 #include "simulationModels/ShallowWaterModel.h"
 #include "enums.h"
+#include "globalSettings.h"
 //--------------------
 
 //-------------------------------------------------------------------
@@ -44,6 +45,7 @@ class Application
 {
 public:
     Application(int width, int height);
+    ~Application();
     bool run(); //!< returns false when app should be closed
 
 private:
@@ -84,6 +86,8 @@ private:
     void showAboutWindow(bool* show); //!< shows window with information on app
     void showKeybindingsWindow(bool* show); //!< shows window with information keybindings
     void newSimulationModal(); //!< draws the new simulation modal if needed
+
+    mpu::CfgFile m_persist;
 };
 
 
