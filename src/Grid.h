@@ -169,7 +169,8 @@ enum class AT
     temperature,
     temperatureGradX,
     temperatureGradY,
-    geopotential
+    geopotential,
+    potentialVort
 };
 
 
@@ -185,6 +186,7 @@ using GridTemperature = GridAttribute<AT::temperature,float>;
 using GridTemperatureGradX = GridAttribute<AT::temperatureGradX,float>;
 using GridTemperatureGradY = GridAttribute<AT::temperatureGradY,float>;
 using GridGeopotential = GridAttribute<AT::geopotential,float>;
+using GridPotentialVort = GridAttribute<AT::potentialVort,float>;
 
 
 //-------------------------------------------------------------------
@@ -844,7 +846,7 @@ extern template class Grid<GridDensity,GridVelocityX,GridVelocityY>;
 using TestSimGrid = Grid<GridDensity, GridVelocityX, GridVelocityY, GridDensityGradX, GridDensityGradY, GridDensityLaplace, GridVelocityDiv, GridVelocityCurl, GridTemperature, GridTemperatureGradX, GridTemperatureGradY>;
 extern template class Grid<GridDensity, GridVelocityX, GridVelocityY, GridDensityGradX, GridDensityGradY, GridDensityLaplace, GridVelocityDiv, GridVelocityCurl, GridTemperature, GridTemperatureGradX, GridTemperatureGradY>;
 
-using ShallowWaterGrid = Grid<GridVelocityX,GridVelocityY,GridGeopotential>;
-extern template class Grid<GridVelocityX,GridVelocityY,GridGeopotential>;
+using ShallowWaterGrid = Grid<GridVelocityX,GridVelocityY,GridGeopotential,GridPotentialVort>;
+extern template class Grid<GridVelocityX,GridVelocityY,GridGeopotential,GridPotentialVort>;
 
 #endif //CIRCULATION_GRID_H

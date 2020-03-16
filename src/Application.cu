@@ -596,6 +596,7 @@ void Application::newSimulationModal()
 
                     std::vector<std::pair<std::string,int>> scalarFields;
                     scalarFields.emplace_back("geopotential at free surface",2);
+                    scalarFields.emplace_back("potential vorticity",3);
                     m_renderer.setScalarFields(scalarFields, 0);
 
                     std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;

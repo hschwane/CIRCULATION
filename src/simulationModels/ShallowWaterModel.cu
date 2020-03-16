@@ -157,6 +157,9 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
                 cor = 0.0f;
             vortPlusCor[cellId] = vort + cor;
 
+            // write potential vorticity
+            grid.write<AT::potentialVort>(cellId, abs(vort+cor) / phi);
+
             // compute geopotential advection time derivative dPhi/dt
             const float divv = divergence2d( velLeftX, velRightX, velBackY, velForY, cellPos, cs);
             float dphi_dt = -divv * phi;
@@ -189,7 +192,8 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
 
 template <typename csT>
 __global__ void shallowWaterSimulationB(ShallowWaterGrid::ReferenceType grid, csT coordinateSystem,
-                                        mpu::VectorReference<const float> phiPlusK, mpu::VectorReference<float> vortPlusCor, float timestep, bool useLeapfrog)
+                                        mpu::VectorReference<const float> phiPlusK, mpu::VectorReference<float> vortPlusCor,
+                                        float timestep, bool useLeapfrog)
 {
     csT cs = coordinateSystem;
 
