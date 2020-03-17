@@ -385,6 +385,12 @@ void Renderer::compileShader()
         m_streamlineShader.uniformMat4("modelMat", m_model);
         m_streamlineShader.uniform1f("slLength",m_streamlineLength);
         m_streamlineShader.uniform1f("dx",m_streamlineDx);
+        m_streamlineShader.uniform1b("scalarColor",m_colorVectorsByLength);
+        m_streamlineShader.uniform3f("minScalarColor", m_minVecColor);
+        m_streamlineShader.uniform3f("maxScalarColor", m_maxVecColor);
+        m_streamlineShader.uniform1f("minScalar",m_minVecLength);
+        m_streamlineShader.uniform1f("maxScalar",m_maxVecLength);
+        m_streamlineShader.uniform3f("constantColor", m_VectorConstColor);
 
         if(m_currentStreamlineVecField >= 0)
         {

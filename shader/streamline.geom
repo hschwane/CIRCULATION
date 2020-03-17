@@ -20,6 +20,13 @@ uniform mat4 viewMat;
 uniform mat4 modelMat;
 uniform mat4 modelViewProjectionMat;
 
+uniform vec3 constantColor;
+uniform bool scalarColor = false;
+uniform float minScalar;
+uniform float maxScalar;
+uniform vec3 minScalarColor;
+uniform vec3 maxScalarColor;
+
 uniform float slLength;
 uniform float dx;
 
@@ -41,7 +48,7 @@ float linearInterpolate(float targetPosition, float positionA, float valueA, flo
 
 void main()
 {
-    cellColor = vec3(1);
+    cellColor = constantColor;
     vec2 position = gl_in[0].gl_Position.xy;
     vec2 prev = vec2(0,0);
 
@@ -49,7 +56,17 @@ void main()
     int nVertex = 0;
     while(lineLength < slLength && nVertex < 100)
     {
-        if(position.x < cs_getMinCoord().x || position.y < cs_getMinCoord().y || position.x > cs_getMaxCoord().x || position.y > cs_getMaxCoord().y)
+        #if defined(GEOGRAPHICAL_COORDINATES_2D)
+            if(position.x > cs_getMaxCoord().x )
+                position.x = (position.x - cs_getMaxCoord().x) + cs_getMinCoord().x;
+            if(position.x < cs_getMinCoord().x)
+                position.x = (position.x - cs_getMinCoord().x) + cs_getMaxCoord().x;
+        #else
+            if(position.x < cs_getMinCoord().x || position.x > cs_getMaxCoord().x)
+                break;
+        #endif
+
+        if(position.y < cs_getMinCoord().y || position.y > cs_getMaxCoord().y)
             break;
 
         int cellId = cs_getCellId(vec3(position,0));
@@ -74,6 +91,13 @@ void main()
 
         if(l < 0.0001*cs_getCellSize().x || dot(vector,prev)<0)
             break;
+
+        if(scalarColor)
+        {
+            float f = (l - minScalar) / (maxScalar - minScalar);
+            f = clamp(f,0,1);
+            cellColor = mix(minScalarColor,maxScalarColor,f);
+        }
 
         vector = vector / l;
         prev = vector;
