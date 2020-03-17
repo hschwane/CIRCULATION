@@ -42,6 +42,10 @@ Renderer::Renderer(int w, int h)
     m_vectorShader.setShaderModule({PROJECT_SHADER_PATH"vectorRenderer.geom"});
     m_vectorShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
 
+    m_streamlineShader.setShaderModule({PROJECT_SHADER_PATH"streamline.vert"});
+    m_streamlineShader.setShaderModule({PROJECT_SHADER_PATH"streamline.geom"});
+    m_streamlineShader.setShaderModule({PROJECT_SHADER_PATH"gridRenderer.frag"});
+
     // try compiling shaders
     compileShader();
 
@@ -70,6 +74,7 @@ void Renderer::showGui(bool* show)
                 m_gridCenterShader.uniformMat4("modelMat", m_model);
                 m_vectorShader.uniformMat4("modelMat", m_model);
                 m_scalarShader.uniformMat4("modelMat", m_model);
+                m_streamlineShader.uniformMat4("modelMat", m_model);
                 setClip(0.001,m_unscaledFar*m_scale);
                 updateMVP();
             }
@@ -185,6 +190,61 @@ void Renderer::showGui(bool* show)
             {
                 if(ImGui::ColorEdit3("Color##vecconstcolor", glm::value_ptr(m_VectorConstColor)))
                     m_vectorShader.uniform3f("constantColor", m_VectorConstColor);
+            }
+        }
+
+        if(ImGui::CollapsingHeader("Streamlines"))
+        {
+            ImGui::Checkbox("show streamlines",&m_renderStreamlines);
+
+            if(ImGui::DragFloat("line width", &m_lineWidth, 0.1))
+                glLineWidth(m_lineWidth);
+
+            if(ImGui::DragFloat("line length", &m_streamlineLength, 0.01))
+                m_streamlineShader.uniform1f("slLength",m_streamlineLength);
+
+            if(ImGui::DragFloat("dx", &m_streamlineDx, 0.001))
+                m_streamlineShader.uniform1f("dx",m_streamlineDx);
+
+            ImGui::DragInt("Number of Streamlines",&m_numStreamlines);
+
+            if( ImGui::BeginCombo("Attribute##streamlineselection", (m_currentVecField<0) ? "none" : m_vectorFields[m_currentVecField].first.c_str()))
+            {
+                for(int i = 0; i < m_vectorFields.size(); i++)
+                {
+                    bool selected = (m_currentStreamlineVecField == i);
+                    if(ImGui::Selectable((m_vectorFields[i].first+"##vectorfieldselection").c_str(), &selected))
+                    {
+                        m_currentStreamlineVecField = i;
+
+                        unsigned int blockIndex = 0;
+                        blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_streamlineShader), GL_SHADER_STORAGE_BLOCK, "vectorFieldX");
+                        glShaderStorageBlockBinding(static_cast<GLuint>(m_streamlineShader), blockIndex, m_vectorFields[i].second.first);
+
+                        blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_streamlineShader), GL_SHADER_STORAGE_BLOCK, "vectorFieldY");
+                        glShaderStorageBlockBinding(static_cast<GLuint>(m_streamlineShader), blockIndex, m_vectorFields[i].second.second);
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::Checkbox("color by length##vectorfieldselection",&m_colorstreamlinesByLength);
+            m_streamlineShader.uniform1b("scalarColor",m_colorstreamlinesByLength);
+
+            if(m_colorstreamlinesByLength)
+            {
+                if(ImGui::ColorEdit3("Min Color##slmincolor", glm::value_ptr(m_minSlColor)))
+                    m_streamlineShader.uniform3f("minScalarColor", m_minSlColor);
+                if(ImGui::ColorEdit3("Max Color##slmaxcolor", glm::value_ptr(m_maxVecColor)))
+                    m_streamlineShader.uniform3f("maxScalarColor", m_maxVecColor);
+                if(ImGui::DragFloat("Min Length##slminveclength",&m_minSlVecLength,0.01))
+                    m_streamlineShader.uniform1f("minScalar",m_minSlVecLength);
+                if(ImGui::DragFloat("Max Length##slmaxveclength",&m_maxSlVecLength,0.01))
+                    m_streamlineShader.uniform1f("maxScalar",m_maxSlVecLength);
+            } else
+            {
+                if(ImGui::ColorEdit3("Color##slconstcolor", glm::value_ptr(m_streamlineConstColor)))
+                    m_streamlineShader.uniform3f("constantColor", m_streamlineConstColor);
             }
         }
 
@@ -312,6 +372,32 @@ void Renderer::compileShader()
             blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldY");
             glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex,m_vectorFields[m_currentVecField].second.second);
         }
+
+        // compile streamline shader
+        m_streamlineShader.clearDefinitions();
+        if(m_cs)
+            m_streamlineShader.addDefinition(glsp::definition(m_cs->getShaderDefine()) );
+        m_streamlineShader.rebuild();
+        if(m_cs)
+            m_cs->setShaderUniforms(m_streamlineShader);
+        m_streamlineShader.uniformMat4("viewMat", m_view);
+        m_streamlineShader.uniformMat4("projectionMat", m_projection);
+        m_streamlineShader.uniformMat4("modelMat", m_model);
+        m_streamlineShader.uniform1f("slLength",m_streamlineLength);
+        m_streamlineShader.uniform1f("dx",m_streamlineDx);
+
+        if(m_currentStreamlineVecField >= 0)
+        {
+            unsigned int blockIndex = 0;
+            blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_streamlineShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldX");
+            glShaderStorageBlockBinding(static_cast<GLuint>(m_streamlineShader), blockIndex,m_vectorFields[m_currentStreamlineVecField].second.first);
+
+            blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_streamlineShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldY");
+            glShaderStorageBlockBinding(static_cast<GLuint>(m_streamlineShader), blockIndex,m_vectorFields[m_currentStreamlineVecField].second.second);
+        }
+
+        updateMVP();
+
     }
     catch (const std::runtime_error& e)
     {
@@ -378,6 +464,13 @@ void Renderer::draw()
         m_vectorShader.use();
         glDrawArrays(GL_POINTS, 0, m_cs->getNumGridCells());
     }
+
+    // draw streamlines
+    if(m_renderStreamlines)// && m_currentVecField >= 0)
+    {
+        m_streamlineShader.use();
+        glDrawArrays(GL_POINTS,0,m_numStreamlines);
+    }
 }
 
 void Renderer::setViewMat(const glm::mat4& view)
@@ -387,6 +480,7 @@ void Renderer::setViewMat(const glm::mat4& view)
     m_gridCenterShader.uniformMat4("viewMat", m_view);
     m_scalarShader.uniformMat4("viewMat", m_view);
     m_vectorShader.uniformMat4("viewMat", m_view);
+    m_streamlineShader.uniformMat4("viewMat", m_view);
     updateMVP();
 }
 
@@ -397,6 +491,7 @@ void Renderer::rebuildProjectionMat()
     m_gridCenterShader.uniformMat4("projectionMat", m_projection);
     m_scalarShader.uniformMat4("projectionMat", m_projection);
     m_vectorShader.uniformMat4("projectionMat", m_projection);
+    m_streamlineShader.uniformMat4("projectionMat", m_projection);
     updateMVP();
 }
 
@@ -406,6 +501,7 @@ void Renderer::updateMVP()
     m_gridCenterShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
     m_scalarShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
     m_vectorShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
+    m_streamlineShader.uniformMat4("modelViewProjectionMat", m_projection * m_view * m_model);
 }
 
 void Renderer::setScalarFields(std::vector<std::pair<std::string, int>> fields, int active)
@@ -437,16 +533,27 @@ void Renderer::setVecFields(std::vector<std::pair<std::string, std::pair<int, in
 {
     m_vectorFields = std::move(fields);
     if(active>-2)
+    {
         m_currentVecField = active;
+        m_currentStreamlineVecField = active;
+    }
     if(m_currentVecField >= m_vectorFields.size())
         m_currentVecField = -1;
+
+    if(m_currentStreamlineVecField >= m_vectorFields.size())
+        m_currentStreamlineVecField = -1;
 
     unsigned int blockIndex = 0;
     blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK, "vectorFieldX");
     glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex, m_vectorFields[m_currentVecField].second.first);
-
     blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_vectorShader), GL_SHADER_STORAGE_BLOCK, "vectorFieldY");
     glShaderStorageBlockBinding(static_cast<GLuint>(m_vectorShader), blockIndex, m_vectorFields[m_currentVecField].second.second);
+
+    blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_streamlineShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldX");
+    glShaderStorageBlockBinding(static_cast<GLuint>(m_streamlineShader), blockIndex,m_vectorFields[m_currentStreamlineVecField].second.first);
+    blockIndex = glGetProgramResourceIndex(static_cast<GLuint>(m_streamlineShader), GL_SHADER_STORAGE_BLOCK,"vectorFieldY");
+    glShaderStorageBlockBinding(static_cast<GLuint>(m_streamlineShader), blockIndex,m_vectorFields[m_currentStreamlineVecField].second.second);
+
 
 }
 

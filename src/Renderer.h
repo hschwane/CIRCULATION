@@ -85,6 +85,19 @@ private:
     float m_maxVecLength{1.0f}; //!< biggest scalar value
     int m_currentVecField{-1};
 
+    bool m_renderStreamlines{false}; //!< should streamlines be rendered
+    float m_lineWidth{1.0}; //!< width of lines
+    int m_numStreamlines{200}; //!< number of streamlines
+    float m_streamlineLength{1.0}; //!< length of streamlines
+    float m_streamlineDx{0.01}; //!< streamline integration steps
+    glm::vec3 m_streamlineConstColor{0.0,0.8,1.0}; //!< streamline color
+    bool m_colorstreamlinesByLength{false}; //!< should streamlines be colored by length, or constant?
+    glm::vec3 m_minSlColor{0.0,0.0,0.0}; //!< color of smallest value
+    glm::vec3 m_maxSlColor{0.0,0.0,1.0}; //!< color of biggest value
+    float m_minSlVecLength{0.0f}; //!< smallest scalar value
+    float m_maxSlVecLength{1.0f}; //!< biggest scalar value
+    int m_currentStreamlineVecField{-1};
+
     float m_near{0.001}; //!< near plane distance
     float m_far{50}; //!< far plane distance
     float m_unscaledFar{50}; //!< far plane without scaling
@@ -101,6 +114,7 @@ private:
     std::vector<std::pair<std::string,std::pair<int,int>>> m_vectorFields; //!< scalar fields used for visualization, name and buffer id
 
     // opengl objects
+    mpu::gph::ShaderProgram m_streamlineShader; //!< shader to draw streamlines
     mpu::gph::ShaderProgram m_vectorShader; //!< shader used for rendering
     mpu::gph::ShaderProgram m_scalarShader; //!< shader used for rendering
     mpu::gph::ShaderProgram m_gridlineShader; //!< shader used for rendering
