@@ -53,9 +53,19 @@ ivec3 cs_getCellId3d(const vec3 coord)
     return ivec3(roundEven(coord2d.x),roundEven(coord2d.y),0);
 }
 
+ivec3 cs_getCellId3d(int cellId)
+{
+    return int3(cellId%csInternalData.m_numGridCells.x, cellId/csInternalData.m_numGridCells.x,0);
+}
+
 int cs_getCellId(const vec3 coord)
 {
     ivec3 cellId3d = cs_getCellId3d(coord);
+    return cellId3d.y*csInternalData.m_numGridCells.x+ cellId3d.x;
+}
+
+int cs_getCellId(const ivec3 cellId3d)
+{
     return cellId3d.y*csInternalData.m_numGridCells.x+ cellId3d.x;
 }
 

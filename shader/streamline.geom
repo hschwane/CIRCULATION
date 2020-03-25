@@ -55,31 +55,21 @@ void main()
     int nVertex = 0;
     while(nVertex < 100)
     {
-        #if defined(GEOGRAPHICAL_COORDINATES_2D)
-            if(position.x > cs_getMaxCoord().x )
-                position.x = (position.x - cs_getMaxCoord().x) + cs_getMinCoord().x;
-            if(position.x < cs_getMinCoord().x)
-                position.x = (position.x - cs_getMinCoord().x) + cs_getMaxCoord().x;
-        #else
-            if(position.x < cs_getMinCoord().x || position.x > cs_getMaxCoord().x)
-                break;
-        #endif
-
-        if(position.y < cs_getMinCoord().y || position.y > cs_getMaxCoord().y)
-            break;
-
         int cellId = cs_getCellId(vec3(position,0));
         vec2 vector = vec2(vecX[cellId],vecY[cellId]);
 
+        // interpolate the correct vector at the center of cell
         int left = cs_getLeftNeighbor(cellId);
         int down = cs_getBackwardNeighbor(cellId);
-        if(left > 0)
+        // prevent crash when out of bounds
+        // (yes, this simple method might result in sometimes in the wrong vector beeing loaded on the edge, please fix)
+        if(left >= 0)
         {
             float posX1 = cs_getCellCoordinate(cellId).x - 0.5*cs_getCellSize().x;
             float posX2 = cs_getCellCoordinate(cellId).x + 0.5*cs_getCellSize().x;
             vector.x = linearInterpolate(position.x,posX1, vecX[left],posX2, vector.x);
         }
-        if(down > 0)
+        if(down >= 0)
         {
             float posY1 = cs_getCellCoordinate(cellId).y - 0.5*cs_getCellSize().y;
             float posY2 = cs_getCellCoordinate(cellId).y + 0.5*cs_getCellSize().y;
@@ -87,7 +77,6 @@ void main()
         }
 
         float l = length(vector);
-
         if(l < 0.0001*cs_getCellSize().x || dot(vector,prev)<0)
             break;
 
@@ -103,6 +92,18 @@ void main()
 
         vec2 change = vector * dx;
         position += change;
+
+        #if defined(GEOGRAPHICAL_COORDINATES_2D)
+        if(position.x > cs_getMaxCoord().x )
+            position.x = (position.x - cs_getMaxCoord().x) + cs_getMinCoord().x;
+        if(position.x < cs_getMinCoord().x)
+            position.x = (position.x - cs_getMinCoord().x) + cs_getMaxCoord().x;
+        #else
+        if(position.x < cs_getMinCoord().x || position.x > cs_getMaxCoord().x)
+            break;
+        #endif
+        if(position.y < cs_getMinCoord().y || position.y > cs_getMaxCoord().y)
+            break;
 
         // emmit vertex
         gl_Position = modelViewProjectionMat * vec4( 1.001*cs_getCartesian(vec3(position,1)),1);
