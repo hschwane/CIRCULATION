@@ -104,16 +104,14 @@ void CosineAdvection::reset()
     // create initial conditions using gaussian
     for(int i : mpu::Range<int>(m_grid->size()))
     {
-        float3 c = m_cs->getCellCoordinate(i);
+        float3 cp = m_cs->getCellCoordinate(i);
+        float3 cv = m_cs->getCellCoordinate(i) + m_cs->getCellSize()*0.5f;
 
-        float sinLat = sin(c.y);
-        float cosLat = cos(c.y);
-
-        float velX = m_u0*(cosLat*cosAlpha + sinLat*cos(c.x)*sinAlpha);
-        float velY = -m_u0*sinLat*sinAlpha;
+        float velX = m_u0*(cos(cv.y)*cosAlpha + sin(cv.y)*cos(cv.x)*sinAlpha);
+        float velY = -m_u0*sin(cv.y)*sinAlpha;
 
         float geopotential = 0;
-        float r = m_earthRadius * acos( sinLatCenter*sinLat + cosLatCenter*cosLat*cos(c.x - m_cosineBellCenter.x));
+        float r = m_earthRadius * acos( sinLatCenter*sin(cp.y) + cosLatCenter*cos(cp.y)*cos(cp.x - m_cosineBellCenter.x));
         if(r < m_cosineBellRadius)
         {
             float h = (m_h0/2.0f) * (1.0f + cos( M_PI * r / m_cosineBellRadius ));
@@ -163,15 +161,15 @@ __global__ void poleAdvectionA(ShallowWaterGrid::ReferenceType grid, Geographica
 
             // read values of quantities
             const float phi = grid.read<AT::geopotential>(cellId);
-            const float phiRight = grid.read<AT::geopotential>(cs.getRightNeighbor(cellId));
             const float phiLeft = grid.read<AT::geopotential>(cs.getLeftNeighbor(cellId));
+            const float phiRight = grid.read<AT::geopotential>(cs.getRightNeighbor(cellId));
+            const float phiBack = grid.read<AT::geopotential>(cs.getBackwardNeighbor(cellId));
             const float phiFor = grid.read<AT::geopotential>(cs.getForwardNeighbor(cellId));
-            const float phiBackward = grid.read<AT::geopotential>(cs.getBackwardNeighbor(cellId));
 
-            const float velRightX = grid.read<AT::velocityX>(cellId);
-            const float velForY   = grid.read<AT::velocityY>(cellId);
             const float velLeftX  = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
+            const float velRightX = grid.read<AT::velocityX>(cellId);
             const float velBackY  = grid.read<AT::velocityY>(cs.getBackwardNeighbor(cellId));
+            const float velForY   = grid.read<AT::velocityY>(cellId);
 //            const float velForX  = grid.read<AT::velocityX>(cs.getForwardNeighbor(cellId)); // used for vorticity
 //            const float velRightY  = grid.read<AT::velocityY>(cs.getRightNeighbor(cellId)); // used for vorticity
 
@@ -192,8 +190,11 @@ __global__ void poleAdvectionA(ShallowWaterGrid::ReferenceType grid, Geographica
 //            grid.write<AT::potentialVort>(cellId, abs(vort+cor) / phi);
 
             // compute geopotential advection time derivative dPhi/dt
-            const float divv = divergence2d( velLeftX, velRightX, velBackY, velForY, cellPos, cs);
-            float dphi_dt = -divv; //-divv * phi;
+            const float phiHalfLeft = 0.5f*(phi+phiLeft);
+            const float phiHalfRight = 0.5f*(phi+phiRight);
+            const float phiHalfBack = 0.5f*(phi+phiBack);
+            const float phiHalfFor = 0.5f*(phi+phiFor);
+            float dphi_dt = -divergence2d( velLeftX*phiHalfLeft, velRightX*phiHalfRight, velBackY*phiHalfBack, velForY*phiHalfFor, cellPos, cs);
 
             // compute values at t+1
             float nextPhi;
