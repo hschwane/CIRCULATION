@@ -30,10 +30,11 @@
 void PoleAdvection::showCreationOptions()
 {
     ImGui::Text("Test Case number 1 from David L. Williamson 1992.");
-    ImGui::DragFloat("Wind Angle offset (alpha)", &m_alpha, 0.001f,0.0,M_PI_2);
-    ImGui::DragFloat("Wind Velocity (u0)", &m_u0, 0.001f);
-    ImGui::DragFloat("Earth radius (a)", &m_earthRadius);
-    ImGui::DragFloat("Angular Velocity",&m_angularVelocity,0.00001f,0.00001,5.0f,"%.8f");
+    ImGui::DragFloat("Wind Angle offset (alpha) in rad", &m_alpha, 0.001f,0.0,M_PI_2);
+    ImGui::DragFloat("Wind Velocity (u0) in m/s", &m_u0SI, 0.001f);
+    ImGui::DragFloat("Earth radius (a) in m", &m_earthRadiusSI);
+    ImGui::DragFloat("Angular Velocity in rad/m", &m_angularVelocitySI, 0.00001f, 0.00001f, 5.0f, "%.8f");
+    ImGui::DragFloat("Internal time unit in s", &m_timeUnit, 0.1f, 1.0);
 }
 
 void PoleAdvection::showBoundaryOptions(const CoordinateSystem& cs)
@@ -42,7 +43,7 @@ void PoleAdvection::showBoundaryOptions(const CoordinateSystem& cs)
 
 void PoleAdvection::showSimulationOptions()
 {
-    ImGui::DragFloat("Angular Velocity",&m_angularVelocity,0.00001f,0.00001,5.0f,"%.5f");
+    ImGui::DragFloat("Angular Velocity", &m_angularVelocitySI, 0.00001f, 0.00001, 5.0f, "%.5f");
 
     ImGui::DragFloat("Geopotential diffusion",&m_geopotDiffusion,0.00001f,0.00001,1.0,"%.5f");
     ImGui::Checkbox("Use Leapfrog",&m_useLeapfrog);
@@ -64,6 +65,18 @@ std::shared_ptr<GridBase> PoleAdvection::recreate(std::shared_ptr<CoordinateSyst
                           "ok", "error",1);
         return m_grid;
     }
+
+    // scale units
+    m_lengthUnit = m_earthRadiusSI / m_cs->getMinCoord().z;
+    logINFO("PoleAdvectionTest") << "Internal length unit: " << m_lengthUnit << " meter";
+    logINFO("PoleAdvectionTest") << "Internal time unit: " << m_timeUnit << " seconds";
+
+    m_earthRadius = m_earthRadiusSI / m_lengthUnit;
+    m_u0 = m_u0SI / m_lengthUnit * m_timeUnit;
+    m_angularVelocity = m_angularVelocitySI * m_timeUnit;
+
+    logINFO("PoleAdvectionTest") << "Settings in internal units: earth radius: " << m_earthRadius << ", u0: " << m_u0
+                                << ", angular velocity: " << m_angularVelocity;
 
     reset();
     return m_grid;
@@ -249,7 +262,7 @@ void PoleAdvection::simulateOnceImpl(GeographicalCoordinates2D& cs)
 
     poleAdvectionA << < numBlocks, blocksize >> > (m_grid->getGridReference(),cs,m_phiPlusKBuffer.getVectorReference(),
             m_vortPlusCor.getVectorReference(), m_timestep, !m_firstTimestep && m_useLeapfrog,
-            m_geopotDiffusion, m_angularVelocity);
+            m_geopotDiffusion, m_angularVelocitySI);
     poleAdvectionB << < numBlocks, blocksize >> > (m_grid->getGridReference(),cs,m_phiPlusKBuffer.getVectorReference(),
             m_vortPlusCor.getVectorReference(), m_timestep, !m_firstTimestep && m_useLeapfrog);
 
