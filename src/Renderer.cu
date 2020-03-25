@@ -200,10 +200,7 @@ void Renderer::showGui(bool* show)
             if(ImGui::DragFloat("line width", &m_lineWidth, 0.1))
                 glLineWidth(m_lineWidth);
 
-            if(ImGui::DragFloat("line length", &m_streamlineLength, 0.01))
-                m_streamlineShader.uniform1f("slLength",m_streamlineLength);
-
-            if(ImGui::DragFloat("dx", &m_streamlineDx, 0.001))
+            if(ImGui::DragFloat("dx (lines have 100 vertices)", &m_streamlineDx, 0.001))
                 m_streamlineShader.uniform1f("dx",m_streamlineDx);
 
             ImGui::DragInt("Number of Streamlines",&m_numStreamlines);
@@ -213,7 +210,7 @@ void Renderer::showGui(bool* show)
                 for(int i = 0; i < m_vectorFields.size(); i++)
                 {
                     bool selected = (m_currentStreamlineVecField == i);
-                    if(ImGui::Selectable((m_vectorFields[i].first+"##vectorfieldselection").c_str(), &selected))
+                    if(ImGui::Selectable((m_vectorFields[i].first+"##streamlineselection").c_str(), &selected))
                     {
                         m_currentStreamlineVecField = i;
 
@@ -228,18 +225,18 @@ void Renderer::showGui(bool* show)
                 ImGui::EndCombo();
             }
 
-            ImGui::Checkbox("color by length##vectorfieldselection",&m_colorstreamlinesByLength);
+            ImGui::Checkbox("color by length##streamlineselection",&m_colorstreamlinesByLength);
             m_streamlineShader.uniform1b("scalarColor",m_colorstreamlinesByLength);
 
             if(m_colorstreamlinesByLength)
             {
-                if(ImGui::ColorEdit3("Min Color##slmincolor", glm::value_ptr(m_minSlColor)))
+                if(ImGui::ColorEdit3("Min Color##streamlineselection", glm::value_ptr(m_minSlColor)))
                     m_streamlineShader.uniform3f("minScalarColor", m_minSlColor);
-                if(ImGui::ColorEdit3("Max Color##slmaxcolor", glm::value_ptr(m_maxVecColor)))
-                    m_streamlineShader.uniform3f("maxScalarColor", m_maxVecColor);
-                if(ImGui::DragFloat("Min Length##slminveclength",&m_minSlVecLength,0.01))
+                if(ImGui::ColorEdit3("Max Color##streamlineselection", glm::value_ptr(m_maxSlColor)))
+                    m_streamlineShader.uniform3f("maxScalarColor", m_maxSlColor);
+                if(ImGui::DragFloat("Min Length##streamlineselection",&m_minSlVecLength,0.01))
                     m_streamlineShader.uniform1f("minScalar",m_minSlVecLength);
-                if(ImGui::DragFloat("Max Length##slmaxveclength",&m_maxSlVecLength,0.01))
+                if(ImGui::DragFloat("Max Length##streamlineselection",&m_maxSlVecLength,0.01))
                     m_streamlineShader.uniform1f("maxScalar",m_maxSlVecLength);
             } else
             {
@@ -383,14 +380,13 @@ void Renderer::compileShader()
         m_streamlineShader.uniformMat4("viewMat", m_view);
         m_streamlineShader.uniformMat4("projectionMat", m_projection);
         m_streamlineShader.uniformMat4("modelMat", m_model);
-        m_streamlineShader.uniform1f("slLength",m_streamlineLength);
         m_streamlineShader.uniform1f("dx",m_streamlineDx);
-        m_streamlineShader.uniform1b("scalarColor",m_colorVectorsByLength);
-        m_streamlineShader.uniform3f("minScalarColor", m_minVecColor);
-        m_streamlineShader.uniform3f("maxScalarColor", m_maxVecColor);
-        m_streamlineShader.uniform1f("minScalar",m_minVecLength);
-        m_streamlineShader.uniform1f("maxScalar",m_maxVecLength);
-        m_streamlineShader.uniform3f("constantColor", m_VectorConstColor);
+        m_streamlineShader.uniform1b("scalarColor",m_colorstreamlinesByLength);
+        m_streamlineShader.uniform3f("minScalarColor", m_minSlColor);
+        m_streamlineShader.uniform3f("maxScalarColor", m_maxSlColor);
+        m_streamlineShader.uniform1f("minScalar",m_minSlVecLength);
+        m_streamlineShader.uniform1f("maxScalar",m_maxSlVecLength);
+        m_streamlineShader.uniform3f("constantColor", m_streamlineConstColor);
 
         if(m_currentStreamlineVecField >= 0)
         {

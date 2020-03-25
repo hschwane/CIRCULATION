@@ -52,9 +52,8 @@ void main()
     vec2 position = gl_in[0].gl_Position.xy;
     vec2 prev = vec2(0,0);
 
-    float lineLength = 0;
     int nVertex = 0;
-    while(lineLength < slLength && nVertex < 100)
+    while(nVertex < 100)
     {
         #if defined(GEOGRAPHICAL_COORDINATES_2D)
             if(position.x > cs_getMaxCoord().x )
@@ -110,7 +109,6 @@ void main()
         EmitVertex();
 
         nVertex ++;
-        lineLength += l;
     }
 
     EndPrimitive();

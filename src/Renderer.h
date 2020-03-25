@@ -88,7 +88,6 @@ private:
     bool m_renderStreamlines{false}; //!< should streamlines be rendered
     float m_lineWidth{1.0}; //!< width of lines
     int m_numStreamlines{200}; //!< number of streamlines
-    float m_streamlineLength{1.0}; //!< length of streamlines
     float m_streamlineDx{0.01}; //!< streamline integration steps
     glm::vec3 m_streamlineConstColor{0.0,0.8,1.0}; //!< streamline color
     bool m_colorstreamlinesByLength{false}; //!< should streamlines be colored by length, or constant?
