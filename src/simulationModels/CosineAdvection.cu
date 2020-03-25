@@ -13,7 +13,7 @@
 
 // includes
 //--------------------
-#include "PoleAdvection.h"
+#include "CosineAdvection.h"
 
 #include <mpUtils/mpUtils.h>
 #include <mpUtils/mpGraphics.h>
@@ -27,21 +27,23 @@
 // function definitions of the ShallowWaterModel class
 //-------------------------------------------------------------------
 
-void PoleAdvection::showCreationOptions()
+void CosineAdvection::showCreationOptions()
 {
     ImGui::Text("Test Case number 1 from David L. Williamson 1992.");
     ImGui::DragFloat("Wind Angle offset (alpha) in rad", &m_alpha, 0.001f,0.0,M_PI_2);
     ImGui::DragFloat("Wind Velocity (u0) in m/s", &m_u0SI, 0.001f);
     ImGui::DragFloat("Earth radius (a) in m", &m_earthRadiusSI);
     ImGui::DragFloat("Angular Velocity in rad/m", &m_angularVelocitySI, 0.00001f, 0.00001f, 5.0f, "%.8f");
+    ImGui::DragFloat2("position of cosine bell", &m_cosineBellCenter.x, 0.001);
+    ImGui::DragFloat("cosine bell radius (R) in m", &m_cosineBellRadiusSI, 1.0f);
     ImGui::DragFloat("Internal time unit in s", &m_timeUnit, 0.1f, 1.0);
 }
 
-void PoleAdvection::showBoundaryOptions(const CoordinateSystem& cs)
+void CosineAdvection::showBoundaryOptions(const CoordinateSystem& cs)
 {
 }
 
-void PoleAdvection::showSimulationOptions()
+void CosineAdvection::showSimulationOptions()
 {
     ImGui::DragFloat("Angular Velocity", &m_angularVelocitySI, 0.00001f, 0.00001, 5.0f, "%.5f");
 
@@ -51,7 +53,7 @@ void PoleAdvection::showSimulationOptions()
     ImGui::Text("Simulated Time units: %f", m_totalSimulatedTime);
 }
 
-std::shared_ptr<GridBase> PoleAdvection::recreate(std::shared_ptr<CoordinateSystem> cs)
+std::shared_ptr<GridBase> CosineAdvection::recreate(std::shared_ptr<CoordinateSystem> cs)
 {
     m_cs = cs;
     m_grid = std::make_shared<ShallowWaterGrid>(m_cs->getNumGridCells());
@@ -60,7 +62,7 @@ std::shared_ptr<GridBase> PoleAdvection::recreate(std::shared_ptr<CoordinateSyst
 
     if(m_cs->getType() != CSType::geographical2d)
     {
-        logERROR("PoleAdvection") << "Pole advection test loaded in cartesian cordinates!";
+        logERROR("CosineAdvection") << "Pole advection test loaded in cartesian cordinates!";
         tinyfd_messageBox("Error","Advection Test only works for geographical coordinates",
                           "ok", "error",1);
         return m_grid;
@@ -74,30 +76,49 @@ std::shared_ptr<GridBase> PoleAdvection::recreate(std::shared_ptr<CoordinateSyst
     m_earthRadius = m_earthRadiusSI / m_lengthUnit;
     m_u0 = m_u0SI / m_lengthUnit * m_timeUnit;
     m_angularVelocity = m_angularVelocitySI * m_timeUnit;
+    m_cosineBellRadius = m_cosineBellRadiusSI / m_lengthUnit;
+    m_h0 = m_h0SI / m_lengthUnit;
+    m_g = m_gSI / m_lengthUnit * m_timeUnit * m_timeUnit;
 
     logINFO("PoleAdvectionTest") << "Settings in internal units: earth radius: " << m_earthRadius << ", u0: " << m_u0
-                                << ", angular velocity: " << m_angularVelocity;
+                                 << ", angular velocity: " << m_angularVelocity
+                                 << ", cosine bell radius: " << m_cosineBellRadius
+                                 << ", cosine bell heigt: " << m_h0
+                                 << ", g: " << m_g
+                                 ;
 
     reset();
     return m_grid;
 }
 
-void PoleAdvection::reset()
+void CosineAdvection::reset()
 {
     m_grid->cacheOverwrite();
 
     float cosAlpha = cos(m_alpha);
     float sinAlpha = sin(m_alpha);
 
+    float sinLatCenter = sin(m_cosineBellCenter.y);
+    float cosLatCenter = cos(m_cosineBellCenter.y);
+
     // create initial conditions using gaussian
     for(int i : mpu::Range<int>(m_grid->size()))
     {
         float3 c = m_cs->getCellCoordinate(i);
 
-        float velX = m_u0*(cos(c.y)*cosAlpha + sin(c.y)*cos(c.x)*sinAlpha);
-        float velY = -m_u0*sin(c.y)*sinAlpha;
+        float sinLat = sin(c.y);
+        float cosLat = cos(c.y);
+
+        float velX = m_u0*(cosLat*cosAlpha + sinLat*cos(c.x)*sinAlpha);
+        float velY = -m_u0*sinLat*sinAlpha;
 
         float geopotential = 0;
+        float r = m_earthRadius * acos( sinLatCenter*sinLat + cosLatCenter*cosLat*cos(c.x - m_cosineBellCenter.x));
+        if(r < m_cosineBellRadius)
+        {
+            float h = (m_h0/2.0f) * (1.0f + cos( M_PI * r / m_cosineBellRadius ));
+            geopotential = m_g*h;
+        }
 
         m_grid->initialize<AT::geopotential>(i, geopotential);
         m_grid->initialize<AT::velocityX>(i, velX);
@@ -113,12 +134,12 @@ void PoleAdvection::reset()
     m_firstTimestep = true;
 }
 
-std::unique_ptr<Simulation> PoleAdvection::clone() const
+std::unique_ptr<Simulation> CosineAdvection::clone() const
 {
-    return std::make_unique<PoleAdvection>(*this);
+    return std::make_unique<CosineAdvection>(*this);
 }
 
-void PoleAdvection::simulateOnce()
+void CosineAdvection::simulateOnce()
 {
     if(m_cs->getType() != CSType::geographical2d)
         return;
@@ -254,7 +275,7 @@ __global__ void poleAdvectionB(ShallowWaterGrid::ReferenceType grid, Geographica
 }
 
 
-void PoleAdvection::simulateOnceImpl(GeographicalCoordinates2D& cs)
+void CosineAdvection::simulateOnceImpl(GeographicalCoordinates2D& cs)
 {
     dim3 blocksize{16,16,1};
     dim3 numBlocks{ static_cast<unsigned int>(mpu::numBlocks( cs.getNumGridCells3d().x ,blocksize.x)),
@@ -270,12 +291,12 @@ void PoleAdvection::simulateOnceImpl(GeographicalCoordinates2D& cs)
     m_firstTimestep = false;
 }
 
-GridBase& PoleAdvection::getGrid()
+GridBase& CosineAdvection::getGrid()
 {
     return *m_grid;
 }
 
-std::string PoleAdvection::getDisplayName()
+std::string CosineAdvection::getDisplayName()
 {
     return "Shallow Water Model";
 }

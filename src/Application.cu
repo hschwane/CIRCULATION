@@ -433,7 +433,7 @@ void Application::newSimulationModal()
         static auto testSim = std::make_unique<TestSimulation>();
         static auto rdSim = std::make_unique<RenderDemoSimulation>();
         static auto shallowSim = std::make_unique<ShallowWaterModel>();
-        static auto poleAdSim = std::make_unique<PoleAdvection>();
+        static auto poleAdSim = std::make_unique<CosineAdvection>();
         static int selctedModelId = 3;
         static Simulation* selectedeModel = poleAdSim.get();
 
