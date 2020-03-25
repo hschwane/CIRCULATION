@@ -18,7 +18,8 @@ enum class SimModel : int
 {
     renderDemo = 0,
     testSimulation = 1,
-    shallowWaterModel = 2
+    shallowWaterModel = 2,
+    poleAdvectionTest = 3
 };
 
 /**

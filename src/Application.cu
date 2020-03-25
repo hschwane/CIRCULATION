@@ -429,12 +429,13 @@ void Application::newSimulationModal()
         static auto testSim = std::make_unique<TestSimulation>();
         static auto rdSim = std::make_unique<RenderDemoSimulation>();
         static auto shallowSim = std::make_unique<ShallowWaterModel>();
-        static int selctedModelId = 2;
-        static Simulation* selectedeModel = shallowSim.get();
+        static auto poleAdSim = std::make_unique<PoleAdvection>();
+        static int selctedModelId = 3;
+        static Simulation* selectedeModel = poleAdSim.get();
 
         // select simulation model
         ImGui::Text("Simulation Model");
-        if( ImGui::Combo("Model", &selctedModelId, "Render Demo \0Test Simulation \0Shallow Water Model \0\0") )
+        if( ImGui::Combo("Model", &selctedModelId, "Render Demo \0Test Simulation \0Shallow Water Model \0Advection Test \0\0") )
         {
             switch(static_cast<SimModel>(selctedModelId))
             {
@@ -446,6 +447,9 @@ void Application::newSimulationModal()
                     break;
                 case SimModel::shallowWaterModel:
                     selectedeModel = shallowSim.get();
+                    break;
+                case SimModel::poleAdvectionTest:
+                    selectedeModel = poleAdSim.get();
                     break;
             }
         }
@@ -463,6 +467,12 @@ void Application::newSimulationModal()
         {
             case CSType::cartesian2d:
             {
+                if(selctedModelId == 3)
+                {
+                    ImGui::Text("Pole Advection Test requires geographical coordinate system!");
+                    break;
+                }
+
                 ImGui::PushID("Cartesian2dOptions");
                 ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
                 ImGui::DragFloat2("Min coordinates", &minCoords.x);
@@ -590,6 +600,7 @@ void Application::newSimulationModal()
                     break;
                 }
                 case SimModel::shallowWaterModel:
+                case SimModel::poleAdvectionTest:
                 {
                     m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
                     m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);

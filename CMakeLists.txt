@@ -49,6 +49,7 @@ add_executable(CIRCULATION
             "src/Renderer.cu"
             "src/simulationModels/TestSimulation.cu"
             "src/simulationModels/ShallowWaterModel.cu"
+            "src/simulationModels/PoleAdvection.cu"
         )
 
 # -------------------------------------------------------------
