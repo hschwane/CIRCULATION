@@ -56,6 +56,7 @@ Application::Application(int width, int height)
         m_showKeybindingsWindow = m_persist.getValue<bool>("ui_windows", "keybindingWindow");
         m_showRendererWindow = m_persist.getValue<bool>("ui_windows", "renderWindow");
         m_showSimulationWindow = m_persist.getValue<bool>("ui_windows", "simulateWindow");
+        m_window.setSize( m_persist.getValue<int>("window", "width"), m_persist.getValue<int>("window", "height"));
     }
     catch (const std::exception& e)
     {
@@ -74,6 +75,9 @@ Application::~Application()
 {
     // try to load existing settings
     try {
+        auto s = m_window.getSize();
+        m_persist.setValue<int>("window", "width", s.x);
+        m_persist.setValue<int>("window", "height", s.y);
         m_persist.setValue<bool>("ui_windows", "ImGuiDemo", m_showImGuiDemoWindow);
         m_persist.setValue<bool>("ui_windows", "cameraWindow", m_showCameraDebugWindow);
         m_persist.setValue<bool>("ui_windows", "perfWindow", m_showPerfWindow);
