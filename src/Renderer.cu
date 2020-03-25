@@ -200,7 +200,7 @@ void Renderer::showGui(bool* show)
             if(ImGui::DragFloat("line width", &m_lineWidth, 0.1))
                 glLineWidth(m_lineWidth);
 
-            if(ImGui::DragFloat("dx (lines have 100 vertices)", &m_streamlineDx, 0.001))
+            if(ImGui::DragFloat("dx (lines have 100 vertices)", &m_streamlineDx, 0.0001,0.0f,0.0f,"%.4f",2))
                 m_streamlineShader.uniform1f("dx",m_streamlineDx);
 
             ImGui::DragInt("Number of Streamlines",&m_numStreamlines);
