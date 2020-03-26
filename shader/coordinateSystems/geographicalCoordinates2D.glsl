@@ -133,12 +133,12 @@ vec3 cs_getCellSize()
 
 vec3 cs_getMinCoord()
 {
-    return vec3(csInternalData.m_min.x, csInternalData.m_min.y, 0);
+    return vec3(csInternalData.m_min.x, csInternalData.m_min.y, csInternalData.m_radius);
 }
 
 vec3 cs_getMaxCoord()
 {
-    return vec3(csInternalData.m_max.x,csInternalData.m_max.y,0);
+    return vec3(csInternalData.m_max.x,csInternalData.m_max.y, csInternalData.m_radius);
 }
 
 int cs_getDimension()

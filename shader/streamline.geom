@@ -76,6 +76,13 @@ void main()
             vector.y = linearInterpolate(position.y,posY1, vecY[left],posY2, vector.y);
         }
 
+        #if defined(GEOGRAPHICAL_COORDINATES_2D)
+            // needed for some mathematical reason I do not fully understand
+            // see eg M. F. CARFORA 2007
+            vector.x /= cs_getMinCoord().z * cos(position.y);
+            vector.y /= cs_getMinCoord().z;
+        #endif
+
         float l = length(vector);
         if(l < 0.0001*cs_getCellSize().x || dot(vector,prev)<0)
             break;
@@ -87,7 +94,7 @@ void main()
             cellColor = mix(minScalarColor,maxScalarColor,f);
         }
 
-        vector = vector / l;
+//        vector = vector / l;
         prev = vector;
 
         vec2 change = vector * dx;
