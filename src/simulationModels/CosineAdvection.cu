@@ -30,13 +30,13 @@
 void CosineAdvection::showCreationOptions()
 {
     ImGui::Text("Test Case number 1 from David L. Williamson 1992.");
-    ImGui::DragFloat("Wind Angle offset (alpha) in rad", &m_alpha, 0.001f,0.0,M_PI_2);
-    ImGui::DragFloat("Wind Velocity (u0) in m/s", &m_u0SI, 0.001f);
     ImGui::DragFloat("Earth radius (a) in m", &m_earthRadiusSI);
     ImGui::DragFloat("Angular Velocity in rad/m", &m_angularVelocitySI, 0.00001f, 0.00001f, 5.0f, "%.8f");
+    ImGui::DragFloat("Internal time unit in s", &m_timeUnit, 0.1f, 1.0);
+    ImGui::DragFloat("Wind Angle offset (alpha) in rad", &m_alpha, 0.001f,0.0,M_PI_2);
+    ImGui::DragFloat("Wind Velocity (u0) in m/s", &m_u0SI, 0.001f);
     ImGui::DragFloat2("position of cosine bell", &m_cosineBellCenter.x, 0.001);
     ImGui::DragFloat("cosine bell radius (R) in m", &m_cosineBellRadiusSI, 1.0f);
-    ImGui::DragFloat("Internal time unit in s", &m_timeUnit, 0.1f, 1.0);
 }
 
 void CosineAdvection::showBoundaryOptions(const CoordinateSystem& cs)
@@ -45,6 +45,12 @@ void CosineAdvection::showBoundaryOptions(const CoordinateSystem& cs)
 
 void CosineAdvection::showSimulationOptions()
 {
+    if(ImGui::DragFloat("Wind Angle offset (alpha) in rad", &m_alpha, 0.001f,0.0,M_PI_2))
+        buildWindField();
+
+    if(ImGui::DragFloat("Wind Velocity (u0) in m/s", &m_u0SI, 0.001f))
+        buildWindField();
+
     if(ImGui::DragFloat("Angular Velocity", &m_angularVelocitySI, 0.00001f, 0.00001, 5.0f, "%.5f"))
     {
         m_angularVelocity = m_angularVelocitySI * m_timeUnit;
@@ -86,14 +92,14 @@ std::shared_ptr<GridBase> CosineAdvection::recreate(std::shared_ptr<CoordinateSy
                                  << ", cosine bell heigt: " << m_h0
                                  << ", g: " << m_g
                                  ;
-
+    buildWindField();
     reset();
     return m_grid;
 }
 
-void CosineAdvection::reset()
+void CosineAdvection::buildWindField()
 {
-    m_grid->cacheOverwrite();
+    m_grid->cacheOnHost();
 
     float cosAlpha = cos(m_alpha);
     float sinAlpha = sin(m_alpha);
@@ -101,15 +107,37 @@ void CosineAdvection::reset()
     float sinLatCenter = sin(m_cosineBellCenter.y);
     float cosLatCenter = cos(m_cosineBellCenter.y);
 
-    // create initial conditions using gaussian
+    // create solid body rotation velocity field
+    for(int i : mpu::Range<int>(m_grid->size()))
+    {
+        float3 cv = m_cs->getCellCoordinate(i) + m_cs->getCellSize()*0.5f;
+
+        float velX = m_u0*( cos(cv.y)*cosAlpha + sin(cv.y)*cos(cv.x)*sinAlpha);
+        float velY = -m_u0*sin(cv.x)*sinAlpha;
+
+        m_grid->initialize<AT::velocityX>(i, velX);
+        m_grid->initialize<AT::velocityY>(i, velY);
+    }
+    m_grid->pushCachToDevice();
+
+    // swap buffers and ready for rendering
+    m_grid->swapAndRender();
+}
+
+void CosineAdvection::reset()
+{
+    m_grid->cacheOnHost();
+
+    float cosAlpha = cos(m_alpha);
+    float sinAlpha = sin(m_alpha);
+
+    float sinLatCenter = sin(m_cosineBellCenter.y);
+    float cosLatCenter = cos(m_cosineBellCenter.y);
+
+    // create initial conditions using cosine bell
     for(int i : mpu::Range<int>(m_grid->size()))
     {
         float3 cp = m_cs->getCellCoordinate(i);
-        float3 cv = m_cs->getCellCoordinate(i) + m_cs->getCellSize()*0.5f;
-
-        float velX = m_u0*(cos(cv.y)*cosAlpha + sin(cv.y)*cos(cv.x)*sinAlpha);
-        float velY = -m_u0*sin(cv.y)*sinAlpha;
-
         float geopotential = 0;
         float r = m_earthRadius * acos( sinLatCenter*sin(cp.y) + cosLatCenter*cos(cp.y)*cos(cp.x - m_cosineBellCenter.x));
         if(r < m_cosineBellRadius)
@@ -119,8 +147,6 @@ void CosineAdvection::reset()
         }
 
         m_grid->initialize<AT::geopotential>(i, geopotential);
-        m_grid->initialize<AT::velocityX>(i, velX);
-        m_grid->initialize<AT::velocityY>(i, velY);
     }
     m_grid->pushCachToDevice();
 

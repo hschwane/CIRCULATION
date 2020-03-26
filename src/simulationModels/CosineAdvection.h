@@ -45,6 +45,8 @@ private:
 
     void simulateOnceImpl(GeographicalCoordinates2D& cs); //!< implementation of simulate once
 
+    void buildWindField(); //!< set a new velocity field
+
     // settings in SI units
     float m_earthRadiusSI{6.37122e6}; //!< mean radius of earth (m)
     float m_u0SI{2*M_PI*6.37122e6/1036800}; //!< advection wind velocity (m/s)
