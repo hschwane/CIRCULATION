@@ -22,6 +22,7 @@
 #include "../GridReference.h"
 #include "../finiteDifferences.h"
 #include "../boundaryConditions.h"
+#include "../interpolation.h"
 //--------------------
 
 // function definitions of the ShallowWaterModel class
@@ -128,6 +129,9 @@ void CosineAdvection::reset()
 {
     m_grid->cacheOnHost();
 
+    std::default_random_engine rng(mpu::getRanndomSeed());
+    std::uniform_real_distribution<float> dist(0.9,1.1);
+
     float cosAlpha = cos(m_alpha);
     float sinAlpha = sin(m_alpha);
 
@@ -142,7 +146,7 @@ void CosineAdvection::reset()
         float r = m_earthRadius * acos( sinLatCenter*sin(cp.y) + cosLatCenter*cos(cp.y)*cos(cp.x - m_cosineBellCenter.x));
         if(r < m_cosineBellRadius)
         {
-            float h = (m_h0/2.0f) * (1.0f + cos( M_PI * r / m_cosineBellRadius ));
+            float h = dist(rng) * (m_h0/2.0f) * (1.0f + cos( M_PI * r / m_cosineBellRadius ));
             geopotential = m_g*h;
         }
 
@@ -178,8 +182,8 @@ __global__ void poleAdvectionA(ShallowWaterGrid::ReferenceType grid, Geographica
 
     // updates geopotential for all non boundary cells
     // also calculates kinetic energy per unit mass
-    for(int x : mpu::gridStrideRange( cs.hasBoundary().x, cs.getNumGridCells3d().x-cs.hasBoundary().x ))
-        for(int y : mpu::gridStrideRangeY( cs.hasBoundary().y, cs.getNumGridCells3d().y-cs.hasBoundary().y ))
+    for(int x : mpu::gridStrideRange( 0, cs.getNumGridCells3d().x))
+        for(int y : mpu::gridStrideRangeY( 0, cs.getNumGridCells3d().y))
         {
             int3 cell{x,y,0};
             int cellId = cs.getCellId(cell);
@@ -189,13 +193,87 @@ __global__ void poleAdvectionA(ShallowWaterGrid::ReferenceType grid, Geographica
             const float phi = grid.read<AT::geopotential>(cellId);
             const float phiLeft = grid.read<AT::geopotential>(cs.getLeftNeighbor(cellId));
             const float phiRight = grid.read<AT::geopotential>(cs.getRightNeighbor(cellId));
-            const float phiBack = grid.read<AT::geopotential>(cs.getBackwardNeighbor(cellId));
-            const float phiFor = grid.read<AT::geopotential>(cs.getForwardNeighbor(cellId));
 
             const float velLeftX  = grid.read<AT::velocityX>(cs.getLeftNeighbor(cellId));
             const float velRightX = grid.read<AT::velocityX>(cellId);
-            const float velBackY  = grid.read<AT::velocityY>(cs.getBackwardNeighbor(cellId));
-            const float velForY   = grid.read<AT::velocityY>(cellId);
+            float velBackY;
+            float velForY;
+
+            // compute phi half, meaning phi half way between cells
+            const float phiHalfLeft = 0.5f*(phi+phiLeft);
+            const float phiHalfRight = 0.5f*(phi+phiRight);
+            float phiHalfBack;
+            float phiHalfFor;
+
+            // handle lower boundary
+            if(cell.y == 0)
+            {
+                velBackY = 0;
+                phiHalfBack = 0;
+                continue; // we cant handle this case right now
+            } else {
+                float phiBack = grid.read<AT::geopotential>(cs.getBackwardNeighbor(cellId));
+                velBackY  = grid.read<AT::velocityY>(cs.getBackwardNeighbor(cellId));
+                phiHalfBack = 0.5f*(phi+phiBack);
+            }
+
+//            bool print = cell.x == 256 || cell.x == 0;
+//            bool print = cell.x == 384 || cell.x == 128;
+            bool print = cell.x == 127 || cell.x == 128 || cell.x == 129 || cell.x == 384;
+            // handle upper boundary
+            if(cell.y == cs.getNumGridCells3d().y-1)
+            {
+//                continue; // we cant handle this case right now
+
+                // find where we need phiHalfFor in extended coordinates
+                float2 neighborPosExt = cellPos;
+                neighborPosExt.y += cs.getCellSize().y*0.5f;
+
+                // get the same in position in normal coordinates by wrapping around the pole
+                float2 neighborPos = neighborPosExt;
+                if(neighborPos.y > M_PIf32*0.5)
+                {
+                    neighborPos.y = M_PIf32 - neighborPos.y;
+                    neighborPos.x = fmod(neighborPos.x+M_PIf32,2*M_PIf32);
+                }
+
+                if(print) printf("cell %i pos: (%f,%f), nbPosExt: (%f,%f), nbPos: (%f,%f)\n",cell.x, cellPos.x, cellPos.y,
+                        neighborPosExt.x, neighborPosExt.y, neighborPos.x, neighborPos.y);
+
+                // if we are in the polar region (outside of the coordinate bounds) special care must be taken
+                if( neighborPos.y > cs.getMaxCoord().y)
+                {
+                    if(print) printf("cell %i geopotential using interpolatePole\n",cell.x);
+                    phiHalfFor = interpolateNorthPole2D<AT::geopotential>(cellPos,phi,neighborPosExt.y,grid,cs,float2{0,0},false);
+                    if(print && phiHalfFor < 0)
+                        printf("cell %i has negative neighbor\n",cell.x);
+                } else
+                {
+                    if(print) printf("cell %i geopotential using interpolate2d\n",cell.x);
+                    phiHalfFor = readInterpolated2D<AT::geopotential>(neighborPos,grid,cs);
+                }
+
+                // velocity X has an offset on the c grid, but we need to load it at the same position as phi
+                float2 offset{0,cs.getCellSize().y*0.5f};
+                if( neighborPos.y > cs.getMaxCoord().y-offset.y)
+                {
+                    if(print) printf("cell %i velocity using interpolatePole\n",cell.x);
+                    velForY = interpolateNorthPole2D<AT::velocityY>(cellPos-offset, velBackY,neighborPosExt.y,grid,cs,offset,true);
+                } else
+                {
+                    if(print) printf("cell %i velocity using interpolate2D\n",cell.x);
+                    velForY = -readInterpolated2D<AT::velocityY>(neighborPos,grid,cs,offset);
+                }
+
+                if(print) printf("cell %i geo: %f geoBack: %f, geoFor %f\n",cell.x,phi,phiHalfBack,phiHalfFor);
+                if(print) printf("cell %i velBack: %f, velFor %f\n",cell.x,velBackY,velForY);
+
+            } else {
+                float phiFor = grid.read<AT::geopotential>(cs.getForwardNeighbor(cellId));
+                velForY = grid.read<AT::velocityY>(cellId);
+                phiHalfFor = 0.5f*(phi+phiFor);
+            }
+
 //            const float velForX  = grid.read<AT::velocityX>(cs.getForwardNeighbor(cellId)); // used for vorticity
 //            const float velRightY  = grid.read<AT::velocityY>(cs.getRightNeighbor(cellId)); // used for vorticity
 
@@ -216,10 +294,6 @@ __global__ void poleAdvectionA(ShallowWaterGrid::ReferenceType grid, Geographica
 //            grid.write<AT::potentialVort>(cellId, abs(vort+cor) / phi);
 
             // compute geopotential advection time derivative dPhi/dt
-            const float phiHalfLeft = 0.5f*(phi+phiLeft);
-            const float phiHalfRight = 0.5f*(phi+phiRight);
-            const float phiHalfBack = 0.5f*(phi+phiBack);
-            const float phiHalfFor = 0.5f*(phi+phiFor);
             float dphi_dt = -divergence2d( velLeftX*phiHalfLeft, velRightX*phiHalfRight, velBackY*phiHalfBack, velForY*phiHalfFor, cellPos, cs);
 
             // compute values at t+1
