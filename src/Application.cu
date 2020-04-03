@@ -21,8 +21,7 @@
 //-------------------------------------------------------------------
 Application::Application(int width, int height)
     : m_window(width,height,"CIRCULATION"),
-    m_camera(mpu::gph::Camera::trackball, glm::vec3(0,0,2), glm::vec3(0,0,0),glm::vec3(0,0,1)),
-    m_renderer(width,height)
+    m_camera(mpu::gph::Camera::trackball, glm::vec3(0,0,2), glm::vec3(0,0,0),glm::vec3(0,0,1))
 {
     // setup GUI
     ImGui::create(m_window);
@@ -36,7 +35,7 @@ Application::Application(int width, int height)
                                  glViewport(0,0,w,h);
                                  this->m_width = w;
                                  this->m_width = h;
-                                 this->m_renderer.setSize(w,h);
+//                                 this->m_renderer.setSize(w,h);
                                  this->m_aspect = float(m_width) / float(m_height);
                              });
 
@@ -109,28 +108,28 @@ bool Application::run()
     if(m_showPerfWindow) showPerfWindow(&m_showPerfWindow);
     if(m_showAboutWindow) showAboutWindow(&m_showAboutWindow);
     if(m_showKeybindingsWindow) showKeybindingsWindow(&m_showKeybindingsWindow);
-    if(m_showRendererWindow) m_renderer.showGui(&m_showRendererWindow);
-    if(m_showSimulationWindow && m_simulation != nullptr) m_simulation->showGui(&m_showSimulationWindow);
+//    if(m_showRendererWindow) m_renderer.showGui(&m_showRendererWindow);
+//    if(m_showSimulationWindow && m_simulation != nullptr) m_simulation->showGui(&m_showSimulationWindow);
 
     // open new simulation modal on startup
-    static struct Once{Once(){ImGui::OpenPopup("New Simulation");}}once;
-    newSimulationModal();
+//    static struct Once{Once(){ImGui::OpenPopup("New Simulation");}}once;
+//    newSimulationModal();
 
     // -------------------------
     // simulation
-    if(m_simulation)
-        m_simulation->run();
+//    if(m_simulation)
+//        m_simulation->run();
 
     // -------------------------
     // rendering
     m_camera.update();
-    m_renderer.setViewMat(m_camera.viewMatrix());
-    if(m_grid)
-    {
-        m_grid->startRendering();
-        m_renderer.draw();
-        m_grid->renderDone();
-    }
+//    m_renderer.setViewMat(m_camera.viewMatrix());
+//    if(m_grid)
+//    {
+//        m_grid->startRendering();
+//        m_renderer.draw();
+//        m_grid->renderDone();
+//    }
 
     m_window.frameEnd();
     return true;
@@ -155,8 +154,8 @@ void Application::addInputs()
     Input::addButton("ToggleGUI","toggle visibility the user interface", [](Window&){ImGui::toggleVisibility();});
 
     // add buttons to pause and resume
-    Input::addButton("Pause", "Pause the simulation",  [this](Window& wnd) { if(this->m_simulation)this->m_simulation->pause(); });
-    Input::addButton("Resume", "Resume the simulation",  [this](Window& wnd) { if(this->m_simulation)this->m_simulation->resume(); });
+//    Input::addButton("Pause", "Pause the simulation",  [this](Window& wnd) { if(this->m_simulation)this->m_simulation->pause(); });
+//    Input::addButton("Resume", "Resume the simulation",  [this](Window& wnd) { if(this->m_simulation)this->m_simulation->resume(); });
 }
 
 void Application::setKeybindings()
@@ -203,66 +202,64 @@ void Application::setKeybindings()
 
 void Application::resetCamera()
 {
-    glm::vec3 aabbMin{m_cs->getAABBMin().x, m_cs->getAABBMin().y, m_cs->getAABBMin().z};
-    glm::vec3 aabbMax{m_cs->getAABBMax().x, m_cs->getAABBMax().y, m_cs->getAABBMax().z};
+//    glm::vec3 aabbMin{m_cs->getAABBMin().x, m_cs->getAABBMin().y, m_cs->getAABBMin().z};
+//    glm::vec3 aabbMax{m_cs->getAABBMax().x, m_cs->getAABBMax().y, m_cs->getAABBMax().z};
 
-    glm::vec3 size = aabbMax - aabbMin;
-    float diagonal = glm::length(size);
-    glm::vec3 center = aabbMin + size/2;
+//    glm::vec3 size = aabbMax - aabbMin;
+//    float diagonal = glm::length(size);
+//    glm::vec3 center = aabbMin + size/2;
 
-    m_camera.setPosition(glm::vec3(0,-0.75*diagonal,diagonal));
-    m_camera.setTarget(center);
+//    m_camera.setPosition(glm::vec3(0,-0.75*diagonal,diagonal));
+//    m_camera.setTarget(center);
 }
 
 void Application::mainMenuBar()
 {
-    bool newSimPressed=false; // was Simulation -> New selected?
-
     if(ImGui::BeginMainMenuBar())
     {
         // simulation menu to manage the simulation
         if(ImGui::BeginMenu("Simulation"))
         {
-            if(ImGui::MenuItem("New"))
-                newSimPressed=true; // needed for some imGui id stack thing
-
-            // disable menue in case simulation is not valid
-            if(!m_simulation)
-            {
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-            }
-
-            ImGui::Separator();
-
-            if(m_simulation && m_simulation->isPaused())
-            {
-                if(ImGui::MenuItem("Resume","1"))
-                    m_simulation->resume();
-            }
-            else
-            {
-                if(ImGui::MenuItem("Pause","2"))
-                    m_simulation->pause();
-            }
-
-            if(ImGui::MenuItem("Reset"))
-            {
-                m_grid = m_simulation->recreate(m_cs);
-                m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
-                m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
-            }
-
-            ImGui::Separator();
-
-            ImGui::MenuItem("Show Simulation window", nullptr, &m_showSimulationWindow);
-
-            if(!m_simulation)
-            {
-                ImGui::PopItemFlag();
-                ImGui::PopStyleVar();
-            }
-
+//            if(ImGui::MenuItem("New"))
+//                newSimPressed=true; // needed for some imGui id stack thing
+//
+//            // disable menue in case simulation is not valid
+//            if(!m_simulation)
+//            {
+//                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+//                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+//            }
+//
+//            ImGui::Separator();
+//
+//            if(m_simulation && m_simulation->isPaused())
+//            {
+//                if(ImGui::MenuItem("Resume","1"))
+//                    m_simulation->resume();
+//            }
+//            else
+//            {
+//                if(ImGui::MenuItem("Pause","2"))
+//                    m_simulation->pause();
+//            }
+//
+//            if(ImGui::MenuItem("Reset"))
+//            {
+//                m_grid = m_simulation->recreate(m_cs);
+//                m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
+//                m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
+//            }
+//
+//            ImGui::Separator();
+//
+//            ImGui::MenuItem("Show Simulation window", nullptr, &m_showSimulationWindow);
+//
+//            if(!m_simulation)
+//            {
+//                ImGui::PopItemFlag();
+//                ImGui::PopStyleVar();
+//            }
+//
             ImGui::EndMenu();
         }
 
@@ -275,7 +272,7 @@ void Application::mainMenuBar()
                 m_camera.toggleMode();
 
             ImGui::Separator();
-            ImGui::MenuItem("Show Visualization window", nullptr, &m_showRendererWindow);
+//            ImGui::MenuItem("Show Visualization window", nullptr, &m_showRendererWindow);
 
             ImGui::EndMenu();
         }
@@ -284,8 +281,8 @@ void Application::mainMenuBar()
         if(ImGui::BeginMenu("Windows"))
         {
             ImGui::MenuItem("performance", nullptr, &m_showPerfWindow);
-            ImGui::MenuItem("visualization", nullptr, &m_showRendererWindow);
-            ImGui::MenuItem("simulation", nullptr, &m_showSimulationWindow);
+//            ImGui::MenuItem("visualization", nullptr, &m_showRendererWindow);
+//            ImGui::MenuItem("simulation", nullptr, &m_showSimulationWindow);
             ImGui::MenuItem("camera debug window", nullptr, &m_showCameraDebugWindow);
             ImGui::Separator();
             ImGui::MenuItem("ImGui demo window", nullptr, &m_showImGuiDemoWindow);
@@ -302,10 +299,6 @@ void Application::mainMenuBar()
 
         ImGui::EndMainMenuBar();
     }
-
-    // open modal
-    if(newSimPressed)
-        ImGui::OpenPopup("New Simulation");
 }
 
 void Application::showPerfWindow(bool* show)
@@ -409,223 +402,4 @@ void Application::showKeybindingsWindow(bool* show)
             *show = false;
     }
     ImGui::End();
-}
-
-void Application::newSimulationModal()
-{
-    if(ImGui::BeginPopupModal("New Simulation",nullptr,ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        // variables to select a simulation model
-        static int selctedCoordinates = 1;
-        static int3 numGridCells{512,256,32};
-        static std::unique_ptr<CoordinateSystem> selectedCS;
-
-        // variables for cartesian grids
-        static float3 minCoords{-1,-1,-1};
-        static float3 maxCoords{1,1,1};
-
-        // variables for geographical grids
-        static float minLat{-1.55f};
-        static float maxLat{1.55f};
-        static float radius{1.0f};
-
-        // variables to select a simulation
-        static auto testSim = std::make_unique<TestSimulation>();
-        static auto rdSim = std::make_unique<RenderDemoSimulation>();
-        static auto shallowSim = std::make_unique<ShallowWaterModel>();
-        static auto poleAdSim = std::make_unique<CosineAdvection>();
-        static int selctedModelId = 3;
-        static Simulation* selectedeModel = poleAdSim.get();
-
-        // select simulation model
-        ImGui::Text("Simulation Model");
-        if( ImGui::Combo("Model", &selctedModelId, "Render Demo \0Test Simulation \0Shallow Water Model \0Advection Test \0\0") )
-        {
-            switch(static_cast<SimModel>(selctedModelId))
-            {
-                case SimModel::renderDemo:
-                    selectedeModel = rdSim.get();
-                    break;
-                case SimModel::testSimulation:
-                    selectedeModel = testSim.get();
-                    break;
-                case SimModel::shallowWaterModel:
-                    selectedeModel = shallowSim.get();
-                    break;
-                case SimModel::poleAdvectionTest:
-                    selectedeModel = poleAdSim.get();
-                    break;
-            }
-        }
-
-        // handle model settings
-        selectedeModel->showCreationOptions();
-        ImGui::Separator();
-
-        // select coordinate system
-        ImGui::Text("Coordinate System");
-        ImGui::Combo("Coordinate System",&selctedCoordinates," 2D Cartesian Coordinates \0 2D Geographical Coordinates \0\0");
-
-        // options depending on coordinate system
-        switch(static_cast<CSType>(selctedCoordinates))
-        {
-            case CSType::cartesian2d:
-            {
-                if(selctedModelId == 3)
-                {
-                    ImGui::Text("Pole Advection Test requires geographical coordinate system!");
-                    break;
-                }
-
-                ImGui::PushID("Cartesian2dOptions");
-                ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
-                ImGui::DragFloat2("Min coordinates", &minCoords.x);
-                ImGui::DragFloat2("Max coordinates", &maxCoords.x);
-
-                float2 size = make_float2(maxCoords - minCoords);
-                float2 cellSize = size / make_float2( (numGridCells.x<2) ? 1 : numGridCells.x-1, (numGridCells.y<2) ? 1 : numGridCells.y-1);
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-                ImGui::DragFloat2("Size", &size.x);
-                ImGui::DragFloat2("Cell Size", &cellSize.x);
-                int numOfCells = numGridCells.x * numGridCells.y;
-                ImGui::DragInt("Total number of cells", &numOfCells);
-                ImGui::PopItemFlag();
-                ImGui::PopStyleVar();
-                ImGui::PopID();
-
-                selectedCS = std::make_unique<CartesianCoordinates2D>(minCoords, maxCoords, numGridCells);
-                break;
-            }
-            case CSType::geographical2d:
-            {
-                ImGui::PushID("Geographical2dOptions");
-                ImGui::DragInt2("Number of Grid Cells", &numGridCells.x);
-                ImGui::DragFloat("Min latitude", &minLat,0.001);
-                ImGui::DragFloat("Max latitude", &maxLat,0.001);
-                ImGui::DragFloat("Radius", &radius);
-
-                float2 size = make_float2(2* M_PIf32, maxLat) - make_float2(0,minLat);
-                float2 cellSize = size / make_float2( numGridCells.x, (numGridCells.y<2) ? 1 : numGridCells.y-1);
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-                ImGui::DragFloat2("Angular size", &size.x);
-                ImGui::DragFloat2("Angular cell Size", &cellSize.x);
-                int numOfCells = numGridCells.x * numGridCells.y;
-                ImGui::DragInt("Total number of cells", &numOfCells);
-                ImGui::PopItemFlag();
-                ImGui::PopStyleVar();
-                ImGui::PopID();
-
-                selectedCS = std::make_unique<GeographicalCoordinates2D>(minLat, maxLat, numGridCells, radius);
-                break;
-            }
-        }
-        ImGui::Separator();
-
-        // handle boundary settings
-        ImGui::Text("Boundary Conditions");
-        selectedeModel->showBoundaryOptions(*selectedCS);
-        ImGui::Separator();
-
-        // cancel button
-        if(ImGui::Button("Cancel"))
-            ImGui::CloseCurrentPopup();
-        ImGui::SameLine();
-
-        // create button
-        if(ImGui::Button("Create"))
-        {
-            ImGui::CloseCurrentPopup();
-
-            logINFO("Application") << "Creating new simulation with sim model " << int(selctedModelId) << " coordinate system "
-                                   << int(selctedCoordinates) << "] and grid cell count " << numGridCells;
-
-            // create coordinate system
-            switch(static_cast<CSType>(selctedCoordinates))
-            {
-                case CSType::cartesian2d:
-                {
-                    minCoords.z = 0;
-                    maxCoords.z = 0;
-                    numGridCells.z = 0;
-                    m_cs = std::make_shared<CartesianCoordinates2D>(minCoords, maxCoords, numGridCells);
-                    break;
-                }
-                case CSType::geographical2d:
-                {
-                    m_cs = std::make_shared<GeographicalCoordinates2D>(minLat, maxLat, numGridCells, radius);
-                }
-            }
-            m_renderer.setCS(m_cs);
-
-            // create simulation and grid
-            m_simulation = selectedeModel->clone();
-            m_grid = m_simulation->recreate(m_cs);
-            m_simulation->pause();
-
-            // setup visualization
-            switch(static_cast<SimModel>(selctedModelId))
-            {
-                case SimModel::renderDemo:
-                {
-                    m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
-                    m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
-
-                    std::vector<std::pair<std::string,int>> scalarFields;
-                    scalarFields.emplace_back("density",0);
-                    scalarFields.emplace_back("velocity_x",1);
-                    scalarFields.emplace_back("velocity_y",2);
-                    m_renderer.setScalarFields(scalarFields);
-
-                    std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
-                    vectorFields.emplace_back("velocity",std::pair<int,int>(1,2));
-                    m_renderer.setVecFields(vectorFields);
-                    break;
-                }
-                case SimModel::testSimulation:
-                {
-                    m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
-                    m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
-
-                    std::vector<std::pair<std::string,int>> scalarFields;
-                    scalarFields.emplace_back("density",0);
-                    scalarFields.emplace_back("density_laplace",5);
-                    scalarFields.emplace_back("velocity_divergence",6);
-                    scalarFields.emplace_back("velocity_curl",7);
-                    scalarFields.emplace_back("temperature",8);
-                    m_renderer.setScalarFields(scalarFields);
-
-                    std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
-                    vectorFields.emplace_back("velocity",std::pair<int,int>(1,2));
-                    vectorFields.emplace_back("density_gradient",std::pair<int,int>(3,4));
-                    vectorFields.emplace_back("temperature_gradient",std::pair<int,int>(9,10));
-                    m_renderer.setVecFields(vectorFields);
-                    break;
-                }
-                case SimModel::shallowWaterModel:
-                case SimModel::poleAdvectionTest:
-                {
-                    m_grid->addRenderBufferToVao(m_renderer.getVAO(), 0);
-                    m_grid->bindRenderBuffer(0, GL_SHADER_STORAGE_BUFFER);
-
-                    std::vector<std::pair<std::string,int>> scalarFields;
-                    scalarFields.emplace_back("geopotential at free surface",2);
-                    scalarFields.emplace_back("potential vorticity",3);
-                    m_renderer.setScalarFields(scalarFields, 0);
-
-                    std::vector<std::pair<std::string,std::pair<int,int>>> vectorFields;
-                    vectorFields.emplace_back("velocity",std::pair<int,int>(0,1));
-                    m_renderer.setVecFields(vectorFields, 0);
-                    break;
-                }
-            }
-
-
-            resetCamera();
-        }
-        ImGui::SetItemDefaultFocus();
-
-        ImGui::EndPopup();
-    }
 }

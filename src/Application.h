@@ -20,17 +20,6 @@
 #include <mpUtils/mpGraphics.h>
 #include <mpUtils/mpCuda.h>
 
-#include "coordinateSystems/CoordinateSystem.h"
-#include "coordinateSystems/CartesianCoordinates2D.h"
-#include "coordinateSystems/GeographicalCoordinates2D.h"
-#include "Grid.h"
-#include "Renderer.h"
-#include "simulationModels/Simulation.h"
-#include "simulationModels/RenderDemoSimulation.h"
-#include "simulationModels/TestSimulation.h"
-#include "simulationModels/ShallowWaterModel.h"
-#include "simulationModels/CosineAdvection.h"
-#include "enums.h"
 #include "globalSettings.h"
 //--------------------
 
@@ -59,13 +48,7 @@ private:
     bool m_vsync{true}; //!< is vsync enabled?
 
     // rendering
-    Renderer m_renderer;
     mpu::gph::Camera m_camera; //!< the camera used by the renderer to draw results
-
-    // simulation
-    std::shared_ptr<CoordinateSystem> m_cs{nullptr}; //!< coordinate system currently in use
-    std::shared_ptr<GridBase> m_grid; //!< grid used by the current simulation
-    std::unique_ptr<Simulation> m_simulation; //!< the currently active simulation model
 
     // user interface
     bool m_showImGuiDemoWindow{false}; //!< is true ImGUI demo window will be shown
@@ -86,7 +69,6 @@ private:
     void showPerfWindow(bool* show); //!< shows window with performance information and settings
     void showAboutWindow(bool* show); //!< shows window with information on app
     void showKeybindingsWindow(bool* show); //!< shows window with information keybindings
-    void newSimulationModal(); //!< draws the new simulation modal if needed
 
     mpu::CfgFile m_persist;
 };
