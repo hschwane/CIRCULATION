@@ -43,7 +43,6 @@ Application::Application(int width, int height)
                                  this->m_width = w;
                                  this->m_width = h;
                                  this->m_renderer.setSize(w,h);
-                                 this->m_aspect = float(m_width) / float(m_height);
                              });
 
     // add input functions
@@ -75,6 +74,10 @@ Application::Application(int width, int height)
             logWARNING("Application") << "Could not create new persistence file.";
         }
     }
+
+    constructIcosphere();
+    m_renderer.getVAO().addAttributeBufferArray(0,0,m_cartPos,0, sizeof(float3),3,0);
+    m_renderer.setNumGridpoints(m_cartPos.size());
 }
 
 Application::~Application()
@@ -142,6 +145,7 @@ void Application::constructIcosphere()
     // first build icosahedron
     std::vector<float2> geoPoints;
     std::vector<float3> cartPoints;
+    std::vector<int> indexBuffer;
 
     auto addPoint = [&](const float2& geoPoint)
     {
@@ -160,27 +164,12 @@ void Application::constructIcosphere()
         addPoint({ long1,lat});
         addPoint({ long2,-lat});
         long1 += offset;
-        long1 += offset;
+        long2 += offset;
     }
 
     addPoint({0,-M_PI_2f32});
 
-
-
-    for(int j = 0; j < geoPoints.size(); ++j)
-    {
-        logINFO("ISOCAHEDRON") << "geo" << geoPoints[j] << " cart: " << cartPoints[j];
-    }
-
-    cartPoints.clear();
-    cartPoints.push_back(float3{0.5,0.5,0.5});
-    cartPoints.push_back(float3{-0.5,0.5,0.5});
-    cartPoints.push_back(float3{0.5,-0.5,0.5});
-    cartPoints.push_back(float3{-0.5,-0.5,0.5});
-    cartPoints.push_back(float3{0.5,0.5,-0.5});
-    cartPoints.push_back(float3{-0.5,0.5,-0.5});
-    cartPoints.push_back(float3{0.5,-0.5,-0.5});
-    cartPoints.push_back(float3{-0.5,-0.5,-0.5});
+    m_cartPos = mpu::gph::Buffer<float3>(cartPoints);
 }
 
 void Application::addInputs()

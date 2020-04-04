@@ -45,11 +45,13 @@ private:
     mpu::gph::Window m_window; //!< main window
     int m_width; //!< main window framebuffer width
     int m_height; //!< main window framebuffer height
-    float m_aspect; //!< main window framebuffer aspect ratio
     bool m_vsync{true}; //!< is vsync enabled?
 
     // initial conditions
     void constructIcosphere();
+
+    // gl buffer for simulation data
+    mpu::gph::Buffer<float3> m_cartPos;
 
     // rendering
     Renderer m_renderer; //!< the renderer class

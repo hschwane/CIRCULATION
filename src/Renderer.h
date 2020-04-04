@@ -35,20 +35,23 @@ public:
 
     mpu::gph::VertexArray& getVAO(); //!< get a reference to the vao so buffers can be bound to it
 
+    void setNumGridpoints(int numGridpoints); //!< configure the number of points to render
+    mpu::gph::VertexArray& getVao(); //!< get the vao to add buffers to it
+
     void setSize(int w, int h); //!< call when window is resized
     void setViewMat(const glm::mat4& view); //!< set the view matrix
-
     void showGui(bool* show); //!< show user interface for rendering settings
     void draw(); //!< draw the grid
 
 private:
 
     // settings
+    int m_numGridpoints{0};
     glm::vec3 m_backgroundColor{0.2,0.2,0.2}; //!< background color
     float m_scale{1.0}; //!< global scale factor
     bool m_backfaceCulling{false}; //!< is backface culling on / off?
 
-    float m_near{0.001}; //!< near plane distance
+    float m_near{0.01}; //!< near plane distance
     float m_far{50}; //!< far plane distance
     float m_unscaledFar{50}; //!< far plane without scaling
     float m_fovy{60}; //!< field of view in degrees

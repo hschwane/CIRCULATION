@@ -13,7 +13,7 @@ uniform mat4 projectionMat; // matrix to perform perspective projection
 
 void main()
 {
-    gl_Position = /*projectionMat */ viewMat * modelMat * vec4(inPosition.xyz,1);
+    gl_Position = projectionMat * viewMat * modelMat * vec4(inPosition.xyz,1);
 
     // apply transfer function to the density
     color = vec4(inDensity / maxDensity, inDensity / maxDensity, inDensity/ maxDensity, 1);

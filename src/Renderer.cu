@@ -119,8 +119,18 @@ void Renderer::draw()
     if(m_renderIcosphere)
     {
         m_icosphereShader.use();
-        glDrawArrays(GL_POINTS, 0, 10);
+        glDrawArrays(GL_POINTS, 0, m_numGridpoints);
     }
+}
+
+void Renderer::setNumGridpoints(int numGridpoints)
+{
+    m_numGridpoints = numGridpoints;
+}
+
+mpu::gph::VertexArray& Renderer::getVao()
+{
+    return m_vao;
 }
 
 void Renderer::setViewMat(const glm::mat4& view)
