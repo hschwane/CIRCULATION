@@ -57,8 +57,11 @@ private:
     float m_fovy{60}; //!< field of view in degrees
     float m_aspect; //!< aspect ratio of the current window
 
-    bool m_renderIcosphere{true}; //!< should the icosphere be rendered
+    bool m_renderScalar{true}; //!< should the icosphere be rendered
+    glm::vec3 m_scalarConstColor{1.0,1.0,1.0}; //!< const color for scalar field
+
     bool m_renderGridLines{true}; //!< should gridlines be renderes
+    glm::vec3 m_gridlineColor{0,0,0}; //!< color of the gridlines
 
     glm::mat4 m_projection{1.0}; //!< projection matrix used when rendering
     glm::mat4 m_view{1.0}; //!< view matrix used when rendering

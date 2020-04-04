@@ -40,9 +40,8 @@ Renderer::Renderer(int w, int h)
 
     // initial settings
     glEnable(GL_DEPTH_TEST);
+    setBackfaceCulling(m_backfaceCulling);
     glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, 1.0f);
-    glPointSize(5.0f);
-    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 }
 
 void Renderer::showGui(bool* show)
@@ -65,6 +64,18 @@ void Renderer::showGui(bool* show)
 
             if(ImGui::Button("Rebuild Shader"))
                 compileShader();
+        }
+
+        if(ImGui::CollapsingHeader("Scalar field"))
+        {
+            ImGui::Checkbox("Draw scalar field",&m_renderScalar);
+            ImGui::ColorEdit3("Scalar color",glm::value_ptr(m_scalarConstColor));
+        }
+
+        if(ImGui::CollapsingHeader("Grid"))
+        {
+            ImGui::Checkbox("Draw grid",&m_renderGridLines);
+            ImGui::ColorEdit3("Grid color",glm::value_ptr(m_gridlineColor));
         }
     }
     ImGui::End();
@@ -117,10 +128,25 @@ void Renderer::draw()
     m_vao.bind();
 
     // visualize scalar field
-    if(m_renderIcosphere)
+    if(m_renderScalar)
     {
         m_icosphereShader.use();
+        m_icosphereShader.uniform1b("useConstColor",true);
+        m_icosphereShader.uniform3f("constColor",m_scalarConstColor);
         glDrawElements(GL_TRIANGLES, m_numIndices, GL_UNSIGNED_INT, 0);
+    }
+
+    if(m_renderGridLines)
+    {
+        glDisable(GL_DEPTH_TEST);
+        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+        m_icosphereShader.use();
+        m_icosphereShader.uniform1b("useConstColor",true);
+        m_icosphereShader.uniform3f("constColor",m_gridlineColor);
+        glDrawElements(GL_TRIANGLES, m_numIndices, GL_UNSIGNED_INT, 0);
+        glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+        glEnable(GL_DEPTH_TEST);
+
     }
 }
 
