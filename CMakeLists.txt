@@ -43,13 +43,7 @@ add_executable(CIRCULATION
             "src/dummy.cpp"
             "src/main.cu"
             "src/Application.cu"
-            "src/Grid.cu"
-            "src/coordinateSystems/CartesianCoordinates2D.cu"
-            "src/coordinateSystems/GeographicalCoordinates2D.cu"
             "src/Renderer.cu"
-            "src/simulationModels/TestSimulation.cu"
-            "src/simulationModels/ShallowWaterModel.cu"
-            "src/simulationModels/CosineAdvection.cu"
         )
 
 # -------------------------------------------------------------
