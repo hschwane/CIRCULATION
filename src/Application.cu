@@ -17,6 +17,29 @@
 #include <random>
 //--------------------
 
+// helper functions
+
+/**
+ * @brief convert between coordinate systems X is longitude 0<long<2pi, Y is latitude -pi/2 < lat < pi/2, Z is radius
+ */
+template <typename T>
+T geoToCartPoint(const T& spherical)
+{
+    float sinPhi = cos(spherical.y);
+    return T{spherical.z * cos(spherical.x) * sinPhi, spherical.z * sin(spherical.x) * sinPhi, spherical.z * sin(spherical.y)};
+}
+
+/**
+ * @brief convert between coordinate systems X is longitude 0<long<2pi, Y is latitude -pi/2 < lat < pi/2, Z is radius
+ */
+template <typename T>
+T cartToGeoPoint(const T& cartesian)
+{
+    float r = sqrt( cartesian.x * cartesian.x + cartesian.y * cartesian.y + cartesian.z * cartesian.z );
+    float phi = acos(cartesian.z / r);
+    return T{  atan2(cartesian.y,cartesian.x), M_PI_2f32 - phi, r};
+}
+
 // function definitions of the Application class
 //-------------------------------------------------------------------
 Application::Application(int width, int height)
@@ -133,6 +156,52 @@ bool Application::run()
 
     m_window.frameEnd();
     return true;
+}
+
+void Application::constructIcosphere()
+{
+    // first build icosahedron
+    std::vector<float2> geoPoints;
+    std::vector<float3> cartPoints;
+
+    auto addPoint = [&](const float2& geoPoint)
+    {
+        geoPoints.push_back(geoPoint);
+        cartPoints.push_back(geoToCartPoint(float3{geoPoint.x,geoPoint.y,1.0f}));
+    };
+
+    addPoint({0,M_PI_2f32});
+
+    float lat = atan(0.5);
+    float offset = glm::radians(72.0f);
+    float long1 = 0;
+    float long2 = offset*0.5;
+    for(int i=0; i < 5; i++)
+    {
+        addPoint({ long1,lat});
+        addPoint({ long2,-lat});
+        long1 += offset;
+        long1 += offset;
+    }
+
+    addPoint({0,-M_PI_2f32});
+
+
+
+    for(int j = 0; j < geoPoints.size(); ++j)
+    {
+        logINFO("ISOCAHEDRON") << "geo" << geoPoints[j] << " cart: " << cartPoints[j];
+    }
+
+    cartPoints.clear();
+    cartPoints.push_back(float3{0.5,0.5,0.5});
+    cartPoints.push_back(float3{-0.5,0.5,0.5});
+    cartPoints.push_back(float3{0.5,-0.5,0.5});
+    cartPoints.push_back(float3{-0.5,-0.5,0.5});
+    cartPoints.push_back(float3{0.5,0.5,-0.5});
+    cartPoints.push_back(float3{-0.5,0.5,-0.5});
+    cartPoints.push_back(float3{0.5,-0.5,-0.5});
+    cartPoints.push_back(float3{-0.5,-0.5,-0.5});
 }
 
 void Application::addInputs()

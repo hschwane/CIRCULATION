@@ -47,6 +47,9 @@ private:
     float m_aspect; //!< main window framebuffer aspect ratio
     bool m_vsync{true}; //!< is vsync enabled?
 
+    // initial conditions
+    void constructIcosphere();
+
     // rendering
     mpu::gph::Camera m_camera; //!< the camera used by the renderer to draw results
 
