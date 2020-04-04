@@ -14,37 +14,21 @@
 // includes
 //--------------------
 #include "Application.h"
+
 #include <random>
+#include "coordinateTransforms.h"
 //--------------------
 
 // helper functions
 
-/**
- * @brief convert between coordinate systems X is longitude 0<long<2pi, Y is latitude -pi/2 < lat < pi/2, Z is radius
- */
-template <typename T>
-T geoToCartPoint(const T& spherical)
-{
-    float sinPhi = cos(spherical.y);
-    return T{spherical.z * cos(spherical.x) * sinPhi, spherical.z * sin(spherical.x) * sinPhi, spherical.z * sin(spherical.y)};
-}
 
-/**
- * @brief convert between coordinate systems X is longitude 0<long<2pi, Y is latitude -pi/2 < lat < pi/2, Z is radius
- */
-template <typename T>
-T cartToGeoPoint(const T& cartesian)
-{
-    float r = sqrt( cartesian.x * cartesian.x + cartesian.y * cartesian.y + cartesian.z * cartesian.z );
-    float phi = acos(cartesian.z / r);
-    return T{  atan2(cartesian.y,cartesian.x), M_PI_2f32 - phi, r};
-}
 
 // function definitions of the Application class
 //-------------------------------------------------------------------
 Application::Application(int width, int height)
     : m_window(width,height,"CIRCULATION"),
-    m_camera(mpu::gph::Camera::trackball, glm::vec3(0,0,2), glm::vec3(0,0,0),glm::vec3(0,0,1))
+    m_camera(mpu::gph::Camera::trackball, glm::vec3(0,1,0), glm::vec3(0,0,0),glm::vec3(0,0,1)),
+    m_renderer(width,height)
 {
     // setup GUI
     ImGui::create(m_window);
@@ -58,7 +42,7 @@ Application::Application(int width, int height)
                                  glViewport(0,0,w,h);
                                  this->m_width = w;
                                  this->m_width = h;
-//                                 this->m_renderer.setSize(w,h);
+                                 this->m_renderer.setSize(w,h);
                                  this->m_aspect = float(m_width) / float(m_height);
                              });
 
@@ -131,7 +115,7 @@ bool Application::run()
     if(m_showPerfWindow) showPerfWindow(&m_showPerfWindow);
     if(m_showAboutWindow) showAboutWindow(&m_showAboutWindow);
     if(m_showKeybindingsWindow) showKeybindingsWindow(&m_showKeybindingsWindow);
-//    if(m_showRendererWindow) m_renderer.showGui(&m_showRendererWindow);
+    if(m_showRendererWindow) m_renderer.showGui(&m_showRendererWindow);
 //    if(m_showSimulationWindow && m_simulation != nullptr) m_simulation->showGui(&m_showSimulationWindow);
 
     // open new simulation modal on startup
@@ -146,13 +130,8 @@ bool Application::run()
     // -------------------------
     // rendering
     m_camera.update();
-//    m_renderer.setViewMat(m_camera.viewMatrix());
-//    if(m_grid)
-//    {
-//        m_grid->startRendering();
-//        m_renderer.draw();
-//        m_grid->renderDone();
-//    }
+    m_renderer.setViewMat(m_camera.viewMatrix());
+    m_renderer.draw();
 
     m_window.frameEnd();
     return true;
@@ -341,7 +320,7 @@ void Application::mainMenuBar()
                 m_camera.toggleMode();
 
             ImGui::Separator();
-//            ImGui::MenuItem("Show Visualization window", nullptr, &m_showRendererWindow);
+            ImGui::MenuItem("Show Visualization window", nullptr, &m_showRendererWindow);
 
             ImGui::EndMenu();
         }
@@ -350,7 +329,7 @@ void Application::mainMenuBar()
         if(ImGui::BeginMenu("Windows"))
         {
             ImGui::MenuItem("performance", nullptr, &m_showPerfWindow);
-//            ImGui::MenuItem("visualization", nullptr, &m_showRendererWindow);
+            ImGui::MenuItem("visualization", nullptr, &m_showRendererWindow);
 //            ImGui::MenuItem("simulation", nullptr, &m_showSimulationWindow);
             ImGui::MenuItem("camera debug window", nullptr, &m_showCameraDebugWindow);
             ImGui::Separator();

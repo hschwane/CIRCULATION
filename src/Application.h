@@ -21,6 +21,7 @@
 #include <mpUtils/mpCuda.h>
 
 #include "globalSettings.h"
+#include "Renderer.h"
 //--------------------
 
 //-------------------------------------------------------------------
@@ -51,6 +52,7 @@ private:
     void constructIcosphere();
 
     // rendering
+    Renderer m_renderer; //!< the renderer class
     mpu::gph::Camera m_camera; //!< the camera used by the renderer to draw results
 
     // user interface
