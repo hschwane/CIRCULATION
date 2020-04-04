@@ -52,6 +52,7 @@ private:
 
     // gl buffer for simulation data
     mpu::gph::Buffer<float3> m_cartPos;
+    mpu::gph::Buffer<GLuint> m_triangleIndices;
 
     // rendering
     Renderer m_renderer; //!< the renderer class

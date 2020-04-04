@@ -77,7 +77,8 @@ Application::Application(int width, int height)
 
     constructIcosphere();
     m_renderer.getVAO().addAttributeBufferArray(0,0,m_cartPos,0, sizeof(float3),3,0);
-    m_renderer.setNumGridpoints(m_cartPos.size());
+    m_renderer.getVAO().setIndexBuffer(m_triangleIndices);
+    m_renderer.setNumIndices(m_triangleIndices.size());
 }
 
 Application::~Application()
@@ -145,7 +146,14 @@ void Application::constructIcosphere()
     // first build icosahedron
     std::vector<float2> geoPoints;
     std::vector<float3> cartPoints;
-    std::vector<int> indexBuffer;
+    std::vector<GLuint> triIndices;
+
+    auto addTriangle = [&](int a, int b, int c)
+    {
+        triIndices.push_back(a);
+        triIndices.push_back(b);
+        triIndices.push_back(c);
+    };
 
     auto addPoint = [&](const float2& geoPoint)
     {
@@ -158,18 +166,47 @@ void Application::constructIcosphere()
     float lat = atan(0.5);
     float offset = glm::radians(72.0f);
     float long1 = 0;
-    float long2 = offset*0.5;
     for(int i=0; i < 5; i++)
     {
         addPoint({ long1,lat});
-        addPoint({ long2,-lat});
         long1 += offset;
+    }
+
+    float long2 = offset*0.5;
+    for(int i=0; i < 5; i++)
+    {
+        addPoint({ long2,-lat});
         long2 += offset;
     }
 
     addPoint({0,-M_PI_2f32});
 
+    // generate indexbuffer for rendering
+    for(int i=0; i<5; i++)
+    {
+        // generate two triangles for every rhombus
+        int v0 = 0;
+        int v1 = i+1;
+        int v2 = ((i+1)%5) +1;
+        int v3 = i+6;
+        addTriangle( v0, v1, v2);
+        addTriangle( v1, v3, v2);
+    }
+
+    for(int i=0; i<5; i++)
+    {
+        // generate two triangles for every rhombus
+        int v0 = ((i+1)%5) +1;
+        int v1 = i+6;
+        int v2 = ((i+1)%5) +6;
+        int v3 = 11;
+        addTriangle( v0, v1, v2);
+        addTriangle( v1, v3, v2);
+    }
+
+
     m_cartPos = mpu::gph::Buffer<float3>(cartPoints);
+    m_triangleIndices = mpu::gph::Buffer<GLuint>(triIndices);
 }
 
 void Application::addInputs()

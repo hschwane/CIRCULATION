@@ -42,6 +42,7 @@ Renderer::Renderer(int w, int h)
     glEnable(GL_DEPTH_TEST);
     glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, 1.0f);
     glPointSize(5.0f);
+    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 }
 
 void Renderer::showGui(bool* show)
@@ -119,13 +120,13 @@ void Renderer::draw()
     if(m_renderIcosphere)
     {
         m_icosphereShader.use();
-        glDrawArrays(GL_POINTS, 0, m_numGridpoints);
+        glDrawElements(GL_TRIANGLES, m_numIndices, GL_UNSIGNED_INT, 0);
     }
 }
 
-void Renderer::setNumGridpoints(int numGridpoints)
+void Renderer::setNumIndices(int numGridpoints)
 {
-    m_numGridpoints = numGridpoints;
+    m_numIndices = numGridpoints;
 }
 
 mpu::gph::VertexArray& Renderer::getVao()

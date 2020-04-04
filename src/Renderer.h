@@ -35,7 +35,7 @@ public:
 
     mpu::gph::VertexArray& getVAO(); //!< get a reference to the vao so buffers can be bound to it
 
-    void setNumGridpoints(int numGridpoints); //!< configure the number of points to render
+    void setNumIndices(int numGridpoints); //!< configure the number of points to render
     mpu::gph::VertexArray& getVao(); //!< get the vao to add buffers to it
 
     void setSize(int w, int h); //!< call when window is resized
@@ -46,10 +46,10 @@ public:
 private:
 
     // settings
-    int m_numGridpoints{0};
+    int m_numIndices{0};
     glm::vec3 m_backgroundColor{0.2,0.2,0.2}; //!< background color
     float m_scale{1.0}; //!< global scale factor
-    bool m_backfaceCulling{false}; //!< is backface culling on / off?
+    bool m_backfaceCulling{true}; //!< is backface culling on / off?
 
     float m_near{0.01}; //!< near plane distance
     float m_far{50}; //!< far plane distance
@@ -57,7 +57,8 @@ private:
     float m_fovy{60}; //!< field of view in degrees
     float m_aspect; //!< aspect ratio of the current window
 
-    bool m_renderIcosphere; //!< should the icosphere be rendered
+    bool m_renderIcosphere{true}; //!< should the icosphere be rendered
+    bool m_renderGridLines{true}; //!< should gridlines be renderes
 
     glm::mat4 m_projection{1.0}; //!< projection matrix used when rendering
     glm::mat4 m_view{1.0}; //!< view matrix used when rendering
