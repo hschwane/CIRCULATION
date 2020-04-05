@@ -59,10 +59,15 @@ T fractionalPointOnArc(const T& A, const T& B, float f)
     assert_true(A.z == B.z, "CoordinateTransformation", "cannot find fractional point for points with different radii");
     float d = greatCircleDistance(A,B);
     float a = sin((1.0f-f) *d) /sin(d);
+
+    if(isnan(a))
+        return A;
+
     float b = sin(f*d) /sin(d);
     float x = a*cos(A.y)*cos(A.x) + b*cos(B.y)*cos(B.x);
     float y = a*cos(A.y)*sin(A.x) + b*cos(B.y)*sin(B.x);
     float z = a*sin(A.y) + b*sin(B.y);
+
     return {atan2(y,x),atan2(z,sqrt(x*x+y*y)),A.z};
 }
 

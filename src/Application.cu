@@ -17,11 +17,8 @@
 
 #include <random>
 #include "coordinateTransforms.h"
+#include "icosphere.h"
 //--------------------
-
-// helper functions
-
-
 
 // function definitions of the Application class
 //-------------------------------------------------------------------
@@ -75,10 +72,21 @@ Application::Application(int width, int height)
         }
     }
 
-    constructIcosphere();
+    std::vector<float2> geoPoints;
+    std::vector<float3> cartPoints;
+    std::vector<GLuint> triIndices;
+
+    icosphere::generateIcosphere(64,geoPoints,cartPoints);
+    icosphere::generateIcosphereIndices(64,triIndices);
+
+    m_cartPos = mpu::gph::Buffer<float3>(cartPoints);
+    m_triangleIndices = mpu::gph::Buffer<GLuint>(triIndices);
+
+//    constructIcosphere();
     m_renderer.getVAO().addAttributeBufferArray(0,0,m_cartPos,0, sizeof(float3),3,0);
     m_renderer.getVAO().setIndexBuffer(m_triangleIndices);
     m_renderer.setNumIndices(m_triangleIndices.size());
+//    m_renderer.setNumIndices(m_cartPos.size());
 }
 
 Application::~Application()

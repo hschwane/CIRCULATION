@@ -109,7 +109,7 @@ inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<
                 float3 pCart;
 
                 // compute the id of the diagonal
-                int diagonalId = pointId3d.y - pointId3d.z;
+                int diagonalId = pointId3d.z - pointId3d.y;
 
                 if(diagonalId >= 0)
                 {
@@ -145,6 +145,11 @@ inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<
                     pGeo =  fractionalPointOnArc(pAB,pAC,f2);
                     pCart = geoToCartPoint(pGeo);
 
+//                    logINFO("icosphere") << pointId3d
+//                            << " A:" << A << " B:" << B << " C:" << C
+//                            << "\n pAB:" << pAB << " pAC" << pAC
+//                            << "\n pGeo " << pGeo << " pGeo"  << pCart;
+
                 } else {
                     // this is the lower half of the thrombus
                     // find surrounding triangle in spherical coordinates
@@ -177,17 +182,21 @@ inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<
                     float f2 = float(pointId3d.z-1)/float(n-diagonalId);
 
                     // compute position
-                    pGeo =  fractionalPointOnArc(pAB,pAC,f2);
+                    pGeo =  fractionalPointOnArc(pAC,pAB,f2);
                     pCart = geoToCartPoint(pGeo);
 
+//                    logINFO("icosphere") << pointId3d << " pGeo" << pGeo << " pCart"  << pCart;
                 }
                 int memId = getPointId(pointId3d, n);
                 geoCoord[memId] = float2{pGeo.x,pGeo.y};
                 cartCoord[memId] = pCart;
+
+//                logINFO("icosphere") << pointId3d << " pGeo" << pGeo << " pCart"  << pCart;
+
             }
 }
 
-inline void generateIcosphereIndices(int n, std::vector<int>& indices)
+inline void generateIcosphereIndices(int n, std::vector<unsigned int>& indices)
 {
     indices.clear();
 
@@ -199,14 +208,14 @@ inline void generateIcosphereIndices(int n, std::vector<int>& indices)
             for(pointId3d.z=2; pointId3d.z<N; pointId3d.z++)
             {
                 // lower triangle
-                indices.push_back(getPointId({pointId3d.x, pointId3d.y-1, pointId3d.z-1}));
-                indices.push_back(getPointId({pointId3d.x, pointId3d.y, pointId3d.z-1}));
-                indices.push_back(getPointId({pointId3d.x, pointId3d.y, pointId3d.z}));
+                indices.push_back(getPointId(int3{pointId3d.x, pointId3d.y-1, pointId3d.z-1},n));
+                indices.push_back(getPointId(int3{pointId3d.x, pointId3d.y, pointId3d.z-1},n));
+                indices.push_back(getPointId(int3{pointId3d.x, pointId3d.y, pointId3d.z},n));
 
                 // upper triangle
-                indices.push_back(getPointId({pointId3d.x, pointId3d.y, pointId3d.z}));
-                indices.push_back(getPointId({pointId3d.x, pointId3d.y-1, pointId3d.z}));
-                indices.push_back(getPointId({pointId3d.x, pointId3d.y-1, pointId3d.z-1}));
+                indices.push_back(getPointId(int3{pointId3d.x, pointId3d.y, pointId3d.z},n));
+                indices.push_back(getPointId(int3{pointId3d.x, pointId3d.y-1, pointId3d.z},n));
+                indices.push_back(getPointId(int3{pointId3d.x, pointId3d.y-1, pointId3d.z-1},n));
             }
 }
 
