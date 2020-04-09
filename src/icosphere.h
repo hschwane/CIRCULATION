@@ -88,6 +88,9 @@ CUDAHOSTDEV inline void getSurroundingTriangle(int3 pointId, float2& A, float2& 
     }
 }
 
+/**
+ * @brief generate an icosphere of requested resolution in geological and cartesian coordinates
+ */
 inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<float3>& cartCoord)
 {
     // allocate some memory for positions
@@ -190,6 +193,9 @@ inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<
     }
 }
 
+/**
+ * @brief generate index buffer for the icosphere
+ */
 inline void generateIcosphereIndices(int n, std::vector<unsigned int>& indices)
 {
     indices.clear();
