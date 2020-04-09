@@ -77,8 +77,12 @@ private:
     void showPerfWindow(bool* show); //!< shows window with performance information and settings
     void showAboutWindow(bool* show); //!< shows window with information on app
     void showKeybindingsWindow(bool* show); //!< shows window with information keybindings
+    void newSimulationModal(); //!< handles the new simulation model
 
     mpu::CfgFile m_persist;
+
+    // simulation creation settings
+    int m_n{10}; // number of cells per thrombus
 };
 
 

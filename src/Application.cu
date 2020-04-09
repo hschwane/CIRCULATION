@@ -24,7 +24,7 @@
 //-------------------------------------------------------------------
 Application::Application(int width, int height)
     : m_window(width,height,"CIRCULATION"),
-    m_camera(mpu::gph::Camera::trackball, glm::vec3(0,1,0), glm::vec3(0,0,0),glm::vec3(0,0,1)),
+    m_camera(mpu::gph::Camera::trackball, glm::vec3(0,2,0), glm::vec3(0,0,0),glm::vec3(0,0,1)),
     m_renderer(width,height)
 {
     // setup GUI
@@ -71,22 +71,6 @@ Application::Application(int width, int height)
             logWARNING("Application") << "Could not create new persistence file.";
         }
     }
-
-    std::vector<float2> geoPoints;
-    std::vector<float3> cartPoints;
-    std::vector<GLuint> triIndices;
-
-    icosphere::generateIcosphere(64,geoPoints,cartPoints);
-    icosphere::generateIcosphereIndices(64,triIndices);
-
-    m_cartPos = mpu::gph::Buffer<float3>(cartPoints);
-    m_triangleIndices = mpu::gph::Buffer<GLuint>(triIndices);
-
-//    constructIcosphere();
-    m_renderer.getVAO().addAttributeBufferArray(0,0,m_cartPos,0, sizeof(float3),3,0);
-    m_renderer.getVAO().setIndexBuffer(m_triangleIndices);
-    m_renderer.setNumIndices(m_triangleIndices.size());
-//    m_renderer.setNumIndices(m_cartPos.size());
 }
 
 Application::~Application()
@@ -131,8 +115,8 @@ bool Application::run()
 //    if(m_showSimulationWindow && m_simulation != nullptr) m_simulation->showGui(&m_showSimulationWindow);
 
     // open new simulation modal on startup
-//    static struct Once{Once(){ImGui::OpenPopup("New Simulation");}}once;
-//    newSimulationModal();
+    static struct Once{Once(){ImGui::OpenPopup("New Simulation");}}once;
+    newSimulationModal();
 
     // -------------------------
     // simulation
@@ -284,27 +268,21 @@ void Application::setKeybindings()
 
 void Application::resetCamera()
 {
-//    glm::vec3 aabbMin{m_cs->getAABBMin().x, m_cs->getAABBMin().y, m_cs->getAABBMin().z};
-//    glm::vec3 aabbMax{m_cs->getAABBMax().x, m_cs->getAABBMax().y, m_cs->getAABBMax().z};
-
-//    glm::vec3 size = aabbMax - aabbMin;
-//    float diagonal = glm::length(size);
-//    glm::vec3 center = aabbMin + size/2;
-
-//    m_camera.setPosition(glm::vec3(0,-0.75*diagonal,diagonal));
-//    m_camera.setTarget(center);
+    m_camera.setPosition(glm::vec3(0,2,0));
+    m_camera.setTarget(glm::vec3(0,0,0));
 }
 
 void Application::mainMenuBar()
 {
+    bool newSimPressed=false;
     if(ImGui::BeginMainMenuBar())
     {
         // simulation menu to manage the simulation
         if(ImGui::BeginMenu("Simulation"))
         {
-//            if(ImGui::MenuItem("New"))
-//                newSimPressed=true; // needed for some imGui id stack thing
-//
+            if(ImGui::MenuItem("New"))
+                newSimPressed=true; // needed for some imGui id stack thing
+
 //            // disable menue in case simulation is not valid
 //            if(!m_simulation)
 //            {
@@ -381,6 +359,10 @@ void Application::mainMenuBar()
 
         ImGui::EndMainMenuBar();
     }
+
+    // open modal
+    if(newSimPressed)
+        ImGui::OpenPopup("New Simulation");
 }
 
 void Application::showPerfWindow(bool* show)
@@ -484,4 +466,52 @@ void Application::showKeybindingsWindow(bool* show)
             *show = false;
     }
     ImGui::End();
+}
+
+void Application::newSimulationModal()
+{
+    if(ImGui::BeginPopupModal("New Simulation",nullptr,ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::DragInt("grid n",&m_n,0.5,1,1024);
+
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+
+        int cells = 10*m_n*m_n+2;
+        ImGui::DragInt("cells", &cells);
+
+        ImGui::PopItemFlag();
+        ImGui::PopStyleVar();
+
+        ImGui::Separator();
+
+        // cancel button
+        if(ImGui::Button("Cancel"))
+            ImGui::CloseCurrentPopup();
+        ImGui::SameLine();
+
+        // create button
+        if(ImGui::Button("Create"))
+        {
+            ImGui::CloseCurrentPopup();
+
+            std::vector<float2> geoPoints;
+            std::vector<float3> cartPoints;
+            std::vector<GLuint> triIndices;
+
+            icosphere::generateIcosphere(m_n,geoPoints,cartPoints);
+            icosphere::generateIcosphereIndices(m_n,triIndices);
+
+            m_cartPos = mpu::gph::Buffer<float3>(cartPoints);
+            m_triangleIndices = mpu::gph::Buffer<GLuint>(triIndices);
+
+            m_renderer.getVAO().addAttributeBufferArray(0,0,m_cartPos,0, sizeof(float3),3,0);
+            m_renderer.getVAO().setIndexBuffer(m_triangleIndices);
+            m_renderer.setNumIndices(m_triangleIndices.size());
+
+            resetCamera();
+        }
+        ImGui::SetItemDefaultFocus();
+        ImGui::EndPopup();
+    }
 }

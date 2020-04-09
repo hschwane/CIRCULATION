@@ -100,10 +100,13 @@ inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<
     const float offset = glm::radians(72.0f);
 
     // generate subdivided positions
-    int3 pointId3d;
-    for(pointId3d.x=0; pointId3d.x<10; pointId3d.x++)
-        for(pointId3d.y=1; pointId3d.y<N; pointId3d.y++)
-            for(pointId3d.z=1; pointId3d.z<N; pointId3d.z++)
+    #pragma omp parallel for
+    for(int thrombus=0; thrombus<10; thrombus++)
+    {
+        int3 pointId3d;
+        pointId3d.x = thrombus;
+        for(pointId3d.y = 1; pointId3d.y < N; pointId3d.y++)
+            for(pointId3d.z = 1; pointId3d.z < N; pointId3d.z++)
             {
                 float3 pGeo;
                 float3 pCart;
@@ -119,81 +122,72 @@ inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<
                     float3 B;
                     float3 C;
                     int thrombus = pointId3d.x;
-                    if(thrombus<5)
+                    if(thrombus < 5)
                     {
-                        A = float3{ 0, M_PI_2f32,1};
-                        B = float3{ thrombus*offset, lat,1};
-                        C = float3{ ((thrombus+1)%5)*offset, lat,1};
+                        A = float3{0, M_PI_2f32, 1};
+                        B = float3{thrombus * offset, lat, 1};
+                        C = float3{((thrombus + 1) % 5) * offset, lat, 1};
                     } else
                     {
                         thrombus -= 5;
-                        A = float3{ thrombus*offset, lat,1};
-                        B = float3{ fmod(thrombus-0.5f,5.0f)*offset, -lat,1};
-                        C = float3{ (0.5f+thrombus)*offset, -lat,1};
+                        A = float3{thrombus * offset, lat, 1};
+                        B = float3{fmod(thrombus - 0.5f, 5.0f) * offset, -lat, 1};
+                        C = float3{(0.5f + thrombus) * offset, -lat, 1};
                     }
 
                     // get the fraction we need from the AB and AC arc
-                    float f1 = float(diagonalId)/float(n);
+                    float f1 = float(diagonalId) / float(n);
 
-                    float3 pAB = fractionalPointOnArc(B,A,f1);
-                    float3 pAC = fractionalPointOnArc(C,A,f1);
+                    float3 pAB = fractionalPointOnArc(B, A, f1);
+                    float3 pAC = fractionalPointOnArc(C, A, f1);
 
                     // get the fraction we need on the resulting arc
-                    float f2 = float(pointId3d.y-1)/float(n-diagonalId);
+                    float f2 = float(pointId3d.y - 1) / float(n - diagonalId);
 
                     // compute position
-                    pGeo =  fractionalPointOnArc(pAB,pAC,f2);
+                    pGeo = fractionalPointOnArc(pAB, pAC, f2);
                     pCart = geoToCartPoint(pGeo);
-
-//                    logINFO("icosphere") << pointId3d
-//                            << " A:" << A << " B:" << B << " C:" << C
-//                            << "\n pAB:" << pAB << " pAC" << pAC
-//                            << "\n pGeo " << pGeo << " pGeo"  << pCart;
-
-                } else {
+                } else
+                {
                     // this is the lower half of the thrombus
                     // find surrounding triangle in spherical coordinates
                     float3 A;
                     float3 B;
                     float3 C;
                     int thrombus = pointId3d.x;
-                    if(thrombus<5)
+                    if(thrombus < 5)
                     {
-                        A = float3{ (0.5f+thrombus)*offset, -lat,1};
-                        B = float3{ ((thrombus+1)%5)*offset, lat,1};
-                        C = float3{ thrombus*offset, lat,1};
+                        A = float3{(0.5f + thrombus) * offset, -lat, 1};
+                        B = float3{((thrombus + 1) % 5) * offset, lat, 1};
+                        C = float3{thrombus * offset, lat, 1};
                     } else
                     {
                         thrombus -= 5;
-                        A = float3{ 0, -M_PI_2f32,1};
-                        B = float3{ (0.5f+thrombus)*offset, -lat,1};
-                        C = float3{ fmod(thrombus-0.5f,5.0f)*offset, -lat,1};
+                        A = float3{0, -M_PI_2f32, 1};
+                        B = float3{(0.5f + thrombus) * offset, -lat, 1};
+                        C = float3{fmod(thrombus - 0.5f, 5.0f) * offset, -lat, 1};
                     }
 
                     diagonalId *= -1;
 
                     // get the fraction we need from the AB and AC arc
-                    float f1 = float(diagonalId)/float(n);
+                    float f1 = float(diagonalId) / float(n);
 
-                    float3 pAB = fractionalPointOnArc(B,A,f1);
-                    float3 pAC = fractionalPointOnArc(C,A,f1);
+                    float3 pAB = fractionalPointOnArc(B, A, f1);
+                    float3 pAC = fractionalPointOnArc(C, A, f1);
 
                     // get the fraction we need on the resulting arc
-                    float f2 = float(pointId3d.z-1)/float(n-diagonalId);
+                    float f2 = float(pointId3d.z - 1) / float(n - diagonalId);
 
                     // compute position
-                    pGeo =  fractionalPointOnArc(pAC,pAB,f2);
+                    pGeo = fractionalPointOnArc(pAC, pAB, f2);
                     pCart = geoToCartPoint(pGeo);
-
-//                    logINFO("icosphere") << pointId3d << " pGeo" << pGeo << " pCart"  << pCart;
                 }
                 int memId = getPointId(pointId3d, n);
-                geoCoord[memId] = float2{pGeo.x,pGeo.y};
+                geoCoord[memId] = float2{pGeo.x, pGeo.y};
                 cartCoord[memId] = pCart;
-
-//                logINFO("icosphere") << pointId3d << " pGeo" << pGeo << " pCart"  << pCart;
-
             }
+    }
 }
 
 inline void generateIcosphereIndices(int n, std::vector<unsigned int>& indices)
