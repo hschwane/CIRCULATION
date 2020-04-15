@@ -25,7 +25,7 @@ namespace icosphere {
  */
 CUDAHOSTDEV inline int memorySize(int n)
 {
-    return 10*(n+2)*(n+2);
+    return 10*(n+2)*(n+2)+2;
 }
 
 /**
@@ -89,6 +89,36 @@ CUDAHOSTDEV inline void getSurroundingTriangle(int3 pointId, float2& A, float2& 
 }
 
 /**
+ * @brief finds the simulated cell which carries the value for the halo cell
+ */
+CUDAHOSTDEV inline int3 findHaloPartnerToReadFrom(const int3& pointId3d, int n)
+{
+//    int N = n+2;
+//    int3 targetId3d;
+//    if(pointId3d.x<5)
+//    {
+//        if(pointId3d.z == n+1)
+//        {
+//            targetId3d.x = (pointId3d.x+1)%5;
+//            targetId3d.y = 0;
+//            targetId3d.z = pointId3d.y - ;
+//        }
+//        else if(pointId3d.z == 0)
+//        {
+//            targetId3d.x = (pointId3d.x-1)%5;
+//            targetId3d.y = ;
+//            targetId3d.z = ;
+//        }
+//
+//
+//    } else {
+//
+//    }
+//
+//    return targetId3d;
+}
+
+/**
  * @brief generate an icosphere of requested resolution in geological and cartesian coordinates
  */
 inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<float3>& cartCoord)
@@ -104,10 +134,10 @@ inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<
 
     // generate subdivided positions
     #pragma omp parallel for
-    for(int thrombus=0; thrombus<10; thrombus++)
+    for(int rhombus=0; rhombus<10; rhombus++)
     {
         int3 pointId3d;
-        pointId3d.x = thrombus;
+        pointId3d.x = rhombus;
         for(pointId3d.y = 1; pointId3d.y < N; pointId3d.y++)
             for(pointId3d.z = 1; pointId3d.z < N; pointId3d.z++)
             {
@@ -119,7 +149,7 @@ inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<
 
                 if(diagonalId >= 0)
                 {
-                    // this is the upper half of the thrombus
+                    // this is the upper half of the rhombus
                     // find surrounding triangle in spherical coordinates
                     float3 A;
                     float3 B;
@@ -152,7 +182,7 @@ inline void generateIcosphere(int n, std::vector<float2>& geoCoord, std::vector<
                     pCart = geoToCartPoint(pGeo);
                 } else
                 {
-                    // this is the lower half of the thrombus
+                    // this is the lower half of the rhombus
                     // find surrounding triangle in spherical coordinates
                     float3 A;
                     float3 B;

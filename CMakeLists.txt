@@ -18,7 +18,7 @@ endif()
 # -------------------------------------------------------------
 enable_language(C)
 enable_language(CXX)
-#enable_language(CUDA)
+enable_language(CUDA)
 find_package(mpUtils REQUIRED)
 find_package(Threads REQUIRED)
 find_package(OpenMP)
