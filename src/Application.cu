@@ -472,6 +472,7 @@ void Application::newSimulationModal()
 {
     if(ImGui::BeginPopupModal("New Simulation",nullptr,ImGuiWindowFlags_AlwaysAutoResize))
     {
+        ImGui::Text("Icosahedral grid");
         ImGui::DragInt("grid n",&m_n,0.5,1,1024);
 
         ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
@@ -485,6 +486,28 @@ void Application::newSimulationModal()
 
         ImGui::Separator();
 
+        ImGui::Text("Internal units");
+        ImGui::DragFloat("Earth radius (a) in m", &m_earthRadiusSI);
+        ImGui::DragFloat("Internal time unit in s", &m_timeUnit, 0.1f, 1.0);
+        ImGui::DragFloat("Gravity", &m_gSI, 0.01f, 0.001);
+        ImGui::Separator();
+
+        ImGui::Text("Test Case number 1 from David L. Williamson 1992.");
+        ImGui::DragFloat("Angular Velocity in rad/m", &m_angularVelocitySI, 0.00001f, 0.00001f, 5.0f, "%.8f");
+        ImGui::DragFloat("Wind Angle offset (alpha) in rad", &m_alpha, 0.001f,0.0,M_PI_2);
+        ImGui::DragFloat("Wind Velocity (u0) in m/s", &m_u0SI, 0.001f);
+        ImGui::DragFloat2("position of cosine bell", &m_cosineBellCenter.x, 0.001);
+        ImGui::DragFloat("cosine bell radius (R) in m", &m_cosineBellRadiusSI, 1.0f);
+
+        // calculate values in internal units
+        m_lengthUnit = m_earthRadiusSI;
+        m_g = m_gSI / m_lengthUnit * m_timeUnit * m_timeUnit;
+
+        m_u0 = m_u0SI / m_lengthUnit * m_timeUnit;
+        m_angularVelocity = m_angularVelocitySI * m_timeUnit;
+        m_cosineBellRadius = m_cosineBellRadiusSI / m_lengthUnit;
+        m_h0 = m_h0SI / m_lengthUnit;
+
         // cancel button
         if(ImGui::Button("Cancel"))
             ImGui::CloseCurrentPopup();
@@ -495,23 +518,59 @@ void Application::newSimulationModal()
         {
             ImGui::CloseCurrentPopup();
 
-            std::vector<float2> geoPoints;
-            std::vector<float3> cartPoints;
-            std::vector<GLuint> triIndices;
+            icosphere::generateIcosphere(m_n,m_geoPointsCPU,m_cartPointsCPU);
+            icosphere::generateIcosphereIndices(m_n,m_triIndicesCPU);
 
-            icosphere::generateIcosphere(m_n,geoPoints,cartPoints);
-            icosphere::generateIcosphereIndices(m_n,triIndices);
-
-            m_cartPos = mpu::gph::Buffer<float3>(cartPoints);
-            m_triangleIndices = mpu::gph::Buffer<GLuint>(triIndices);
+            m_geoPos = mpu::gph::Buffer<float2>(m_geoPointsCPU);
+            m_cartPos = mpu::gph::Buffer<float3>(m_cartPointsCPU);
+            m_triangleIndices = mpu::gph::Buffer<GLuint>(m_triIndicesCPU);
+            m_velocityBuffer = mpu::gph::Buffer<float2,true>(icosphere::memorySize(m_n));
+            m_geopotentialBuffer = mpu::gph::Buffer<float,true>(icosphere::memorySize(m_n));
 
             m_renderer.getVAO().addAttributeBufferArray(0,0,m_cartPos,0, sizeof(float3),3,0);
             m_renderer.getVAO().setIndexBuffer(m_triangleIndices);
             m_renderer.setNumIndices(m_triangleIndices.size());
+            m_renderer.getVAO().addAttributeBufferArray(1,1,m_geopotentialBuffer,0, sizeof(float),1,0);
 
+            resetSimulation();
             resetCamera();
         }
         ImGui::SetItemDefaultFocus();
         ImGui::EndPopup();
     }
+}
+
+void Application::resetSimulation()
+{
+    std::vector<float> geopotCPUBuffer(icosphere::memorySize(m_n));
+
+    float sinLatCenter = sin(m_cosineBellCenter.y);
+    float cosLatCenter = cos(m_cosineBellCenter.y);
+
+    std::default_random_engine rng(mpu::getRanndomSeed());
+    std::uniform_real_distribution<float> dist(0.9,1.1);
+
+    // create initial conditions using cosine bell
+    #pragma omp parallel for
+    for(int rhombus=0; rhombus<10; rhombus++)
+    {
+        int3 pointId3d;
+        pointId3d.x = rhombus;
+        for(pointId3d.y = 1; pointId3d.y < m_n + 1; pointId3d.y++)
+            for(pointId3d.z = 1; pointId3d.z < m_n + 1; pointId3d.z++)
+            {
+                int cellId = icosphere::getPointId(pointId3d, m_n);
+                float2 cp = m_geoPointsCPU[cellId];
+                float geopotential = 0;
+                float r = acos(sinLatCenter * sin(cp.y) + cosLatCenter * cos(cp.y) * cos(cp.x - m_cosineBellCenter.x));
+                if(r < m_cosineBellRadius)
+                {
+                    float h = dist(rng) * (m_h0 / 2.0f) * (1.0f + cos(M_PI * r / m_cosineBellRadius));
+                    geopotential = m_g * h;
+                }
+                geopotCPUBuffer[cellId] = geopotential;
+            }
+    }
+
+    m_geopotentialBuffer.write(geopotCPUBuffer);
 }

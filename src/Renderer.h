@@ -58,10 +58,15 @@ private:
     float m_aspect; //!< aspect ratio of the current window
 
     bool m_renderScalar{true}; //!< should the icosphere be rendered
+    bool m_renderGeopot{true}; //!< render geopotential
     glm::vec3 m_scalarConstColor{1.0,1.0,1.0}; //!< const color for scalar field
+    glm::vec3 m_scalarMinColor{0.0,0.0,0.0}; //!< color of smallest value
+    glm::vec3 m_scalarMaxColor{1.0,0.0,0.0}; //!< color of biggest value
+    float m_minScalar{0.0f}; //!< smallest scalar value
+    float m_maxScalar{1.0f}; //!< biggest scalar value
 
-    bool m_renderGridLines{true}; //!< should gridlines be renderes
-    glm::vec3 m_gridlineColor{0,0,0}; //!< color of the gridlines
+    bool m_renderGridLines{true}; //!< should gridlines be rendered
+    glm::vec3 m_gridlineColor{1.0f,1.0f,1.0f}; //!< color of the gridlines
 
     glm::mat4 m_projection{1.0}; //!< projection matrix used when rendering
     glm::mat4 m_view{1.0}; //!< view matrix used when rendering

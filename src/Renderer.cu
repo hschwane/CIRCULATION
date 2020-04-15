@@ -69,7 +69,21 @@ void Renderer::showGui(bool* show)
         if(ImGui::CollapsingHeader("Scalar field"))
         {
             ImGui::Checkbox("Draw scalar field",&m_renderScalar);
-            ImGui::ColorEdit3("Scalar color",glm::value_ptr(m_scalarConstColor));
+
+            ImGui::Checkbox("Show geopotential",&m_renderGeopot);
+            if(m_renderGeopot)
+            {
+                if(ImGui::ColorEdit3("Min Color##scalarmnincolor", glm::value_ptr(m_scalarMinColor)))
+                    m_icosphereShader.uniform3f("minScalarColor", m_scalarMinColor);
+                if(ImGui::ColorEdit3("Max Color##scalarmaxcolor", glm::value_ptr(m_scalarMaxColor)))
+                    m_icosphereShader.uniform3f("maxScalarColor", m_scalarMaxColor);
+                if(ImGui::DragFloat("Min Value##minscalarcolor", &m_minScalar, 0.01))
+                    m_icosphereShader.uniform1f("minScalar", m_minScalar);
+                if(ImGui::DragFloat("Max Value##maxscalarcolor", &m_maxScalar, 0.01))
+                    m_icosphereShader.uniform1f("maxScalar", m_maxScalar);
+            } else {
+                ImGui::ColorEdit3("Scalar color",glm::value_ptr(m_scalarConstColor));
+            }
         }
 
         if(ImGui::CollapsingHeader("Grid"))
@@ -88,6 +102,12 @@ void Renderer::compileShader()
     try
     {
         m_icosphereShader.rebuild();
+
+        m_icosphereShader.uniform3f("minScalarColor", m_scalarMinColor);
+        m_icosphereShader.uniform3f("maxScalarColor", m_scalarMaxColor);
+        m_icosphereShader.uniform1f("minScalar", m_minScalar);
+        m_icosphereShader.uniform1f("maxScalar", m_maxScalar);
+
         setModelMat(m_model);
         setViewMat(m_view);
         rebuildProjectionMat();
@@ -131,7 +151,7 @@ void Renderer::draw()
     if(m_renderScalar)
     {
         m_icosphereShader.use();
-        m_icosphereShader.uniform1b("useConstColor",true);
+        m_icosphereShader.uniform1b("useConstColor", !m_renderGeopot);
         m_icosphereShader.uniform3f("constColor",m_scalarConstColor);
         glDrawElements(GL_TRIANGLES, m_numIndices, GL_UNSIGNED_INT, 0);
     }

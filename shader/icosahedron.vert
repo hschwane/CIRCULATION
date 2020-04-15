@@ -1,11 +1,14 @@
 #version 330
 
 layout(location=0) in vec4 inPosition;
-layout(location=1) in float inDensity;
+layout(location=1) in float scalarField;
 
 out vec4 color; // this is passed to the fragment shader
 
-uniform float maxDensity; // has the same value for all vertices
+uniform float minScalar;
+uniform float maxScalar;
+uniform vec3 minScalarColor;
+uniform vec3 maxScalarColor;
 
 uniform bool useConstColor; // should constant color be used
 uniform vec3 constColor; // the constant color to use
@@ -25,7 +28,10 @@ void main()
     }
     else
     {
+        float s = scalarField;
         // apply transfer function to the density
-        color = vec4(inDensity / maxDensity, inDensity / maxDensity, inDensity/ maxDensity, 1);
+        float f = (s - minScalar) / (maxScalar - minScalar);
+        f = clamp(f,0,1);
+        color = vec4(mix(minScalarColor,maxScalarColor,f),1.0f);
     }
 }
