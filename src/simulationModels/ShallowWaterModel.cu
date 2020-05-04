@@ -138,6 +138,11 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
             const float velForX  = grid.read<AT::velocityX>(cs.getForwardNeighbor(cellId)); // used for vorticity
             const float velRightY  = grid.read<AT::velocityY>(cs.getRightNeighbor(cellId)); // used for vorticity
 
+            const float phiLeft = grid.read<AT::geopotential>(cs.getLeftNeighbor(cellId));
+            const float phiRight = grid.read<AT::geopotential>(cs.getRightNeighbor(cellId));
+            const float phiFor = grid.read<AT::geopotential>(cs.getForwardNeighbor(cellId));
+            const float phiBack = grid.read<AT::geopotential>(cs.getBackwardNeighbor(cellId));
+
             // compute kinetic energy per unit mass
             const float velX = (velLeftX + velRightX) * 0.5f;
             const float velY = (velForY + velBackY) * 0.5f;
@@ -161,16 +166,14 @@ __global__ void shallowWaterSimulationA(ShallowWaterGrid::ReferenceType grid, cs
             grid.write<AT::potentialVort>(cellId, abs(vort+cor) / phi);
 
             // compute geopotential advection time derivative dPhi/dt
-            const float divv = divergence2d( velLeftX, velRightX, velBackY, velForY, cellPos, cs);
-            float dphi_dt = -divv * phi;
+            float phiHalfLeft = (phi+phiLeft)*0.5;
+            float phiHalfRight = (phi+phiRight)*0.5;
+            float phiHalfBack = (phi+phiBack)*0.5;
+            float phiHalfFor = (phi+phiFor)*0.5;
+            float dphi_dt = -divergence2d( velLeftX*phiHalfLeft, velRightX*phiHalfRight, velBackY*phiHalfBack, velForY*phiHalfFor, cellPos, cs);
 
             if(diffusion > 0)
             {
-                const float phiLeft = grid.read<AT::geopotential>(cs.getLeftNeighbor(cellId));
-                const float phiRight = grid.read<AT::geopotential>(cs.getRightNeighbor(cellId));
-                const float phiFor = grid.read<AT::geopotential>(cs.getForwardNeighbor(cellId));
-                const float phiBack = grid.read<AT::geopotential>(cs.getBackwardNeighbor(cellId));
-
                 // compute geopotential diffusion
                 const float lapphi = laplace2d(phiLeft,phiRight,phiBack,phiFor,phi,cellPos,cs);
                 dphi_dt += diffusion * lapphi;
