@@ -59,7 +59,7 @@ private:
     float m_lengthUnit; //!< internal length unit (depends on cs size)
 
     // settings in internal units
-    float2 m_cosineBellCenter{3*M_PI/2}; //!< center of the cosine bell
+    float2 m_cosineBellCenter{3*M_PI/2,1.2}; //!< center of the cosine bell
     float m_earthRadius; //!< advection wind velocity (lengthUnit / timeUnit)
     float m_u0; //!< advection wind velocity (lengthUnit / timeUnit)
     float m_angularVelocity; //!< angular velocity of earth (radians / time unit)
@@ -67,7 +67,7 @@ private:
     float m_h0; //!< initial height of cosine bell in meter
     float m_g; //!< gravitational acceleration in m/s^2
 
-    float m_alpha; //!< alpha parameter (radians)
+    float m_alpha{1.571}; //!< alpha parameter (radians)
 
     // sim settings
     float m_timestep{0.0001}; //!< simulation timestep used

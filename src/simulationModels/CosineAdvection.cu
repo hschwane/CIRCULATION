@@ -219,7 +219,7 @@ __global__ void poleAdvectionA(ShallowWaterGrid::ReferenceType grid, Geographica
 
 //            bool print = cell.x == 256 || cell.x == 0;
 //            bool print = cell.x == 384 || cell.x == 128;
-            bool print = cell.x == 127 || cell.x == 128 || cell.x == 129 || cell.x == 384;
+//            bool print = cell.x == 127 || cell.x == 128 || cell.x == 129 || cell.x == 384;
             // handle upper boundary
             if(cell.y == cs.getNumGridCells3d().y-1)
             {
@@ -237,19 +237,19 @@ __global__ void poleAdvectionA(ShallowWaterGrid::ReferenceType grid, Geographica
                     neighborPos.x = fmod(neighborPos.x+M_PIf32,2*M_PIf32);
                 }
 
-                if(print) printf("cell %i pos: (%f,%f), nbPosExt: (%f,%f), nbPos: (%f,%f)\n",cell.x, cellPos.x, cellPos.y,
-                        neighborPosExt.x, neighborPosExt.y, neighborPos.x, neighborPos.y);
+//                if(print) printf("cell %i pos: (%f,%f), nbPosExt: (%f,%f), nbPos: (%f,%f)\n",cell.x, cellPos.x, cellPos.y,
+//                        neighborPosExt.x, neighborPosExt.y, neighborPos.x, neighborPos.y);
 
                 // if we are in the polar region (outside of the coordinate bounds) special care must be taken
                 if( neighborPos.y > cs.getMaxCoord().y)
                 {
-                    if(print) printf("cell %i geopotential using interpolatePole\n",cell.x);
+//                    if(print) printf("cell %i geopotential using interpolatePole\n",cell.x);
                     phiHalfFor = interpolateNorthPole2D<AT::geopotential>(cellPos,phi,neighborPosExt.y,grid,cs,float2{0,0},false);
-                    if(print && phiHalfFor < 0)
-                        printf("cell %i has negative neighbor\n",cell.x);
+//                    if(print && phiHalfFor < 0)
+//                        printf("cell %i has negative neighbor\n",cell.x);
                 } else
                 {
-                    if(print) printf("cell %i geopotential using interpolate2d\n",cell.x);
+//                    if(print) printf("cell %i geopotential using interpolate2d\n",cell.x);
                     phiHalfFor = readInterpolated2D<AT::geopotential>(neighborPos,grid,cs);
                 }
 
@@ -257,16 +257,16 @@ __global__ void poleAdvectionA(ShallowWaterGrid::ReferenceType grid, Geographica
                 float2 offset{0,cs.getCellSize().y*0.5f};
                 if( neighborPos.y > cs.getMaxCoord().y-offset.y)
                 {
-                    if(print) printf("cell %i velocity using interpolatePole\n",cell.x);
+//                    if(print) printf("cell %i velocity using interpolatePole\n",cell.x);
                     velForY = interpolateNorthPole2D<AT::velocityY>(cellPos-offset, velBackY,neighborPosExt.y,grid,cs,offset,true);
                 } else
                 {
-                    if(print) printf("cell %i velocity using interpolate2D\n",cell.x);
+//                    if(print) printf("cell %i velocity using interpolate2D\n",cell.x);
                     velForY = -readInterpolated2D<AT::velocityY>(neighborPos,grid,cs,offset);
                 }
 
-                if(print) printf("cell %i geo: %f geoBack: %f, geoFor %f\n",cell.x,phi,phiHalfBack,phiHalfFor);
-                if(print) printf("cell %i velBack: %f, velFor %f\n",cell.x,velBackY,velForY);
+//                if(print) printf("cell %i geo: %f geoBack: %f, geoFor %f\n",cell.x,phi,phiHalfBack,phiHalfFor);
+//                if(print) printf("cell %i velBack: %f, velFor %f\n",cell.x,velBackY,velForY);
 
             } else {
                 float phiFor = grid.read<AT::geopotential>(cs.getForwardNeighbor(cellId));

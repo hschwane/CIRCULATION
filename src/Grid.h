@@ -561,9 +561,9 @@ template <AT Param, typename T>
 void Grid<GridAttribs...>::write(int cellId, T&& data)
 {
     if(m_cached)
-        return m_cachedBuffers[m_writeBuffer].write<Param>(cellId, std::forward<T>(data));
+        return m_cachedBuffers[m_writeBuffer].template write<Param>(cellId, std::forward<T>(data));
     else
-        m_buffers[m_writeBuffer].write<Param>(cellId, std::forward<T>(data));
+        m_buffers[m_writeBuffer].template write<Param>(cellId, std::forward<T>(data));
 }
 
 template <typename... GridAttribs>
@@ -590,17 +590,17 @@ void Grid<GridAttribs...>::initialize(int cellId, T&& data)
 {
     if(m_cached)
     {
-        m_cachedBuffers[0].write<Param>(cellId, std::forward<T>(data));
-        m_cachedBuffers[1].write<Param>(cellId, std::forward<T>(data));
-        m_cachedBuffers[2].write<Param>(cellId, std::forward<T>(data));
-        m_cachedBuffers[3].write<Param>(cellId, std::forward<T>(data));
+        m_cachedBuffers[0].template write<Param>(cellId, std::forward<T>(data));
+        m_cachedBuffers[1].template write<Param>(cellId, std::forward<T>(data));
+        m_cachedBuffers[2].template write<Param>(cellId, std::forward<T>(data));
+        m_cachedBuffers[3].template write<Param>(cellId, std::forward<T>(data));
     }
     else
     {
-        m_buffers[0].write<Param>(cellId, std::forward<T>(data));
-        m_buffers[1].write<Param>(cellId, std::forward<T>(data));
-        m_buffers[2].write<Param>(cellId, std::forward<T>(data));
-        m_buffers[3].write<Param>(cellId, std::forward<T>(data));
+        m_buffers[0].template write<Param>(cellId, std::forward<T>(data));
+        m_buffers[1].template write<Param>(cellId, std::forward<T>(data));
+        m_buffers[2].template write<Param>(cellId, std::forward<T>(data));
+        m_buffers[3].template write<Param>(cellId, std::forward<T>(data));
     }
 }
 
